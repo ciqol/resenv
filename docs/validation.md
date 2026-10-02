@@ -1,0 +1,243 @@
+# Validation
+
+## Version 0.5.0 - inferred providers in the canonical preload
+
+Checked on 2026-10-01 on macOS arm64. All 54 unit/process tests passed on Node
+20.20.2, 22.22.3 and 24.19.0. On each version, the installed package passed 13
+runtime checks and both typed consumer checks. The private package version is
+0.5.0; existing 0.4.1 consumer archives remain unchanged.
+
+Checks cover Doppler inference through `@ciqol/envref/register` in both module
+formats and `envref run`, login-provider inference from inherited values,
+literal shell expressions, and shared execution when the canonical and legacy
+preload names are combined. Login rejects CI even with an interactive terminal.
+Nx 23.2.1 passed target loading, local/shell precedence, target isolation and
+strict failures using the canonical preload and dummy credentials.
+
+A local consumer was linked to the built package without changing its
+manifests, lockfile or workflows. Its serve command uses the canonical preload,
+and its ignored `.env.serve.local` contains three Doppler references. All three
+resolved through the HTTPS API using an existing login. The detached preview
+returned HTTP 200; configuration checks confirmed Google was connected and both
+providers were configured. Secret values were neither printed nor saved.
+The consumer's 80 tests, ESLint and strict oxlint checks passed. Its project has
+no separate typecheck target.
+
+Initial artifact and Nx checks hit sandbox restrictions on npm cache writes
+and Unix sockets; reruns with the required permissions passed. Hosted CI and
+the full native browser-approval flow remain unverified. The consumer setup
+remains local and was not committed or pushed.
+
+## Doppler API resolution and browser login
+
+Checked on 2026-10-01 on macOS arm64. The package remains private and
+unpublished; no npm dependencies were added.
+
+| Runtime | Unit/process tests | Installed artifact checks |
+| --- | --- | --- |
+| Node 20.20.2 | 52 passed | 13 runtime probes and 2 typed consumers passed |
+| Node 22.22.3 | 52 passed | 13 runtime probes and 2 typed consumers passed |
+| Node 24.19.0 | 52 passed | 13 runtime probes and 2 typed consumers passed |
+
+The added checks cover reference validation, credential precedence, browser
+login and CLI fallback, OS helper arguments and environment, request limits,
+safe errors, literal fetched values, atomic updates, and both preload formats.
+Browser authorization, API responses and Linux credential storage use test
+doubles and dummy credentials. Runtime checks use a temporary package copy
+with a stubbed worker; the shipped package has no API endpoint override.
+
+Nx 23.2.1 integration passed for both command and Doppler modes: target dotenv
+loading, local-file and inherited-shell precedence, target isolation, and
+failure before application startup. The test uses an existing Nx installation
+read-only and creates its own temporary workspace. It does not use the source
+workspace's dotenv files or credentials.
+
+Two narrow live checks also passed:
+
+- Doppler's authorization challenge endpoint accepted envref's own version and
+  returned the expected response shape. No browser authorization was completed,
+  account credential issued, or real secret fetched.
+- The macOS Keychain adapter stored and retrieved a dummy token through stdin
+  under a unique test service. The entry was removed and its absence verified.
+  Existing credentials were not read or changed.
+
+Completing browser authorization and retrieving a real secret still need a
+live check. Linux Secret Service and hosted GitHub Actions have not been tested
+live. Windows native login and storage are not implemented.
+
+The existing consumer tarball was retained unchanged, and no files in the
+separate application checkout were modified. See [Doppler setup](doppler.md)
+for the login protocol's compatibility limits and fallback behavior.
+
+## Dual-format Rollup build
+
+Checked on 2026-09-29 on macOS arm64 after converting source, tests and build
+scripts to `.mjs`. The generated package remains private and unpublished.
+
+| Runtime | Unit/process tests | Installed artifact checks |
+| --- | --- | --- |
+| Node 20.20.2 | 31 passed | 11 runtime probes and 2 typed consumers passed |
+| Node 22.22.3 | 31 passed | 11 runtime probes and 2 typed consumers passed |
+| Node 24.19.0 | 31 passed | 11 runtime probes and 2 typed consumers passed |
+
+The artifact checks pack `dist/` and install the tarball into a temporary
+consumer offline using cached, pinned runtime dependencies. They exercise CJS
+and ESM library imports, both preload forms, the CLI, command resolution,
+shared error-class identity, a Node environment with browser-like globals and
+single execution when both preload forms are loaded. TypeScript 6.0.3 checks
+`.cts` and `.mts` consumers, including expected errors for invalid arguments.
+The consumer has no source-tree links or build dependencies.
+
+The 16 upstream ciphertext checks passed against `@dotenvx/primitives` 3.0.3
+on Node 24.19.0. The runtime dependency versions did not change. Build dependency
+evidence and its provenance limits are recorded in [dependencies.md](dependencies.md).
+
+The revised workflow was parsed and inspected for its compatibility matrix,
+action pins, permissions and build/test order. It has not run on GitHub; Linux
+and hosted-runner results remain unverified. Earlier tarballs consumed by
+other projects are retained unchanged.
+
+## Release preparation - Nx and package checks
+
+Checked on 2026-09-29 on macOS arm64 with Node 24.19.0.
+
+- All 31 unit and process tests passed after the release-preparation changes.
+- `npm run test:package` passed five checks against the packed artifact:
+  the library, CLI, CommonJS preload, ES module preload and command preload.
+  It verifies package exports and contents in a temporary consumer using the
+  existing reviewed dependency tree; it does not fetch packages or publish.
+- `npm run test:nx -- /absolute/path/to/workspace/node_modules` passed against
+  Nx 23.2.1. A temporary workspace verifies `.env.serve` loading, precedence
+  of `.env.serve.local` and inherited shell values, isolation from other
+  targets, and failure before application startup when a command fails.
+  All fixture values are dummy data. The source workspace's dotenv files and
+  credentials are not used.
+- The Linux/macOS GitHub Actions workflow is prepared but has not run on
+  GitHub. Local checks do not establish Linux or hosted-runner compatibility.
+- A focused review check confirmed that the command output limit is shared
+  across stdout and stderr. A dummy command producing 40,000 bytes on either
+  stream succeeded; 40,000 bytes on both streams failed with `COMMAND_FAILED`.
+  The README now describes the combined budget. Runtime behavior is unchanged.
+
+The integration script accepts an existing, separately reviewed Nx installation
+so Nx does not become a runtime dependency of envref.
+
+A local application was also started through its own Nx `serve` target with
+the command preload. Three existing cloud secret references resolved at
+startup; the page and configuration-status endpoint both returned HTTP 200.
+Only status flags and safe envref diagnostics were inspected. This manual check
+does not exercise provider API operations or replace the dummy-data tests.
+
+## Version 0.4.1 - clearer log messages
+
+All 31 tests passed on Node 24.19.0 on 2026-09-29. Success and failure messages
+now describe secret replacement; the logging behavior and dependency tree are
+unchanged. Escaped variable names and secret-output checks still pass.
+
+## Version 0.4.0 - native debug logging
+
+Checked on 2026-09-29 on macOS arm64. All 31 tests passed on Node 20.20.2
+and 24.19.0. Diagnostics now use `node:util`'s `debuglog('envref')` and
+`NODE_DEBUG=envref`. Tests verify one result per attempted variable, a final
+summary, a single "Nothing to handle" line for empty work, and safe command
+and decryption failures. Existing tests verify quiet default behavior.
+
+Secrets, command text and provider output remain absent from logs, and variable
+names containing newlines stay escaped. The dependency tree is unchanged.
+
+## Version 0.3.0 - opt-in diagnostics
+
+Checked on 2026-09-29 on macOS arm64. All 31 tests passed on Node 20.20.2
+and 24.19.0. Four new tests cover ordered JSON events, resolution identifiers,
+safe failure details, disabled command mode, empty environments and an explicit
+API override for the debug flag. Existing tests verify quiet default behavior.
+
+The diagnostic tests check that command text, stdout, stderr, private keys,
+ciphertext and plaintext are absent from logs. Newline-containing variable
+names remain escaped inside a single JSON record. Tests use dummy values only.
+The dependency tree is unchanged.
+
+## Version 0.2.0 — command resolution
+
+Checked on 2026-09-29 on macOS arm64. The command suite adds eight tests for
+explicit opt-in, complete-value expressions, nested shell commands, fetched
+private keys, preserving literal output, atomic environment updates, safe
+errors, output limits, timeout cleanup and the CLI/preload entry points.
+
+All 27 tests passed on Node 20.20.2, 24.19.0 and 26.10.0. The 16 upstream
+ciphertext compatibility checks also passed on each version.
+
+The implementation uses Node's standard library and `/bin/sh`; it adds no
+dependencies. Tests execute only local dummy commands. A real Doppler account
+or cloud secret was not accessed.
+
+At the time of this baseline check, Nx's source depended on `dotenv-expand ~12.0.3`. Its variable-expansion
+pattern leaves the `$(doppler ...)` form intact, so the reference reaches the
+application environment. This is a source inspection, not a full Nx workspace
+integration test. A user's installed Nx and dotenv loader versions still need
+to be checked when integrating an existing project.
+
+Sources: [Nx dependencies](https://github.com/nrwl/nx/blob/master/packages/nx/package.json),
+[Nx task loading](https://github.com/nrwl/nx/blob/master/packages/nx/src/tasks-runner/task-env.ts),
+[dotenv-expand 12.0.3](https://github.com/motdotla/dotenv-expand/blob/v12.0.3/lib/main.js).
+
+## Version 0.1.0 — encryption baseline
+
+Checked on 2026-09-28 on macOS arm64 using generated dummy secrets only.
+
+| Check | Result |
+| --- | --- |
+| Node 20.20.2 | 19 unit and process tests passed |
+| Node 24.19.0 | 19 unit and process tests passed |
+| Node 26.10.0 | 19 unit and process tests passed |
+| Upstream ciphertext compatibility | 16 checks passed on each of the three Node versions |
+| npm registry signatures | All 5 installed dependencies verified |
+| npm provenance attestations | All 5 installed dependencies verified |
+| npm audit / OSV | No known vulnerabilities reported for the reviewed versions |
+| Private package installation | Local tarball installed offline in a separate temporary project |
+| Installed package exports | CLI, CommonJS preload, ES module preload and library import passed |
+
+The installed tarball kept the five reviewed dependency versions. Its eight
+files contain the runtime, type declarations and documentation; no dotenv files,
+test credentials or `node_modules` are included. The CLI is executable.
+
+## Upstream compatibility
+
+The upstream check, now `test/interop.mjs`, used a separately installed `@dotenvx/primitives` 3.0.3
+to create fresh keys and ciphertext and confirm the plaintext with its own
+decrypt function. envref then resolved the same ciphertext through its library,
+command wrapper, CommonJS preload and ES module preload.
+
+The plaintext cases cover empty values, a leading byte order mark, ordinary
+text, Unicode, line breaks and shell-like text that must remain literal. The
+working directory remained empty throughout. The upstream package is a
+verification input only and is not part of envref's dependency tree.
+
+To repeat after separately installing and reviewing the upstream package:
+
+```sh
+node test/interop.mjs /absolute/path/to/node_modules/@dotenvx/primitives
+```
+
+The surrounding upstream investigation used dotenvx CLI 2.31.1. No compatibility
+claim is made for future changes to the ciphertext format.
+
+## Runtime coverage and limits
+
+The tests exercise inherited environments, failure before application startup,
+all-or-nothing decryption, key rotation, tampered ciphertext, no dotenv loading
+or modification, literal argument handling, stdin, exit status and SIGTERM
+forwarding. Plaintext and keys do not appear in envref error messages.
+
+The process tests simulate the environment passed by a task runner. The
+separate Nx integration check above now verifies the real task runner with
+an application preload and target-specific dotenv files. It tests the installed
+Nx version listed above; other loaders or versions need their own integration
+check, particularly if they resolve commands before envref runs.
+
+Signal behavior has been tested on macOS only. Windows signal behavior and
+framework-specific reloaders remain unverified. The wrapper forwards signals
+to its direct child, not an arbitrary detached process tree.
+
+This is a private prototype with no independent security audit. The application
+and any code granted the same credentials can read its environment.
