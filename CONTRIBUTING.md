@@ -1,6 +1,6 @@
 # Contributing
 
-envref is being prepared for a public release. Repository access remains
+resenv is being prepared for a public release. Repository access remains
 private, and `package.json` disables registry publication.
 
 ## Local development
@@ -50,7 +50,7 @@ package, then run:
 node test/interop.mjs /absolute/path/to/node_modules/@dotenvx/primitives
 ```
 
-These integration inputs are not runtime dependencies of envref.
+These integration inputs are not runtime dependencies of resenv.
 
 ## Changes
 

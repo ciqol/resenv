@@ -9,7 +9,7 @@ export interface ResolveOptions {
   commandTimeoutMs?: number
 }
 
-export declare class EnvrefError extends Error {
+export declare class ResenvError extends Error {
   readonly code: string
   constructor(code: string, message: string)
 }

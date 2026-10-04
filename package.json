@@ -1,16 +1,16 @@
 {
-  "name": "@ciqol/envref",
-  "version": "0.5.0",
+  "name": "@ciqol/resenv",
+  "version": "0.6.0",
   "private": true,
   "description": "Resolve secret references and encrypted values already in an application's environment",
   "license": "UNLICENSED",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ciqol/envref.git"
+    "url": "git+https://github.com/ciqol/resenv.git"
   },
-  "homepage": "https://github.com/ciqol/envref#readme",
+  "homepage": "https://github.com/ciqol/resenv#readme",
   "bugs": {
-    "url": "https://github.com/ciqol/envref/issues"
+    "url": "https://github.com/ciqol/resenv/issues"
   },
   "keywords": ["environment", "dotenv", "secrets", "nx"],
   "main": "./dist/index.cjs",
@@ -27,37 +27,37 @@
       "require": "./dist/index.cjs",
       "default": "./dist/index.mjs"
     },
-    "./register": {
+    "./resolve": {
       "types": {
-        "import": "./dist/register.d.mts",
-        "require": "./dist/register.d.cts",
-        "default": "./dist/register.d.mts"
+        "import": "./dist/resolve.d.mts",
+        "require": "./dist/resolve.d.cts",
+        "default": "./dist/resolve.d.mts"
       },
-      "import": "./dist/register.mjs",
-      "require": "./dist/register.cjs"
+      "import": "./dist/resolve.mjs",
+      "require": "./dist/resolve.cjs"
     },
-    "./register-commands": {
+    "./resolve-commands": {
       "types": {
-        "import": "./dist/register-commands.d.mts",
-        "require": "./dist/register-commands.d.cts",
-        "default": "./dist/register-commands.d.mts"
+        "import": "./dist/resolve-commands.d.mts",
+        "require": "./dist/resolve-commands.d.cts",
+        "default": "./dist/resolve-commands.d.mts"
       },
-      "import": "./dist/register-commands.mjs",
-      "require": "./dist/register-commands.cjs"
+      "import": "./dist/resolve-commands.mjs",
+      "require": "./dist/resolve-commands.cjs"
     },
-    "./register-doppler": {
+    "./resolve-doppler": {
       "types": {
-        "import": "./dist/register-doppler.d.mts",
-        "require": "./dist/register-doppler.d.cts",
-        "default": "./dist/register-doppler.d.mts"
+        "import": "./dist/resolve-doppler.d.mts",
+        "require": "./dist/resolve-doppler.d.cts",
+        "default": "./dist/resolve-doppler.d.mts"
       },
-      "import": "./dist/register-doppler.mjs",
-      "require": "./dist/register-doppler.cjs"
+      "import": "./dist/resolve-doppler.mjs",
+      "require": "./dist/resolve-doppler.cjs"
     },
     "./package.json": "./package.json"
   },
   "bin": {
-    "envref": "dist/bin/envref.cjs"
+    "resenv": "dist/bin/resenv.cjs"
   },
   "files": ["dist"],
   "engines": {

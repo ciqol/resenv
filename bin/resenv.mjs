@@ -7,7 +7,7 @@ import { login } from '../src/doppler/auth.mjs'
 import { createSystem } from '../src/doppler/system.mjs'
 import { references } from '../src/doppler/references.mjs'
 
-const usage = 'Usage: envref run [--commands] -- <command> [arguments...]\n       envref login [doppler] [--cli] [--no-browser]\n       envref logout doppler\nInfer secret providers from values already in the environment.\n--doppler remains accepted for compatibility.\n--commands enables whole-value $(command) expressions using /bin/sh.\n'
+const usage = 'Usage: resenv run [--commands] -- <command> [arguments...]\n       resenv login [doppler] [--cli] [--no-browser]\n       resenv logout doppler\nInfer secret providers from values already in the environment.\n--doppler remains accepted for compatibility.\n--commands enables whole-value $(command) expressions using /bin/sh.\n'
 
 async function main () {
   const args = process.argv.slice(2)
@@ -18,7 +18,7 @@ async function main () {
   const explicitProvider = args[1] === 'doppler'
   if (args[0] === 'login' && args.slice(explicitProvider ? 2 : 1).every(arg => ['--cli', '--no-browser'].includes(arg))) {
     if (!explicitProvider && !references(process.env).length) {
-      process.stderr.write('Nothing to handle: no cloud secret references in the environment. Load your target environment first, or use envref login doppler.\n')
+      process.stderr.write('Nothing to handle: no cloud secret references in the environment. Load your target environment first, or use resenv login doppler.\n')
       return
     }
     await login({ cli: args.includes('--cli'), noBrowser: args.includes('--no-browser') })
@@ -26,7 +26,7 @@ async function main () {
   }
   if (args.length === 2 && args[0] === 'logout' && args[1] === 'doppler') {
     createSystem().remove()
-    process.stderr.write('Removed the envref credential. Doppler CLI credentials and DOPPLER_TOKEN are unchanged; revoke the token in Doppler to invalidate it.\n')
+    process.stderr.write('Removed the resenv credential. Doppler CLI credentials and DOPPLER_TOKEN are unchanged; revoke the token in Doppler to invalidate it.\n')
     return
   }
   const options = { doppler: true }
@@ -63,7 +63,7 @@ async function main () {
   child.once('error', error => {
     cleanup()
     const code = error.code === 'ENOENT' ? 'COMMAND_NOT_FOUND' : 'COMMAND_START_FAILED'
-    process.stderr.write(`[envref] ${code}: Could not start the requested command.\n`)
+    process.stderr.write(`[resenv] ${code}: Could not start the requested command.\n`)
     process.exitCode = error.code === 'ENOENT' ? 127 : 126
   })
   child.once('exit', (code, signal) => {

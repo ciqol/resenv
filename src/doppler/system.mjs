@@ -1,9 +1,10 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { userInfo } from 'node:os'
-import { EnvrefError } from '../errors.mjs'
+import { ResenvError } from '../errors.mjs'
 import { validateToken } from './http.mjs'
 
+// Preserve saved logins from before the package rename.
 const SERVICE = 'ciqol.envref.doppler'
 const ACCOUNT = 'default'
 
@@ -25,7 +26,7 @@ function createSystem ({ platform = process.platform, run = spawnSync, exists = 
   const mac = platform === 'darwin' && exists('/usr/bin/security')
   const linux = platform === 'linux' && exists('/usr/bin/secret-tool')
   const cli = ['/opt/homebrew/bin/doppler', '/usr/local/bin/doppler', '/usr/bin/doppler'].find(exists)
-  const unavailable = () => new EnvrefError('DOPPLER_KEYRING_UNAVAILABLE', 'The OS credential store is unavailable. Use the Doppler CLI or supply DOPPLER_TOKEN.')
+  const unavailable = () => new ResenvError('DOPPLER_KEYRING_UNAVAILABLE', 'The OS credential store is unavailable. Use the Doppler CLI or supply DOPPLER_TOKEN.')
 
   function read () {
     if (!mac && !linux) return undefined
@@ -44,7 +45,7 @@ function createSystem ({ platform = process.platform, run = spawnSync, exists = 
     // the OS process argument list. The token alphabet excludes separators.
     const result = mac
       ? invoke('/usr/bin/security', ['-i'], { input: `add-generic-password -U -s ${SERVICE} -a ${ACCOUNT} -w ${token}\n` })
-      : invoke('/usr/bin/secret-tool', ['store', '--label=envref Doppler', 'service', SERVICE, 'account', ACCOUNT], { input: token })
+      : invoke('/usr/bin/secret-tool', ['store', '--label=resenv Doppler', 'service', SERVICE, 'account', ACCOUNT], { input: token })
     if (result.error || result.status !== 0) throw unavailable()
     // security -i may report a subcommand failure with a zero process status.
     if (read() !== token) throw unavailable()
@@ -66,10 +67,10 @@ function createSystem ({ platform = process.platform, run = spawnSync, exists = 
   }
 
   function cliLogin () {
-    if (!cli) throw new EnvrefError('DOPPLER_CLI_UNAVAILABLE', 'Doppler CLI fallback is unavailable. Install Doppler or supply DOPPLER_TOKEN.')
+    if (!cli) throw new ResenvError('DOPPLER_CLI_UNAVAILABLE', 'Doppler CLI fallback is unavailable. Install Doppler or supply DOPPLER_TOKEN.')
     const result = invoke(cli, ['login'], { stdio: 'inherit', timeout: 300000 })
-    if (result.error || result.status !== 0) throw new EnvrefError('DOPPLER_LOGIN_FAILED', 'Doppler CLI login did not complete.')
-    if (!cliToken()) throw new EnvrefError('DOPPLER_LOGIN_FAILED', 'Doppler CLI login did not provide a credential.')
+    if (result.error || result.status !== 0) throw new ResenvError('DOPPLER_LOGIN_FAILED', 'Doppler CLI login did not complete.')
+    if (!cliToken()) throw new ResenvError('DOPPLER_LOGIN_FAILED', 'Doppler CLI login did not provide a credential.')
   }
 
   function openBrowser (url) {

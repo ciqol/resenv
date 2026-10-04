@@ -1,5 +1,8 @@
 # Dependency review
 
+Version 0.6.0 renamed the package to `@ciqol/resenv` on 2026-10-04 without
+changing dependency versions. Earlier review entries retain the original name.
+
 ## Doppler support — 2026-10-01
 
 No npm dependency was added for Doppler. Node's built-in HTTPS `fetch`, child

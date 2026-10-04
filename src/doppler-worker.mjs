@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { EnvrefError } from './errors.mjs'
+import { ResenvError } from './errors.mjs'
 import { resolveReferences } from './doppler/resolve.mjs'
 
 // Private pipe protocol for the synchronous Node preload. Tokens and resolved
@@ -11,7 +11,7 @@ async function main () {
     const values = await resolveReferences(JSON.parse(input))
     process.stdout.write(JSON.stringify({ values }))
   } catch (error) {
-    process.stdout.write(JSON.stringify({ error: error instanceof EnvrefError
+    process.stdout.write(JSON.stringify({ error: error instanceof ResenvError
       ? { code: error.code, message: error.message }
       : { code: 'DOPPLER_RESOLUTION_FAILED', message: 'Doppler resolution failed.' } }))
     process.exitCode = 1

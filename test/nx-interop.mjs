@@ -15,8 +15,8 @@ if (!process.argv[2]) {
 const modules = resolve(process.argv[2])
 const nxPackage = JSON.parse(readFileSync(join(modules, 'nx/package.json'), 'utf8'))
 const nx = resolve(modules, 'nx', nxPackage.bin.nx)
-const preload = resolve(__dirname, '../dist/register-commands.cjs')
-const directory = mkdtempSync(join(tmpdir(), 'envref-nx-'))
+const preload = resolve(__dirname, '../dist/resolve-commands.cjs')
+const directory = mkdtempSync(join(tmpdir(), 'resenv-nx-'))
 const project = join(directory, 'app')
 const env = {
   PATH: `${dirname(process.execPath)}:${process.env.PATH}`,
@@ -39,7 +39,7 @@ function run (target, extraEnv = {}) {
 try {
   mkdirSync(project)
   symlinkSync(modules, join(directory, 'node_modules'), 'dir')
-  writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: 'envref-nx-fixture', private: true }))
+  writeFileSync(join(directory, 'package.json'), JSON.stringify({ name: 'resenv-nx-fixture', private: true }))
   writeFileSync(join(directory, 'nx.json'), '{}')
   const quote = value => `'${value.replace(/'/g, "'\\''")}'`
   const command = `${quote(process.execPath)} --require=${quote(preload)} app.cjs`
@@ -49,7 +49,7 @@ try {
       options: { command, cwd: '{projectRoot}' }
     }]))
   }))
-  writeFileSync(join(project, 'app.cjs'), "require('node:assert/strict').equal(process.env.TOKEN, process.env.EXPECTED_TOKEN); process.stdout.write('envref-nx-ok\\n')")
+  writeFileSync(join(project, 'app.cjs'), "require('node:assert/strict').equal(process.env.TOKEN, process.env.EXPECTED_TOKEN); process.stdout.write('resenv-nx-ok\\n')")
   writeFileSync(join(directory, '.env'), 'TOKEN=root-value\n')
   writeFileSync(join(project, '.env.serve'), 'TOKEN="$(printf target-value)"\n')
   writeFileSync(join(project, '.env.serve.local'), 'TOKEN="$(printf local-value)"\n')
@@ -61,7 +61,7 @@ try {
   ]) {
     const result = run(target, extraEnv)
     assert.equal(result.status, 0, result.stdout + result.stderr)
-    assert.ok(result.stdout.includes('envref-nx-ok'))
+    assert.ok(result.stdout.includes('resenv-nx-ok'))
   }
   rmSync(join(project, '.env.serve.local'))
   const target = run('serve', { EXPECTED_TOKEN: 'target-value' })
@@ -69,9 +69,9 @@ try {
   writeFileSync(join(project, '.env.serve'), 'TOKEN="$(exit 7)"\n')
   const failed = run('serve')
   assert.notEqual(failed.status, 0)
-  assert.ok(!failed.stdout.includes('envref-nx-ok'))
+  assert.ok(!failed.stdout.includes('resenv-nx-ok'))
   // Repeat the loader boundary with API references and a private dummy transport.
-  const cloudPackage = join(directory, 'envref')
+  const cloudPackage = join(directory, 'resenv')
   cpSync(resolve(__dirname, '../dist'), cloudPackage, { recursive: true })
   const worker = join(cloudPackage, 'doppler-worker.cjs')
   writeFileSync(worker, `globalThis.fetch = async url => {
@@ -79,7 +79,7 @@ try {
     return name === 'FAIL' ? new Response('{}', {status:403})
       : new Response(JSON.stringify({value:{computed:'api-' + name}}));
   };\n` + readFileSync(worker, 'utf8'))
-  const cloudCommand = `${quote(process.execPath)} --require=${quote(join(cloudPackage, 'register.cjs'))} app.cjs`
+  const cloudCommand = `${quote(process.execPath)} --require=${quote(join(cloudPackage, 'resolve.cjs'))} app.cjs`
   writeFileSync(join(project, 'project.json'), JSON.stringify({
     name: 'app', targets: Object.fromEntries(['serve', 'check'].map(target => [target, {
       executor: 'nx:run-commands', cache: false,
@@ -96,7 +96,7 @@ try {
   ]) {
     const result = run(target, { ...auth, ...extraEnv })
     assert.equal(result.status, 0, result.stdout + result.stderr)
-    assert.ok(result.stdout.includes('envref-nx-ok'))
+    assert.ok(result.stdout.includes('resenv-nx-ok'))
   }
   rmSync(join(project, '.env.serve.local'))
   const cloudTarget = run('serve', { ...auth, EXPECTED_TOKEN: 'api-TARGET' })
@@ -104,7 +104,7 @@ try {
   writeFileSync(join(project, '.env.serve'), 'TOKEN=doppler://dummy/dev/FAIL\n')
   const cloudFailed = run('serve', auth)
   assert.notEqual(cloudFailed.status, 0)
-  assert.ok(!cloudFailed.stdout.includes('envref-nx-ok'))
+  assert.ok(!cloudFailed.stdout.includes('resenv-nx-ok'))
   process.stdout.write(`Nx ${nxPackage.version}: command and Doppler modes passed target loading, local/shell precedence, target isolation and strict failure.\n`)
 } finally {
   rmSync(directory, { recursive: true, force: true })

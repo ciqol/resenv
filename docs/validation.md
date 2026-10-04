@@ -1,5 +1,28 @@
 # Validation
 
+## Version 0.6.0 - resenv package and resolve preload
+
+Checked on 2026-10-04 on macOS arm64. All 54 unit/process tests passed on
+Node 20.20.2, 22.22.3 and 24.19.0. On each version, the installed
+`@ciqol/resenv` package passed 13 runtime checks and two typed consumers,
+including `--require` and `--import` with the canonical `/resolve` preload.
+Nx 23.2.1 passed command and Doppler resolution, target loading, precedence,
+target isolation and strict startup failures using dummy credentials.
+
+The local application uses the renamed preload and ignored package links.
+Its 80 tests, ESLint and strict oxlint checks passed. The restarted detached
+preview returned HTTP 200, and all three Doppler references resolved through
+the HTTPS API. Google was configured and connected; Bing was configured.
+Only boolean status and value-free diagnostics were inspected.
+
+The consumer's manifests, lockfile, CI configuration and original 0.4.1 archive
+remain unchanged. Its integration is local and uncommitted. Both package
+manifests remain private. This rename keeps the existing OS credential-store
+identifier; it does not change authentication or resolution behavior. Hosted
+CI and the full native browser-approval flow remain unverified.
+
+Earlier validation entries retain the names and versions checked at the time.
+
 ## Version 0.5.0 - inferred providers in the canonical preload
 
 Checked on 2026-10-01 on macOS arm64. All 54 unit/process tests passed on Node

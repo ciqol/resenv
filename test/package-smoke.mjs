@@ -8,7 +8,7 @@ import { PrivateKey, encrypt } from 'eciesjs'
 import ts from 'typescript'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
-const directory = mkdtempSync(join(tmpdir(), 'envref-package-'))
+const directory = mkdtempSync(join(tmpdir(), 'resenv-package-'))
 const env = { PATH: `${dirname(process.execPath)}:${process.env.PATH}` }
 const source = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 
@@ -30,7 +30,7 @@ try {
     '--ignore-scripts', '--offline', '--no-audit', '--no-fund'
   ]
   const packed = JSON.parse(run('npm', [...npmOptions, 'pack', './dist', '--json', '--pack-destination', directory], root).stdout)[0]
-  for (const path of ['index.cjs', 'index.mjs', 'index.d.cts', 'index.d.mts', 'register-commands.cjs', 'register-commands.mjs', 'register-doppler.cjs', 'register-doppler.mjs', 'doppler-worker.cjs', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/dependencies.md', 'docs/validation.md', 'docs/releasing.md', 'docs/doppler.md']) {
+  for (const path of ['index.cjs', 'index.mjs', 'index.d.cts', 'index.d.mts', 'resolve-commands.cjs', 'resolve-commands.mjs', 'resolve-doppler.cjs', 'resolve-doppler.mjs', 'doppler-worker.cjs', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/dependencies.md', 'docs/validation.md', 'docs/releasing.md', 'docs/doppler.md']) {
     assert.ok(packed.files.some(file => file.path === path), `Missing package file: ${path}`)
   }
   assert.ok(packed.files.every(file => !/^(src|test|scripts|node_modules)\//.test(file.path) && !file.path.split('/').some(part => part.startsWith('.env'))))
@@ -38,7 +38,7 @@ try {
   // its node_modules. npm ci populates the cache before this offline install.
   writeFileSync(join(directory, 'package.json'), JSON.stringify({ private: true, overrides: source.overrides }))
   run('npm', [...npmOptions, 'install', join(directory, packed.filename)], directory)
-  const packageRoot = join(directory, 'node_modules/@ciqol/envref')
+  const packageRoot = join(directory, 'node_modules/@ciqol/resenv')
   const manifest = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'))
   assert.equal(manifest.private, true)
   for (const field of ['scripts', 'devDependencies', 'type', 'overrides']) assert.equal(manifest[field], undefined)
@@ -56,23 +56,23 @@ try {
   const check = "if (process.env.TOKEN !== 'dummy-package-secret') throw new Error('Token was not resolved')"
   const checkCommand = "if (process.env.COMMAND_VALUE !== 'dummy-command-secret') throw new Error('Command was not resolved')"
   const probes = [
-    ['--require', '@ciqol/envref/register', '-e', check],
-    ['--import', '@ciqol/envref/register', '-e', check],
-    ['-e', `require('@ciqol/envref').resolveEnvInPlace(); ${check}`],
-    ['-e', `global.document = { baseURI: 'https://example.invalid/' }; require('@ciqol/envref').resolveEnvInPlace(); ${check}`],
-    ['--input-type=module', '-e', `import { resolveEnvInPlace } from '@ciqol/envref'; resolveEnvInPlace(); ${check}`],
-    [join(packageRoot, manifest.bin.envref), 'run', '--', process.execPath, '-e', check],
-    ['--require', '@ciqol/envref/register-commands', '-e', `${check}; ${checkCommand}`],
-    ['--import', '@ciqol/envref/register-commands', '-e', `${check}; ${checkCommand}`],
-    [join(packageRoot, manifest.bin.envref), 'run', '--commands', '--', process.execPath, '-e', `${check}; ${checkCommand}`],
+    ['--require', '@ciqol/resenv/resolve', '-e', check],
+    ['--import', '@ciqol/resenv/resolve', '-e', check],
+    ['-e', `require('@ciqol/resenv').resolveEnvInPlace(); ${check}`],
+    ['-e', `global.document = { baseURI: 'https://example.invalid/' }; require('@ciqol/resenv').resolveEnvInPlace(); ${check}`],
+    ['--input-type=module', '-e', `import { resolveEnvInPlace } from '@ciqol/resenv'; resolveEnvInPlace(); ${check}`],
+    [join(packageRoot, manifest.bin.resenv), 'run', '--', process.execPath, '-e', check],
+    ['--require', '@ciqol/resenv/resolve-commands', '-e', `${check}; ${checkCommand}`],
+    ['--import', '@ciqol/resenv/resolve-commands', '-e', `${check}; ${checkCommand}`],
+    [join(packageRoot, manifest.bin.resenv), 'run', '--commands', '--', process.execPath, '-e', `${check}; ${checkCommand}`],
     ['--input-type=module', '-e', `
       import assert from 'node:assert/strict';
       import { createRequire } from 'node:module';
-      import * as esm from '@ciqol/envref';
-      const cjs = createRequire(import.meta.url)('@ciqol/envref');
-      for (const name of ['EnvrefError', 'resolveEnv', 'resolveEnvInPlace', 'formatError']) assert.equal(esm[name], cjs[name]);
-      const error = new cjs.EnvrefError('DUMMY', 'dummy');
-      assert.ok(error instanceof esm.EnvrefError);
+      import * as esm from '@ciqol/resenv';
+      const cjs = createRequire(import.meta.url)('@ciqol/resenv');
+      for (const name of ['ResenvError', 'resolveEnv', 'resolveEnvInPlace', 'formatError']) assert.equal(esm[name], cjs[name]);
+      const error = new cjs.ResenvError('DUMMY', 'dummy');
+      assert.ok(error instanceof esm.ResenvError);
       assert.match(esm.formatError(error), /DUMMY/);
     `]
   ]
@@ -82,7 +82,7 @@ try {
     assert.equal(result.stderr, '')
   }
   const once = run(process.execPath, [
-    '--require', '@ciqol/envref/register-commands', '--import', '@ciqol/envref/register-commands',
+    '--require', '@ciqol/resenv/resolve-commands', '--import', '@ciqol/resenv/resolve-commands',
     '-e', "if (process.env.COMMAND_VALUE !== '$(exit 7)') throw new Error('Preload ran more than once')"
   ], directory, { ...env, COMMAND_VALUE: "$(printf '%s' '$(exit 7)')" })
   assert.equal(once.stdout, '')
@@ -91,7 +91,7 @@ try {
   // Exercise the installed private worker without contacting a provider or
   // reading this machine's keyring: an explicit invalid token fails first.
   for (const preload of ['--require', '--import']) {
-    const failed = spawnSync(process.execPath, [preload, '@ciqol/envref/register', '-e', "process.stdout.write('must-not-start')"], {
+    const failed = spawnSync(process.execPath, [preload, '@ciqol/resenv/resolve', '-e', "process.stdout.write('must-not-start')"], {
       cwd: directory, env: { ...env, TOKEN: 'doppler://dummy/dev/TOKEN', DOPPLER_TOKEN: 'dummy-invalid' },
       encoding: 'utf8', timeout: 10000
     })
@@ -103,15 +103,15 @@ try {
   }
 
   const consumer = `
-    import { EnvrefError, resolveEnv, resolveEnvInPlace, formatError } from '@ciqol/envref';
-    import type { Environment, ResolveOptions } from '@ciqol/envref';
-    import '@ciqol/envref/register';
-    import '@ciqol/envref/register-commands';
-    import '@ciqol/envref/register-doppler';
+    import { ResenvError, resolveEnv, resolveEnvInPlace, formatError } from '@ciqol/resenv';
+    import type { Environment, ResolveOptions } from '@ciqol/resenv';
+    import '@ciqol/resenv/resolve';
+    import '@ciqol/resenv/resolve-commands';
+    import '@ciqol/resenv/resolve-doppler';
     const options: ResolveOptions = { commands: true, doppler: true, commandTimeoutMs: 1000 };
     const env: Environment = resolveEnv({ TOKEN: 'plain' }, options);
     const same: Environment = resolveEnvInPlace(env);
-    const message: string = formatError(new EnvrefError('DUMMY', 'dummy'));
+    const message: string = formatError(new ResenvError('DUMMY', 'dummy'));
     // @ts-expect-error command opt-in must be boolean
     resolveEnv(env, { commands: 'yes' });
     // @ts-expect-error environment values must be strings or undefined

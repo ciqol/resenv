@@ -14,19 +14,19 @@ npm run test:package
 
 | Public entry | ESM | CommonJS | Declarations |
 | --- | --- | --- | --- |
-| `@ciqol/envref` | `index.mjs` | `index.cjs` | `index.d.mts`, `index.d.cts` |
-| `@ciqol/envref/register` | `register.mjs` | `register.cjs` | `register.d.mts`, `register.d.cts` |
-| `@ciqol/envref/register-commands` | `register-commands.mjs` | `register-commands.cjs` | `register-commands.d.mts`, `register-commands.d.cts` |
-| `@ciqol/envref/register-doppler` | `register-doppler.mjs` | `register-doppler.cjs` | `register-doppler.d.mts`, `register-doppler.d.cts` |
+| `@ciqol/resenv` | `index.mjs` | `index.cjs` | `index.d.mts`, `index.d.cts` |
+| `@ciqol/resenv/resolve` | `resolve.mjs` | `resolve.cjs` | `resolve.d.mts`, `resolve.d.cts` |
+| `@ciqol/resenv/resolve-commands` | `resolve-commands.mjs` | `resolve-commands.cjs` | `resolve-commands.d.mts`, `resolve-commands.d.cts` |
+| `@ciqol/resenv/resolve-doppler` | `resolve-doppler.mjs` | `resolve-doppler.cjs` | `resolve-doppler.d.mts`, `resolve-doppler.d.cts` |
 
 These paths are relative to `dist/`. The executable points to
-`bin/envref.cjs`; Rollup also emits its ESM wrapper. The command's user-facing
-name stays `envref`.
+`bin/resenv.cjs`; Rollup also emits its ESM wrapper. The command's user-facing
+name stays `resenv`.
 
-`register` infers cloud providers from inherited values and decrypts original
-ciphertext. `register-doppler` imports that same preload, so loading both names
+`resolve` infers cloud providers from inherited values and decrypts original
+ciphertext. `resolve-doppler` imports that same preload, so loading both names
 does not resolve fetched output again. Arbitrary commands still require the
-separate `register-commands` entry or `run --commands`.
+separate `resolve-commands` entry or `run --commands`.
 
 The private `doppler-worker.cjs` entry lets synchronous preloads wait for HTTPS
 without turning the public CommonJS API into a promise. The worker is packed
@@ -69,7 +69,7 @@ prototype. There is no publishing workflow.
 `npm run pack:local` packs the generated directory. `npm run test:package`
 instead packs into a temporary directory and installs it offline into a clean
 consumer. It checks imports, requires, preloads, CLI behavior and declarations;
-the consumer cannot load envref's source files or build dependencies. The
+the consumer cannot load resenv's source files or build dependencies. The
 existing runtime lock versions are applied through consumer overrides.
 
 Keep tarballs already consumed by other projects immutable. No existing

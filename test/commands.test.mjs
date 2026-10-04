@@ -15,7 +15,7 @@ const quote = value => `'${value.replaceAll("'", "'\\''")}'`
 const expression = script => `$(exec ${quote(process.execPath)} -e ${quote(script)})`
 
 test('commands require explicit opt-in and ignore an environment toggle', () => {
-  const env = { TOKEN: '$(must-not-run)', ENVREF_COMMANDS: 'true' }
+  const env = { TOKEN: '$(must-not-run)', RESENV_COMMANDS: 'true' }
   assert.deepEqual({ ...resolveEnv(env) }, env)
 })
 
@@ -58,7 +58,7 @@ test('failures leave the caller unchanged and never expose command output', posi
 })
 
 test('invalid substitutions are rejected before any command executes', posix, t => {
-  const directory = mkdtempSync(join(tmpdir(), 'envref-command-'))
+  const directory = mkdtempSync(join(tmpdir(), 'resenv-command-'))
   t.after(() => rmSync(directory, { recursive: true, force: true }))
   for (const invalid of ['$()', '$(printf missing', 'prefix$(printf embedded)']) {
     const first = expression(`require('node:fs').writeFileSync(${JSON.stringify(join(directory, 'started'))}, 'yes')`)
@@ -77,7 +77,7 @@ test('commands have bounded time and output and reject invalid environment data'
 })
 
 test('command timeout cleans up the spawned process group', { ...posix, timeout: 5000 }, async t => {
-  const directory = mkdtempSync(join(tmpdir(), 'envref-timeout-'))
+  const directory = mkdtempSync(join(tmpdir(), 'resenv-timeout-'))
   const pidPath = join(directory, 'pid')
   let pid
   t.after(() => {
@@ -100,7 +100,7 @@ test('command timeout cleans up the spawned process group', { ...posix, timeout:
 })
 
 test('CLI and preloads resolve commands inherited from a dotenv loader', posix, t => {
-  const cwd = mkdtempSync(join(tmpdir(), 'envref-command-runtime-'))
+  const cwd = mkdtempSync(join(tmpdir(), 'resenv-command-runtime-'))
   t.after(() => rmSync(cwd, { recursive: true, force: true }))
   const file = join(cwd, '.env.serve')
   const source = 'TOKEN="$(printf dummy-provider-value)"\n'
@@ -109,9 +109,9 @@ test('CLI and preloads resolve commands inherited from a dotenv loader', posix, 
   // use the inherited value, without requiring the file or loading it again.
   const env = { TOKEN: '$(printf dummy-provider-value)' }
   const starts = [
-    [resolve(__dirname, '../dist/bin/envref.cjs'), 'run', '--commands', '--', process.execPath],
-    ['--require', resolve(__dirname, '../dist/register-commands.cjs')],
-    ['--import', pathToFileURL(resolve(__dirname, '../dist/register-commands.mjs')).href]
+    [resolve(__dirname, '../dist/bin/resenv.cjs'), 'run', '--commands', '--', process.execPath],
+    ['--require', resolve(__dirname, '../dist/resolve-commands.cjs')],
+    ['--import', pathToFileURL(resolve(__dirname, '../dist/resolve-commands.mjs')).href]
   ]
   for (const prefix of starts) {
     const result = spawnSync(process.execPath, [...prefix, '-e', "if(process.env.TOKEN !== 'dummy-provider-value') process.exit(9)"], { cwd, env, encoding: 'utf8', timeout: 10000 })

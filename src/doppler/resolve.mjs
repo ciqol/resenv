@@ -1,4 +1,4 @@
-import { EnvrefError } from '../errors.mjs'
+import { ResenvError } from '../errors.mjs'
 import { references } from './references.mjs'
 import { credential } from './auth.mjs'
 import { createClient } from './http.mjs'
@@ -16,7 +16,7 @@ async function resolveReferences (env, { request = createClient(), getCredential
       const result = await request(path, { token })
       const value = result.value?.computed
       if (typeof value !== 'string' || value.includes('\0') || Buffer.byteLength(value) > 65536) {
-        throw new EnvrefError('DOPPLER_INVALID_VALUE', `Doppler did not return a usable value for ${JSON.stringify(entry.name)}.`)
+        throw new ResenvError('DOPPLER_INVALID_VALUE', `Doppler did not return a usable value for ${JSON.stringify(entry.name)}.`)
       }
       cache.set(path, value)
     }

@@ -16,7 +16,7 @@ separate public release:
   documented in `docs/validation.md`.
 - Refresh dependency signatures, provenance, licenses and advisory checks.
   Inspect the packed files and preserve third-party license notices.
-- Confirm the `@ciqol/envref` package name and publishing access with the
+- Confirm the `@ciqol/resenv` package name and publishing access with the
   registry. Configure versioning from commit history in the release workflow
   and prepare release notes; do not hand-edit the version or reuse an archive
   already installed by a consumer.

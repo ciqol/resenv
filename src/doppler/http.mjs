@@ -1,4 +1,4 @@
-import { EnvrefError } from '../errors.mjs'
+import { ResenvError } from '../errors.mjs'
 
 const API_ORIGIN = 'https://api.doppler.com'
 
@@ -11,7 +11,7 @@ function createClient (fetchImpl = globalThis.fetch) {
         method: body === undefined ? 'GET' : 'POST',
         headers: {
           'content-type': 'application/json',
-          'user-agent': 'ciqol-envref',
+          'user-agent': 'ciqol-resenv',
           ...(token ? { authorization: `Bearer ${token}` } : {})
         },
         body: body === undefined ? undefined : JSON.stringify(body),
@@ -28,30 +28,30 @@ function createClient (fetchImpl = globalThis.fetch) {
           : response.status === 403 ? 'DOPPLER_ACCESS_DENIED'
             : [404, 405, 501].includes(response.status) ? 'DOPPLER_ENDPOINT_UNAVAILABLE'
               : 'DOPPLER_REQUEST_FAILED'
-        throw new EnvrefError(code, `Doppler request failed (HTTP ${response.status}). Check your login and access.`)
+        throw new ResenvError(code, `Doppler request failed (HTTP ${response.status}). Check your login and access.`)
       }
       const chunks = []
       let size = 0
       for await (const chunk of response.body) {
         size += chunk.length
-        if (size > 1048576) throw new EnvrefError('DOPPLER_INVALID_RESPONSE', 'Doppler response exceeded the size limit.')
+        if (size > 1048576) throw new ResenvError('DOPPLER_INVALID_RESPONSE', 'Doppler response exceeded the size limit.')
         chunks.push(chunk)
       }
       const result = JSON.parse(Buffer.concat(chunks).toString('utf8'))
       if (!result || typeof result !== 'object' || Array.isArray(result) || result.success === false || result.error) {
-        throw new EnvrefError('DOPPLER_INVALID_RESPONSE', 'Doppler returned an unsuccessful or malformed response.')
+        throw new ResenvError('DOPPLER_INVALID_RESPONSE', 'Doppler returned an unsuccessful or malformed response.')
       }
       return result
     } catch (error) {
-      if (error instanceof EnvrefError) throw error
-      throw new EnvrefError('DOPPLER_REQUEST_FAILED', 'Could not complete the HTTPS request to Doppler. Check your connection and retry.')
+      if (error instanceof ResenvError) throw error
+      throw new ResenvError('DOPPLER_REQUEST_FAILED', 'Could not complete the HTTPS request to Doppler. Check your connection and retry.')
     }
   }
 }
 
 function validateToken (token) {
   if (typeof token !== 'string' || !/^dp\.[a-z]+\.[A-Za-z0-9_.-]{10,512}$/.test(token)) {
-    throw new EnvrefError('DOPPLER_INVALID_TOKEN', 'The Doppler credential is malformed. Run envref login doppler or supply a valid DOPPLER_TOKEN.')
+    throw new ResenvError('DOPPLER_INVALID_TOKEN', 'The Doppler credential is malformed. Run resenv login doppler or supply a valid DOPPLER_TOKEN.')
   }
   return token
 }

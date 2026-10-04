@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { PrivateKey, encrypt, ECIES_CONFIG } from 'eciesjs'
-import { EnvrefError, resolveEnv, resolveEnvInPlace, formatError } from '../dist/index.mjs'
+import { ResenvError, resolveEnv, resolveEnvInPlace, formatError } from '../dist/index.mjs'
 
 function fixture (plaintext = 'dummy-value') {
   const key = new PrivateKey()
@@ -50,7 +50,7 @@ test('missing, invalid and wrong keys fail with safe errors', () => {
   const { ciphertext } = fixture('private-dummy-plaintext')
   for (const [key, code] of [[undefined, 'MISSING_PRIVATE_KEY'], ['invalid-dummy-key', 'INVALID_PRIVATE_KEY'], [new PrivateKey().toHex(), 'DECRYPTION_FAILED']]) {
     assert.throws(() => resolveEnv({ TOKEN: ciphertext, DOTENV_PRIVATE_KEY: key }), error => {
-      assert.ok(error instanceof EnvrefError)
+      assert.ok(error instanceof ResenvError)
       assert.equal(error.code, code)
       const report = `${formatError(error)}\n${error.stack}`
       assert.ok(!report.includes(ciphertext))
@@ -60,7 +60,7 @@ test('missing, invalid and wrong keys fail with safe errors', () => {
       return true
     })
   }
-  assert.equal(formatError(new Error('sensitive underlying failure')), '[envref] STARTUP_FAILED: Environment resolution failed.')
+  assert.equal(formatError(new Error('sensitive underlying failure')), '[resenv] STARTUP_FAILED: Environment resolution failed.')
 })
 
 test('malformed and tampered ciphertext abort before mutating any values', () => {
@@ -70,7 +70,7 @@ test('malformed and tampered ciphertext abort before mutating any values', () =>
   for (const invalid of ['encrypted:', 'encrypted:abc', `${ciphertext}\n`, `encrypted:${tampered.toString('base64')}`]) {
     const env = { FIRST: ciphertext, SECOND: invalid, DOTENV_PRIVATE_KEY: privateKey }
     const original = { ...env }
-    assert.throws(() => resolveEnvInPlace(env), EnvrefError)
+    assert.throws(() => resolveEnvInPlace(env), ResenvError)
     assert.deepEqual(env, original)
   }
 })

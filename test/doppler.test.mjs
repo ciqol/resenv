@@ -6,12 +6,12 @@ import { credential, login } from '../src/doppler/auth.mjs'
 import { createSystem } from '../src/doppler/system.mjs'
 import { resolveReferences } from '../src/doppler/resolve.mjs'
 import { resolveDopplerSync } from '../src/doppler/bridge.mjs'
-import { EnvrefError } from '../src/errors.mjs'
+import { ResenvError } from '../src/errors.mjs'
 
 const token = 'dp.ct.dummy0123456789'
 const challenge = { code: 'dummy_human_code', polling_code: 'dummy_poll_code', auth_url: 'https://dashboard.doppler.com/workplace/auth/cli' }
 const env = { TOKEN: 'doppler://my-app/dev/API_KEY', DOPPLER_TOKEN: token }
-const failure = code => new EnvrefError(code, 'Dummy failure')
+const failure = code => new ResenvError(code, 'Dummy failure')
 
 function loginFixture (overrides = {}) {
   const events = []

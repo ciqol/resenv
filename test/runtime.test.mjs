@@ -8,11 +8,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { PrivateKey, encrypt } from 'eciesjs'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
-const cli = resolve(__dirname, '../dist/bin/envref.cjs')
-const register = resolve(__dirname, '../dist/register.cjs')
+const cli = resolve(__dirname, '../dist/bin/resenv.cjs')
+const preload = resolve(__dirname, '../dist/resolve.cjs')
 
 function fixture (t) {
-  const cwd = mkdtempSync(join(tmpdir(), 'envref-test-'))
+  const cwd = mkdtempSync(join(tmpdir(), 'resenv-test-'))
   t.after(() => rmSync(cwd, { recursive: true, force: true }))
   const key = new PrivateKey()
   const plaintext = 'dummy 🌍\n$(touch must-not-exist) ${HOME}'
@@ -29,8 +29,8 @@ function run (args, context) {
 
 for (const [name, prefix] of [
   ['command wrapper', [cli, 'run', '--', process.execPath]],
-  ['CommonJS preload', ['--require', register]],
-  ['ES module preload', ['--import', pathToFileURL(register.replace(/\.cjs$/, '.mjs')).href]]
+  ['CommonJS preload', ['--require', preload]],
+  ['ES module preload', ['--import', pathToFileURL(preload.replace(/\.cjs$/, '.mjs')).href]]
 ]) {
   test(`${name} decrypts before application imports and leaves files unchanged`, t => {
     const context = fixture(t)
@@ -83,7 +83,7 @@ test('missing executable and invalid CLI usage return conventional error codes',
 test('plaintext-only startup succeeds without loading the encryption library', t => {
   const context = fixture(t)
   context.env = { PATH: process.env.PATH, TOKEN: 'plain' }
-  const result = run(['--require', register, '-e', "if (Object.keys(require.cache).some(p=>p.includes('eciesjs'))) process.exit(9); process.stdout.write(process.env.TOKEN)"], context)
+  const result = run(['--require', preload, '-e', "if (Object.keys(require.cache).some(p=>p.includes('eciesjs'))) process.exit(9); process.stdout.write(process.env.TOKEN)"], context)
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.stdout, 'plain')
 })
@@ -117,12 +117,12 @@ test('wrapper forwards SIGTERM and preserves the child termination signal', { sk
 
 test('NODE_DEBUG reports each result and a summary without exposing sensitive data', { skip: process.platform === 'win32' }, t => {
   const context = fixture(t)
-  context.env.NODE_DEBUG = 'envref'
+  context.env.NODE_DEBUG = 'resenv'
   context.env.COMMAND_VALUE = "$(printf 'dummy-command-secret')"
   const result = run([cli, 'run', '--commands', '--', process.execPath, '-e', ''], context)
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.stdout, '')
-  assert.deepEqual(result.stderr.replace(/^ENVREF \d+: /gm, '').trim().split('\n'), [
+  assert.deepEqual(result.stderr.replace(/^RESENV \d+: /gm, '').trim().split('\n'), [
     'Replaced secret value for "COMMAND_VALUE".', 'Replaced secret value for "TOKEN".', 'Done: replaced 2 secret value(s).'
   ])
   for (const sensitive of [context.plaintext, context.ciphertext, context.env.DOTENV_PRIVATE_KEY, context.env.COMMAND_VALUE, 'dummy-command-secret']) {
@@ -132,13 +132,13 @@ test('NODE_DEBUG reports each result and a summary without exposing sensitive da
 
 test('NODE_DEBUG reports command failure while suppressing command text and output', { skip: process.platform === 'win32' }, t => {
   const context = fixture(t)
-  context.env.NODE_DEBUG = 'envref'
+  context.env.NODE_DEBUG = 'resenv'
   const name = 'COMMAND\nVALUE'
   context.env[name] = "$(printf 'private-stdout'; printf 'private-stderr' >&2; exit 7)"
   const result = run([cli, 'run', '--commands', '--', process.execPath, '-e', "process.stdout.write('must-not-start')"], context)
   assert.equal(result.status, 1)
   assert.equal(result.stdout, '')
-  const messages = result.stderr.split('\n').filter(line => line.startsWith('ENVREF ')).map(line => line.replace(/^ENVREF \d+: /, ''))
+  const messages = result.stderr.split('\n').filter(line => line.startsWith('RESENV ')).map(line => line.replace(/^RESENV \d+: /, ''))
   assert.deepEqual(messages, [
     `Failed to replace secret value for ${JSON.stringify(name)}.`, 'Done: failed (COMMAND_FAILED); environment unchanged.'
   ])
@@ -150,26 +150,26 @@ test('NODE_DEBUG reports command failure while suppressing command text and outp
 
 test('NODE_DEBUG prints only nothing to handle when no enabled references exist', t => {
   const context = fixture(t)
-  context.env = { NODE_DEBUG: 'envref', VALUE: '$(must-not-run)' }
-  const result = run(['--require', register, '-e', ''], context)
+  context.env = { NODE_DEBUG: 'resenv', VALUE: '$(must-not-run)' }
+  const result = run(['--require', preload, '-e', ''], context)
   assert.equal(result.status, 0)
-  assert.match(result.stderr, /^ENVREF \d+: Nothing to handle\.\n$/)
+  assert.match(result.stderr, /^RESENV \d+: Nothing to handle\.\n$/)
   delete context.env.VALUE
-  const empty = run(['--require', register, '-e', ''], context)
+  const empty = run(['--require', preload, '-e', ''], context)
   assert.equal(empty.status, 0)
-  assert.match(empty.stderr, /^ENVREF \d+: Nothing to handle\.\n$/)
+  assert.match(empty.stderr, /^RESENV \d+: Nothing to handle\.\n$/)
 })
 
 test('NODE_DEBUG reports missing keys and invalid ciphertext as failures', t => {
   for (const code of ['MISSING_PRIVATE_KEY', 'INVALID_CIPHERTEXT']) {
     const context = fixture(t)
-    context.env.NODE_DEBUG = 'envref'
+    context.env.NODE_DEBUG = 'resenv'
     if (code === 'MISSING_PRIVATE_KEY') delete context.env.DOTENV_PRIVATE_KEY
     else context.env.TOKEN = 'encrypted:dummy-invalid-ciphertext'
-    const result = run(['--require', register, '-e', "process.stdout.write('must-not-start')"], context)
+    const result = run(['--require', preload, '-e', "process.stdout.write('must-not-start')"], context)
     assert.equal(result.status, 1)
     assert.equal(result.stdout, '')
-    const messages = result.stderr.split('\n').filter(line => line.startsWith('ENVREF ')).map(line => line.replace(/^ENVREF \d+: /, ''))
+    const messages = result.stderr.split('\n').filter(line => line.startsWith('RESENV ')).map(line => line.replace(/^RESENV \d+: /, ''))
     assert.deepEqual(messages, ['Failed to replace secret value for "TOKEN".', `Done: failed (${code}); environment unchanged.`])
     for (const sensitive of [context.env.TOKEN, context.env.DOTENV_PRIVATE_KEY, context.plaintext].filter(Boolean)) {
       assert.ok(!result.stderr.includes(sensitive))

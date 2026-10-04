@@ -1,9 +1,9 @@
-class EnvrefError extends Error {
+class ResenvError extends Error {
   constructor (code, message) {
     super(message)
-    this.name = 'EnvrefError'
+    this.name = 'ResenvError'
     this.code = code
   }
 }
 
-export { EnvrefError }
+export { ResenvError }

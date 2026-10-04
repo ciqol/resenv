@@ -42,7 +42,7 @@ try {
   for (const file of ['README.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md', 'docs']) {
     if (existsSync(file)) cpSync(file, resolve(directory, file), { recursive: true })
   }
-  chmodSync(resolve(directory, manifest.bin.envref), 0o755)
+  chmodSync(resolve(directory, manifest.bin.resenv), 0o755)
   process.stdout.write('Built CommonJS, ESM facades, declarations and private package manifest in dist/.\n')
 } catch (error) {
   rmSync(directory, { recursive: true, force: true })

@@ -10,14 +10,14 @@ const input = Object.fromEntries(Object.values(pkg.exports)
     const name = entry.require.replace(/^\.\/dist\//, '').replace(/\.cjs$/, '')
     return [name, `src/${name}.mjs`]
   }))
-input['bin/envref'] = 'bin/envref.mjs'
+input['bin/resenv'] = 'bin/resenv.mjs'
 input['doppler-worker'] = 'src/doppler-worker.mjs'
 
 export default {
   input,
   external: id => isBuiltin(id) || dependencies.some(name => id === name || id.startsWith(`${name}/`)),
   plugins: [{
-    name: 'envref-node-import-meta',
+    name: 'resenv-node-import-meta',
     resolveImportMeta (property, { format }) {
       if (property === 'url' && format === 'cjs') return "require('node:url').pathToFileURL(__filename).href"
       return null
@@ -36,11 +36,11 @@ export default {
 // Export names come from Rollup's output, so the facade cannot drift from the API.
 export function esmFacadeConfig (chunks) {
   const entries = chunks.filter(chunk => chunk.type === 'chunk' && chunk.isEntry)
-  const prefix = '\0envref-facade:'
+  const prefix = '\0resenv-facade:'
   return {
     input: Object.fromEntries(entries.map(entry => [entry.name, `${prefix}${entry.name}`])),
     plugins: [{
-      name: 'envref-esm-facades',
+      name: 'resenv-esm-facades',
       resolveId (id) {
         if (id.startsWith(prefix)) return id
         if (id.endsWith('.cjs')) return { id, external: true }

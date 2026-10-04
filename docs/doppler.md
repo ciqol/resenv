@@ -1,10 +1,10 @@
 # Doppler references and login
 
-envref can resolve individual Doppler secrets through HTTPS after Nx or another
+resenv can resolve individual Doppler secrets through HTTPS after Nx or another
 loader has populated the environment. This mode does not execute shell commands.
-The canonical `--require @ciqol/envref/register` preload infers Doppler from
-`doppler://` values. The equivalent `--import` and `envref run -- ...` do the
-same. The library accepts `{ doppler: true }`. `register-doppler` and
+The canonical `--require @ciqol/resenv/resolve` preload infers Doppler from
+`doppler://` values. The equivalent `--import` and `resenv run -- ...` do the
+same. The library accepts `{ doppler: true }`. `resolve-doppler` and
 `run --doppler` remain supported for compatibility.
 
 ## Local setup
@@ -13,11 +13,11 @@ From the checkout, build and log in:
 
 ```sh
 npm run build
-node dist/bin/envref.cjs login doppler
+node dist/bin/resenv.cjs login doppler
 ```
 
-After installing a packed build, the same command is `envref login doppler`.
-If the references are already loaded into the shell environment, `envref login`
+After installing a packed build, the same command is `resenv login doppler`.
+If the references are already loaded into the shell environment, `resenv login`
 infers Doppler without naming it. No cloud references means no login is needed.
 Neither command loads dotenv files; Nx remains responsible for file selection.
 It requests a browser authorization code, opens Doppler's authorization page,
@@ -29,17 +29,18 @@ If login falls back to the Doppler CLI, that CLI handles its own browser prompt.
 The native flow follows the protocol observed in Doppler's published
 `@dopplerhq/mcp-server` 1.0.5 package. These login endpoints are not a documented
 third-party OAuth contract. They can change independently of the public API.
-envref identifies itself with its own version and user agent.
+resenv identifies itself with its own version and user agent.
 
 The user token is saved in the OS credential store under service
-`ciqol.envref.doppler`, account `default`. Nothing is saved in the repository,
+`ciqol.envref.doppler`, account `default`. The identifier is retained across
+the resenv rename so existing logins continue to work. Nothing is saved in the repository,
 dotenv files or worktree. The current prototype stores one workplace login per
 OS user; logging in again replaces that saved identity. Each developer logs in
 separately and receives the permissions of their own Doppler account.
 
 Native persistence supports macOS Keychain via `/usr/bin/security` and Linux
 Secret Service via an installed `/usr/bin/secret-tool`. The token is passed to
-the helper through stdin, never through process arguments. envref does not
+the helper through stdin, never through process arguments. resenv does not
 install these tools or fall back to a plaintext credential file. Windows can
 use a supplied `DOPPLER_TOKEN`; native Windows login/storage is not implemented.
 
@@ -51,7 +52,7 @@ Put references in the dotenv file Nx already selects, such as `.env.serve`:
 API_TOKEN=doppler://my-project/dev/API_TOKEN
 ```
 
-This is **envref's own syntax**, not an official Doppler URI standard or
+This is **resenv's own syntax**, not an official Doppler URI standard or
 SecretSpec's provider URI. All three fields are required: project, config and
 secret name. Project/config slugs must be lowercase letters, digits, `_` or
 `-`. Secret names can use Doppler's permissive punctuation; percent encoding
@@ -61,19 +62,19 @@ fragments, credentials, ports and executable expressions are rejected.
 For an Nx Node target, put the preload on the application process:
 
 ```json
-"runtimeArgs": ["--require", "@ciqol/envref/register"]
+"runtimeArgs": ["--require", "@ciqol/resenv/resolve"]
 ```
 
-For an Nx command target, use `envref run -- node app.mjs` inside the
+For an Nx command target, use `resenv run -- node app.mjs` inside the
 target. Preloading the outer Nx process would run before Nx loads target files.
-envref does not choose, read or rewrite dotenv files.
+resenv does not choose, read or rewrite dotenv files.
 
 ## Credentials and CLI fallback
 
 Resolution checks these sources in order:
 
 1. An explicitly supplied `DOPPLER_TOKEN`.
-2. The envref credential in the OS store.
+2. The resenv credential in the OS store.
 3. The current directory's existing Doppler CLI login, retrieved with the
    documented `doppler configure get token --plain` operation.
 
@@ -88,7 +89,7 @@ Native login falls back to `doppler login` when the OS store is unavailable or
 the authorization endpoint returns HTTP 404, 405 or 501. To select it directly:
 
 ```sh
-envref login doppler --cli
+resenv login doppler --cli
 ```
 
 An explicit invalid token, access denial, login rejection, timeout or network
@@ -96,7 +97,7 @@ error stops the operation. These failures do not silently switch identities.
 Unset `DOPPLER_TOKEN` before interactive login because it overrides saved logins.
 In CI, supply a suitably scoped token through the runner's credential facility.
 
-`envref logout doppler` removes only envref's local credential. It does not
+`resenv logout doppler` removes only resenv's local credential. It does not
 revoke the remote token, unset an environment variable or log the Doppler CLI
 out. Those other credential sources can still authenticate. Revoke unwanted
 tokens from Doppler's CLI Tokens page.
@@ -106,7 +107,7 @@ tokens from Doppler's CLI Tokens page.
 - Fetches only named secrets from the public retrieve-secret endpoint. Repeated
   references share one request per startup; values are not cached on disk.
 - Requires the computed value. Restricted, missing, null and invalid values
-  fail startup; envref never substitutes a raw value as a fallback.
+  fail startup; resenv never substitutes a raw value as a fallback.
 - Keeps fetched output literal, including strings that start with `encrypted:`
   or contain `$()`. A reference may supply `DOTENV_PRIVATE_KEY` for original
   ciphertext in the same environment.
