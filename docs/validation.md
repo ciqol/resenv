@@ -29,9 +29,20 @@ the local check is not an actionlint result.
 
 Runtime dependency versions and integrity values remain unchanged. The complete
 local development tree reported zero known vulnerabilities, 116 verified
-registry signatures and 39 verified attestations. Hosted CI for the migration
-is pending. The repository and generated package stay private
-at 0.1.0; no PR, release or visibility change is part of the migration.
+registry signatures and 39 verified attestations.
+
+[Hosted CI](https://github.com/ciqol/resenv/actions/runs/37472468215) passed for
+`e0d6a8f`: the build checked the TypeScript implementation and produced one
+archive. All four compatibility jobs passed 72 tests, 13 runtime package checks
+and two typed consumers: Linux on Node 20, 22 and 24, and macOS on Node 24.
+The Linux build verified 116 registry signatures and 40 attestations, with zero
+known vulnerabilities. Counts describe each platform's installed tree.
+
+This was a manual-dispatch run. The pull-request trigger was inspected but not
+executed, because PR creation remains on hold. Existing distributed archives
+retain their SHA-256 hashes. The documentation-only follow-up records the
+tested commit without changing its implementation. The repository and generated
+package stay private at 0.1.0; no PR, release or visibility change was made.
 
 ## Security, performance and standards review - 2026-10-06
 

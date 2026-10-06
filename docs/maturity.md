@@ -82,3 +82,8 @@ or receives provider credentials. The build checks the TypeScript implementation
 then packs one archive for the compatibility matrix. Missing artifacts and
 digest mismatches fail validation. No GitHub expression is interpolated into a
 shell script. Repository access and release settings are unchanged.
+
+Separate runtime evidence: the
+[manual-dispatch CI run](https://github.com/ciqol/resenv/actions/runs/37472468215)
+passed at `e0d6a8f`. This observation does not affect the static score. A
+pull-request event has not been exercised while PR creation remains on hold.
