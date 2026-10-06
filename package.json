@@ -1,6 +1,6 @@
 {
   "name": "@ciqol/resenv",
-  "version": "0.6.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Replace environment references with their resolved values at application startup",
   "license": "UNLICENSED",
@@ -68,6 +68,8 @@
     "test": "node --test test/*.test.mjs",
     "test:package": "node test/package-smoke.mjs",
     "test:nx": "node test/nx-interop.mjs",
+    "verify": "npm run build && npm test && npm run test:package",
+    "release:check": "npm run verify && npm pack ./dist --dry-run --ignore-scripts",
     "pack:local": "npm pack ./dist --ignore-scripts"
   },
   "dependencies": {

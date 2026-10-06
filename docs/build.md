@@ -74,14 +74,24 @@ consumer. It checks imports, requires, preloads, CLI behavior and declarations;
 the consumer cannot load resenv's source files or build dependencies. The
 existing runtime lock versions are applied through consumer overrides.
 
+With `npm run test:package -- /path/to/package.tgz`, the same checks inspect
+and install the supplied archive without rebuilding it. Its name, version,
+manifest and executable mode must match the package contract. CI uses this
+form so every platform checks the same built bytes.
+
 Keep tarballs already consumed by other projects immutable. No existing
 consumer artifact is rebuilt in place by these tests.
 
 ## CI
 
-CI installs with scripts disabled, builds once per job, runs the unit/process
-tests, then verifies that same built package. The matrix checks Node 20 and 22
-on Linux plus the `.nvmrc` version on Linux and macOS. Jobs have read-only
-repository permissions and receive no application or registry secrets.
-The workflow has no publish or deploy step. Hosted results must be observed
-before treating the workflow definition as a passing CI run.
+The `build` job installs with scripts disabled, checks dependency advisories and
+signatures, builds once and uploads the packed archive. The `test` matrix
+downloads that artifact, verifies the installed package, extracts the same build
+for the unit/process tests, and never recompiles it. The matrix checks Node 20
+and 22 on Linux plus the `.nvmrc` version on Linux and macOS.
+
+Jobs have read-only repository permissions and receive no application or
+registry secrets. Missing artifacts and digest mismatches fail the run. The
+archive is retained for seven days for maintainer review. The workflow has no
+publish or deploy step. Hosted results must be observed before treating the
+workflow definition as a passing CI run.

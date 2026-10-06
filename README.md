@@ -20,8 +20,10 @@ Resolution happens once at startup. It does not watch the provider for changes;
 restart the application to fetch updated values. No filename is passed to
 resenv, and dotenv files are never rewritten.
 
-The repository is private and the package is unpublished. Requires Node.js 20
-or later. See [private installation](#install-the-private-package) below.
+The first public release is planned as **0.1.0**. The repository is still private
+and the package is unpublished. Requires Node.js 20 or later. See
+[private installation](#install-the-private-package) and the
+[release preparation](docs/releasing.md).
 
 ## Use with Doppler
 
@@ -184,7 +186,7 @@ npm run pack:local
 In a consuming project, install the resulting archive using its actual path:
 
 ```sh
-npm install --save-exact --ignore-scripts /path/to/ciqol-resenv-0.6.0.tgz
+npm install --save-exact --ignore-scripts /path/to/ciqol-resenv-0.1.0.tgz
 ```
 
 This records the dependency in that project's manifest and lockfile. A local
@@ -206,8 +208,8 @@ login doppler` from the consumer.
 
 ## Other implemented modes
 
-These earlier features are still implemented in version 0.6.0. They are separate
-from the Doppler reference flow above.
+These earlier features are still implemented in the private candidate. They are
+separate from the Doppler reference flow above.
 
 - **Opt-in shell commands:** `/resolve-commands` resolves complete `$(command)`
   values through `/bin/sh`. `resenv run --commands -- ...` enables commands
@@ -235,6 +237,10 @@ npm run build
 npm test
 npm run test:package
 ```
+
+`npm run verify` runs all three checks. `npm run release:check` also previews
+the packed file list without publishing. CI tests one built archive across its
+Node and platform matrix.
 
 Tests use dummy values and provider responses. See [contributing](CONTRIBUTING.md),
 [build contract](docs/build.md), [validation history](docs/validation.md) and

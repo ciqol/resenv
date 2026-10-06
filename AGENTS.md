@@ -5,6 +5,11 @@ both package manifests `private: true`, and the package unpublished until the
 user explicitly approves release. The license remains `UNLICENSED` pending a
 separate license choice.
 
+The requested first public version is 0.1.0. Earlier versions were unpublished
+prototypes; preserve their archives and validation history. Hold PR creation,
+public visibility, tags and publishing until explicitly requested. The release
+preparation and settings decisions are recorded in `docs/releasing.md`.
+
 ## Implementation
 
 - Author JavaScript in `.mjs`; Rollup generates CommonJS and ESM facades.
@@ -33,6 +38,11 @@ For Nx integration, pass an existing, reviewed installation:
 `npm run test:nx -- /absolute/path/to/workspace/node_modules`.
 Tests must use dummy credentials and temporary fixtures. No test may depend on
 the developer's OS credential store or authenticated provider access.
+
+`npm run verify` runs the build and tests. CI builds one archive and all matrix
+jobs test that same archive through `npm run test:package -- <archive.tgz>`.
+Use `npm run release:check` for the non-publishing preparation check. Keep
+the CI push filter aligned with GitHub's actual default branch.
 
 ## Local consumers
 

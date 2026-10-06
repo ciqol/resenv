@@ -1,5 +1,32 @@
 # Validation
 
+## First public 0.1.0 candidate - 2026-10-06
+
+The public version sequence starts at 0.1.0 as requested. Earlier sections
+record unpublished prototype versions and are retained as historical evidence.
+
+On macOS arm64, all 54 unit/process tests passed on Node 20.20.2, 22.22.3 and
+24.19.0. The same 0.1.0 archive passed 13 runtime checks and two typed consumers
+on each version. Package checks now also validate the supplied archive's name,
+version, private manifest and CLI executable mode.
+
+The changed workflow and contributor YAML files parsed successfully. A focused
+check verified event selection, read-only permissions, pinned action references,
+checkout credential handling, artifact prerequisites and absence of publishing.
+This is local structural validation, not an actionlint or hosted-run result.
+
+Dependency audit reported no known vulnerabilities; ten registry signatures and
+seven attestations verified. The three existing commits were inspected for
+dotenv/archive files, provider-token patterns, private-key blocks and personal
+paths, with no matches outside explicit dummy fixtures. This pattern-based
+check is not a complete secret audit or independent security review.
+
+License selection, the decryption-scope decision, fresh native browser login,
+hosted CI and live repository/release setup remain separate launch requirements.
+No provider calls, credential writes or changes to the local application setup
+were needed for these checks. Both manifests stay private; no release or tag
+was created.
+
 ## Version 0.6.0 - resenv package and resolve preload
 
 Checked on 2026-10-04 on macOS arm64. All 54 unit/process tests passed on

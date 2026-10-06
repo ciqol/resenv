@@ -1,5 +1,50 @@
 # Dependency review
 
+## First public release preparation - 2026-10-06
+
+The planned first public version is `0.1.0`; earlier versions identify private
+prototypes. npm dependency versions are unchanged. `npm audit` found no known
+advisories in the installed tree; `npm audit signatures` verified ten registry
+signatures and seven attestations. These results do not establish a security audit.
+
+Two CI-only actions carry one built package between jobs:
+
+| Action | Release | Pinned commit | License |
+| --- | --- | --- | --- |
+| actions/upload-artifact | v7.0.1 | `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | MIT |
+| actions/download-artifact | v8.0.1 | `3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c` | MIT |
+
+- **Need and alternatives:** the compatibility jobs must test the same archive.
+  Rebuilding per job would not prove that contract. GitHub's own artifact actions
+  avoid custom authenticated upload/download code.
+- **Source and maintenance:** the official release pages resolve to the pinned,
+  GitHub-signed commits. Both releases are from 2026, maintained by GitHub, and
+  already used in the reference client. At review the repositories showed about
+  1,100 and 734 forks respectively; these are adoption signals only.
+- **License and execution:** the tagged LICENSE files are MIT; action metadata
+  runs bundled JavaScript on Node 24. No action code is shipped in resenv.
+  A reproducible build of those bundles and account MFA were not verified.
+- **Authority and limits:** upload receives only the package archive, excludes
+  hidden files and expires after seven days. Download selects that artifact
+  from the same run and fails on a digest mismatch. Jobs have read-only
+  repository permission, no provider credentials, and no OIDC publishing grant.
+- **Advisories:** the upload advisory page lists none. Download's published
+  extraction advisory, GHSA-cxww-7g56-2vh6, affects versions >=4.0.0 and <4.1.3;
+  v8.0.1 is outside that range. Bundled dependency advisories were not separately
+  audited, so npm's clean result above does not cover these actions.
+- **Control:** ciqol maintainers review pinned updates proposed by Dependabot.
+  Removing the actions requires replacing artifact transfer or returning to
+  independent per-job builds and narrowing the validation claim.
+
+Sources: [upload release](https://github.com/actions/upload-artifact/releases/tag/v7.0.1),
+[download release](https://github.com/actions/download-artifact/releases/tag/v8.0.1),
+[upload license](https://github.com/actions/upload-artifact/blob/v7.0.1/LICENSE),
+[download license](https://github.com/actions/download-artifact/blob/v8.0.1/LICENSE),
+[upload inputs](https://github.com/actions/upload-artifact/blob/v7.0.1/action.yml),
+[download inputs](https://github.com/actions/download-artifact/blob/v8.0.1/action.yml),
+[upload advisories](https://github.com/actions/upload-artifact/security/advisories),
+[download advisory](https://github.com/actions/download-artifact/security/advisories/GHSA-cxww-7g56-2vh6).
+
 Version 0.6.0 renamed the package to `@ciqol/resenv` on 2026-10-04 without
 changing dependency versions. Earlier review entries retain the original name.
 

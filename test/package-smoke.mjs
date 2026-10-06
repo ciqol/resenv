@@ -7,10 +7,12 @@ import { fileURLToPath } from 'node:url'
 import { PrivateKey, encrypt } from 'eciesjs'
 import ts from 'typescript'
 
+assert.ok(process.argv.length <= 3, 'Usage: npm run test:package -- [package.tgz]')
+const suppliedArchive = process.argv[2] ? resolve(process.argv[2]) : undefined
 const root = fileURLToPath(new URL('..', import.meta.url))
-const directory = mkdtempSync(join(tmpdir(), 'resenv-package-'))
 const env = { PATH: `${dirname(process.execPath)}:${process.env.PATH}` }
 const source = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
+const directory = mkdtempSync(join(tmpdir(), 'resenv-package-'))
 
 function run (command, args, cwd, environment = env) {
   const result = spawnSync(command, args, { cwd, env: environment, encoding: 'utf8', timeout: 30000 })
@@ -29,18 +31,28 @@ try {
     '--cache', process.env.npm_config_cache || join(homedir(), '.npm'),
     '--ignore-scripts', '--offline', '--no-audit', '--no-fund'
   ]
-  const packed = JSON.parse(run('npm', [...npmOptions, 'pack', './dist', '--json', '--pack-destination', directory], root).stdout)[0]
+  const packArgs = suppliedArchive
+    ? ['pack', suppliedArchive, '--dry-run', '--json']
+    : ['pack', './dist', '--json', '--pack-destination', directory]
+  const packed = JSON.parse(run('npm', [...npmOptions, ...packArgs], root).stdout)[0]
+  assert.equal(packed.name, source.name)
+  assert.equal(packed.version, source.version)
   for (const path of ['index.cjs', 'index.mjs', 'index.d.cts', 'index.d.mts', 'resolve-commands.cjs', 'resolve-commands.mjs', 'resolve-doppler.cjs', 'resolve-doppler.mjs', 'doppler-worker.cjs', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/dependencies.md', 'docs/validation.md', 'docs/releasing.md', 'docs/doppler.md']) {
     assert.ok(packed.files.some(file => file.path === path), `Missing package file: ${path}`)
   }
   assert.ok(packed.files.every(file => !/^(src|test|scripts|node_modules)\//.test(file.path) && !file.path.split('/').some(part => part.startsWith('.env'))))
+  if (source.license !== 'UNLICENSED') assert.ok(packed.files.some(file => file.path === 'LICENSE'))
+  assert.ok(packed.files.find(file => file.path === 'bin/resenv.cjs').mode & 0o111, 'CLI must remain executable')
   // Use the same reviewed runtime versions as the repository, without linking
   // its node_modules. npm ci populates the cache before this offline install.
   writeFileSync(join(directory, 'package.json'), JSON.stringify({ private: true, overrides: source.overrides }))
-  run('npm', [...npmOptions, 'install', join(directory, packed.filename)], directory)
+  run('npm', [...npmOptions, 'install', suppliedArchive ?? join(directory, packed.filename)], directory)
   const packageRoot = join(directory, 'node_modules/@ciqol/resenv')
   const manifest = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'))
   assert.equal(manifest.private, true)
+  assert.equal(manifest.name, source.name)
+  assert.equal(manifest.version, source.version)
+  assert.equal(manifest.license, source.license)
   for (const field of ['scripts', 'devDependencies', 'type', 'overrides']) assert.equal(manifest[field], undefined)
   assert.equal(existsSync(join(directory, 'node_modules/rollup')), false)
   assert.equal(existsSync(join(directory, 'node_modules/typescript')), false)
