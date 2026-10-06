@@ -54,7 +54,8 @@ These integration inputs are not runtime dependencies of resenv.
 
 ## Changes
 
-Keep the resolver independent of dotenv file discovery and secret providers.
+Keep dotenv file discovery with the caller. Doppler is the only built-in cloud
+provider; its authentication and lookups live under `src/doppler/`.
 Preserve all-or-nothing environment updates, strict failures, explicit command
 opt-in and literal handling of resolved values. Update the public API types and
 documentation together with behavior changes.

@@ -23,9 +23,11 @@ These paths are relative to `dist/`. The executable points to
 `bin/resenv.cjs`; Rollup also emits its ESM wrapper. The command's user-facing
 name stays `resenv`.
 
-`resolve` infers cloud providers from inherited values and decrypts original
-ciphertext. `resolve-doppler` imports that same preload, so loading both names
-does not resolve fetched output again. Arbitrary commands still require the
+`resolve` reads the inherited environment and replaces Doppler references with
+their fetched values before application code starts. Doppler is the only
+built-in cloud provider. The earlier decryption path for original ciphertext
+also remains implemented. `resolve-doppler` imports that same preload, so loading
+both names does not resolve fetched output again. Arbitrary commands require the
 separate `resolve-commands` entry or `run --commands`.
 
 The private `doppler-worker.cjs` entry lets synchronous preloads wait for HTTPS

@@ -1,230 +1,93 @@
 # resenv
 
-Resolve dotenvx `encrypted:` values, Doppler references and opted-in
-`$(command)` values already loaded into `process.env`, just before an application
-starts. Nx keeps ownership of dotenv discovery and precedence, including target
-files such as `.env.serve`.
+**Replace references already in `process.env` with their resolved values at
+application startup.** Your existing loader, such as Nx, chooses the dotenv
+files. resenv resolves the resulting environment before application code runs.
 
-The repository is currently private and the package is unpublished. Public
-release preparation is tracked in [the release checklist](docs/releasing.md).
-Requires Node.js 20 or later; use the version in `.nvmrc` for development.
-
-## Choose an entry point
-
-| Input | Node preload | Command wrapper |
-| --- | --- | --- |
-| Encrypted values and inferred cloud references | `--require @ciqol/resenv/resolve` | `resenv run -- <command>` |
-| Command references, with optional encryption | `--require @ciqol/resenv/resolve-commands` | `resenv run --commands -- <command>` |
-
-Your existing loader supplies the environment. resenv resolves it in memory
-before application imports, and stops startup if resolution fails.
-The canonical preload infers the provider from each value: `doppler://` uses
-Doppler and `encrypted:` uses dotenvx-compatible decryption. No provider flag
-or file argument is required. Plain values, ordinary URLs and `$()` stay literal.
-`resolve-doppler` is an equivalent preload; `run --doppler` remains accepted.
-
-Version 0.6.0 renames the private prototype from `@ciqol/envref` to
-`@ciqol/resenv`. Change `/register` to `/resolve`, `/register-commands` to
-`/resolve-commands`, and `/register-doppler` to `/resolve-doppler`. The CLI is
-now `resenv`, debug logging uses `NODE_DEBUG=resenv`, and the exported error
-class is `ResenvError`. Existing Doppler logins keep the same credential-store
-identifier. The new package does not export the old preload paths.
-
-## How it works
+**Doppler is the only built-in cloud provider.** A value such as
+`doppler://my-project/dev/API_TOKEN` tells resenv which secret to fetch. The
+application then reads the actual value from `process.env.API_TOKEN`.
 
 ```text
-Nx loads the task's dotenv files into the environment
+Nx or another loader sets process.env
                   |
-resenv resolves enabled commands, Doppler references, then original ciphertext
+resenv fetches the referenced values and replaces them in memory
                   |
 Application starts with ordinary environment values
 ```
 
-Supply `DOTENV_PRIVATE_KEY` through your existing secret manager or runtime
-environment. Anyone with a matching private key can decrypt those values.
-Your provider controls access and storage. A Doppler reference or an opted-in
-command can fetch the key. No resenv account is needed. Doppler login saves its
-access token in your OS credential store.
+Resolution happens once at startup. It does not watch the provider for changes;
+restart the application to fetch updated values. No filename is passed to
+resenv, and dotenv files are never rewritten.
 
-Alternatively, command mode can fetch individual secrets through each user's
-existing provider login. This needs no dotenvx decryption key for those values.
-Continue using dotenvx to create and rotate encrypted values.
-Do not commit private keys or plaintext secrets. This repository ignores all
-`.env` files.
+The repository is private and the package is unpublished. Requires Node.js 20
+or later. See [private installation](#install-the-private-package) below.
 
-## Fetch individual cloud secrets
+## Use with Doppler
 
-### Doppler through HTTPS
+### 1. Authenticate locally
 
-Log in with `resenv login doppler`, then use a reference in the dotenv file
-Nx already loads:
+After installing the package, run:
+
+```sh
+resenv login doppler
+```
+
+Or, from this repository after building:
+
+```sh
+node dist/bin/resenv.cjs login doppler
+```
+
+Each developer authenticates with their own Doppler access. Secret reads use
+the HTTPS API. Credentials come from `DOPPLER_TOKEN`, the saved OS credential,
+or an existing Doppler CLI login, in that order. Startup reports missing access
+and stops; it does not open a login prompt.
+
+Native login uses the browser flow observed in Doppler's official MCP client
+and saves the token in macOS Keychain or Linux Secret Service. The CLI is a
+fallback; the browser protocol is not a public OAuth contract. See
+[Doppler login and platform details](docs/doppler.md).
+
+### 2. Declare references in the environment your app already loads
+
+For example, in an Nx application's `.env.serve`:
 
 ```dotenv
-API_TOKEN=doppler://your-project/dev/API_TOKEN
+API_TOKEN=doppler://my-project/dev/API_TOKEN
+PORT=3000
 ```
 
-Enable `--require @ciqol/resenv/resolve` on the application process,
-or run `resenv run -- node app.mjs` inside the Nx target. Both CommonJS
-and ESM preloads are supported. Reference syntax belongs to resenv; it is not
-an official Doppler standard.
+The reference contains the Doppler project, config and secret name. This is
+resenv's reference syntax. Plain values such as `PORT` pass through unchanged.
+The reference itself grants no access: the authenticated identity needs
+permission to read that secret. Doppler references need no dotenvx private key.
 
-Login first tries the browser flow used by Doppler's official MCP client and
-stores the credential in macOS Keychain or Linux Secret Service. The Doppler
-CLI is a fallback for login or an existing credential. The browser protocol is
-not a public OAuth contract; normal secret reads use the documented API.
-See [Doppler setup, fallback rules and platform limits](docs/doppler.md).
-If your shell already contains the references, `resenv login` infers the
-provider too. It does not read dotenv files; `resenv login doppler` also works
-before Nx loads them. Startup reports a missing login without opening a browser.
+### 3. Preload resenv on the application process
 
-### Arbitrary provider commands (explicit opt-in)
-
-Install your provider's CLI and authenticate as yourself. For Doppler, use
-[`doppler login`](https://docs.doppler.com/docs/cli#authentication) with your own
-account. Your login must cover the worktree directory. Each developer receives
-access through Doppler; no shared resenv or dotenvx master key is needed.
-
-In an existing dotenv file managed by Nx, such as `.env.serve`:
-
-```dotenv
-API_TOKEN="$(doppler secrets get API_TOKEN --plain --project your-project --config dev)"
-```
-
-Replace the project, config and secret name with your own. Explicit project and
-config flags make the reference independent of directory-specific Doppler setup.
-
-For `@nx/js:node`, enable command mode on the application process:
-
-```json
-"runtimeArgs": ["--require", "@ciqol/resenv/resolve-commands"]
-```
-
-For an npm script or Nx command target:
-
-```sh
-resenv run --commands -- node app.cjs
-```
-
-Nx loads the dotenv value, resenv captures the command's stdout, and the app
-receives the resulting secret in `process.env.API_TOKEN`. Files are not
-rewritten. The same mechanism works with other authenticated CLI tools.
-
-Command mode executes trusted repository configuration as shell code with your
-user's permissions. It is explicitly enabled by the preload or CLI flag; an
-environment variable cannot enable it. The normal `resolve` preload and
-`resenv run -- ...` continue to leave `$(...)` text literal.
-
-### Command syntax and behavior
-
-- Available on macOS and Linux through `/bin/sh`; native Windows is unsupported.
-- The entire value must be `$(command)`. This version does not implement
-  dotenvx's embedded form such as `prefix$(command)suffix`. Use a command that
-  prints the complete value instead. Nested commands, quoting and pipes inside
-  the outer expression are parsed by the shell.
-- Commands see the inherited environment and run once per matching variable.
-  One variable's command output is not available to another command in that
-  resolution pass. Fetched values are never evaluated or decrypted again.
-- Commands run before decryption. A `DOTENV_PRIVATE_KEY="$(...)"` reference can
-  fetch a key when mixing cloud key storage with encrypted values.
-- Trailing LF characters are removed, as with POSIX command substitution.
-  Spaces, Unicode and internal newlines are preserved; empty output is allowed.
-- Commands have closed stdin, a 30-second timeout and a 64 KiB limit on total
-  captured stdout and stderr. Complete interactive provider login before
-  launching the app.
-  A failure stops startup without printing the command, stdout or stderr.
-- The resolver applies environment changes only after all resolution succeeds.
-  Commands can have external effects; failed resolution cannot undo those.
-- Nx also expands ordinary `$NAME` references before resenv runs. If a command
-  needs shell variables, account for your dotenv loader's escaping rules. The
-  Doppler example above contains no such references.
-
-## Install privately across projects
-
-From this checkout:
-
-```sh
-npm ci --ignore-scripts
-npm run build
-npm test
-npm run test:package
-npm run pack:local
-```
-
-Then, from a consuming project, install the resulting local tarball using its
-actual path:
-
-```sh
-npm install --save-exact --ignore-scripts /path/to/ciqol-resenv-0.6.0.tgz
-```
-
-Use a regular dependency if production startup requires it. This needs no
-global install and makes no registry publication. Preserve the consuming
-project's lockfile. The root npm overrides in this repository do not propagate
-to consumers; check the installed tree against [the dependency review](docs/dependencies.md).
-
-`pack:local` packs the generated `dist/` package, whose manifest remains private.
-Keep archives already used by consumers unchanged. The current version is still
-an unpublished prototype; a future release needs its own version and approval.
-
-### Local experiments without changing CI
-
-For a local checkout, link this checkout's built `dist/` directory at the
-consumer's ignored `node_modules/@ciqol/resenv`. Retain any existing installation
-as a backup first. This uses the reviewed runtime dependencies from the resenv
-checkout and does not change the consumer's manifest or lockfile. Rebuild
-resenv after source changes; restart the application to load the new build.
-
-Keep reference overrides in an ignored `.env.serve.local` and apply the
-preload only to the local application's `serve` command. Keep that target edit
-local too. Avoid a shell-wide `NODE_OPTIONS` setting: it would preload resenv
-in Nx and unrelated processes before target dotenv files are loaded.
-
-A clean CI checkout has neither the local link nor those overrides. Its
-dependency installation and test/build commands therefore remain unchanged.
-`npm ci` can replace the local link, so relink after reinstalling dependencies
-if you want to continue using the local prototype.
-
-## Node preload
-
-Once the parent has supplied the environment:
+Once the environment has been loaded:
 
 ```sh
 node --require @ciqol/resenv/resolve app.cjs
 node --import @ciqol/resenv/resolve app.mjs
 ```
 
-The preload finishes before application code and its imports execute. A missing
-or wrong key, malformed ciphertext, invalid UTF-8, or decrypted null byte stops
-startup with exit code 1. Errors identify the variable and never include its
-value or the supplied key.
+The preload replaces `process.env.API_TOKEN` before the application and its
+imports execute. It infers Doppler from the value, so no provider flag is needed.
 
-## Nx
+Alternatively, wrap a command whose environment is already populated:
 
-For an existing `@nx/js:node` serve target, add the preload to `runtimeArgs`
-while retaining its other options:
-
-```json
-{
-  "targets": {
-    "serve": {
-      "executor": "@nx/js:node",
-      "options": {
-        "buildTarget": "api:build",
-        "runtimeArgs": ["--require", "@ciqol/resenv/resolve"]
-      }
-    }
-  }
-}
+```sh
+resenv run -- node app.mjs
 ```
 
-Substitute your existing build target for `api:build`. Nx documents
-[`runtimeArgs`](https://nx.dev/docs/technologies/typescript/executors#node)
-for passing Node flags and its
-[dotenv loading rules](https://nx.dev/docs/reference/environment-variables).
-No filename is passed to resenv.
+The wrapper supplies resolved values to the child process. It inherits
+stdin/stdout/stderr, preserves exit status and forwards SIGINT, SIGTERM and
+SIGHUP to that child.
 
-For a plain Node application with cloud secret references, the complete target
-can be as small as:
+## Nx integration
+
+Put the preload on the application's target, after Nx loads its dotenv files:
 
 ```json
 {
@@ -243,161 +106,137 @@ can be as small as:
 }
 ```
 
-Place this in the application's `project.json` and references in its
-`.env.serve`, then run `nx serve app`. Nx loads the target environment before
-launching Node. The application needs no dotenv loader or resenv import.
-Other targets, such as `test` and `lint`, do not select `.env.serve`.
-
-For a command target, wrap the application command inside the target:
+Run `nx serve app`. Nx selects `.env.serve` and any applicable overrides,
+then starts the application with resenv. Use your application's existing path
+and target options. For an existing `@nx/js:node` target, add:
 
 ```json
-{
-  "targets": {
-    "serve": {
-      "executor": "nx:run-commands",
-      "cache": false,
-      "options": {
-        "command": "resenv run -- node dist/apps/api/main.js"
-      }
-    }
-  }
-}
+"runtimeArgs": ["--require", "@ciqol/resenv/resolve"]
 ```
 
-Keep your existing output path and any build dependency. The package must be
-installed in the workspace so Nx can find its `resenv` executable.
+Preloading the outer `nx` process runs too early. A shell-wide `NODE_OPTIONS`
+setting also affects unrelated processes. Keep the preload on the application
+target. If a build needs secrets, its process needs its own integration after
+its environment is loaded; values embedded in build output remain in that output.
 
-Attach resenv to the application process **after Nx loads its task environment**.
-Preloading it on the outer `nx` command runs too early. A global `NODE_OPTIONS`
-also runs it in Nx and unrelated subprocesses, so use the target's runtime
-arguments or command instead.
+## Resolution behavior
 
-The Node executor example decrypts at application startup. If a build itself
-needs a secret, its process needs a separate integration after its environment
-has loaded. Secrets embedded in browser bundles or cached build output become
-part of those artifacts.
+- Only the enabled reference forms are resolved. Ordinary values pass through.
+- Doppler fetches only the named secrets; repeated references share one request
+  within a resolution pass. Values are not cached on disk.
+- All lookups must succeed before the environment is changed or a child starts.
+  Missing access, malformed references and provider failures stop startup.
+- Fetched values stay literal, even if they contain `$()` or another reference.
+- The canonical preload leaves shell expressions literal. Executing commands
+  requires the separate opt-in described below.
+- Application code can read its resolved environment. Access to the same
+  credentials also permits other code or sessions to retrieve those secrets.
 
-## Command wrapper
-
-Inside an npm script or Nx target:
-
-```sh
-resenv run -- node app.cjs
-```
-
-The wrapper passes arguments without adding a shell, inherits stdin/stdout/
-stderr, preserves the child's exit status, and forwards SIGINT, SIGTERM and
-SIGHUP to the direct application child. It starts no application child if
-resolution fails. Shell expressions remain literal unless `--commands` is set.
-
-## Key selection and guarantees
-
-- Plain values pass through unchanged unless their reference mode is enabled. No
-  encrypted values means no key is required and no cryptography module is loaded.
-- Keys come only from `DOTENV_PRIVATE_KEY` and `DOTENV_PRIVATE_KEY_<name>`
-  variables. Each accepts a 64-character hexadecimal private key, or a
-  comma-separated list for rotation. Empty variables are ignored.
-- File provenance is lost once Nx has assembled the environment. resenv tries
-  the supplied keys against each encrypted value, without inferring filenames.
-- All ciphertext must decrypt before any values are applied or a child starts.
-- The `encrypted:` prefix is reserved. Decryption is performed once per value;
-  decrypted text is never expanded or evaluated. Do not apply the resolver
-  again to a plaintext value that itself starts with this reserved prefix.
-- resenv never loads or rewrites dotenv files. Its decryptor makes no runtime
-  network requests. In command mode, provider commands can access their own
-  configuration, credentials and network services.
-- Encryption protects stored values. Application code and tools allowed to run
-  with the same credentials can read plaintext and private keys from the
-  environment. This is not an isolation boundary between coding agents.
-- resenv does not redact application output or remove private keys from child
-  environments. Only supply keys and privileges needed by the task.
+See [Doppler limits](docs/doppler.md#resolution-and-security-boundaries) and
+[security guidance](SECURITY.md).
 
 ## Library API
+
+Call the library after your loader has populated the environment, before
+importing modules that read configuration:
 
 ```js
 import { resolveEnv, resolveEnvInPlace } from '@ciqol/resenv'
 
-const childEnv = resolveEnv(process.env) // returns a copy
-resolveEnvInPlace(process.env) // changes values after all decryption succeeds
-resolveEnvInPlace(process.env, { commands: true, commandTimeoutMs: 30000 })
-resolveEnvInPlace(process.env, { doppler: true })
+const childEnv = resolveEnv(process.env, { doppler: true }) // returns a copy
+resolveEnvInPlace(process.env, { doppler: true }) // replaces values in place
 ```
 
-The library throws `ResenvError` with a stable `code`. The preload and command
-wrapper print a safe diagnostic and stop startup. Call the library before
-importing modules that read configuration at import time.
-
-CommonJS consumers can use
-`const { resolveEnv, resolveEnvInPlace } = require('@ciqol/resenv')`.
-Both forms share the same functions and `ResenvError` class.
+The library currently requires `{ doppler: true }`; the `/resolve` preload and
+`run` command enable it automatically. CommonJS uses the same API through
+`require('@ciqol/resenv')`. Both formats share the `ResenvError` class, whose
+`code` identifies the failure. CLI and preload failures exit with a safe message.
 
 ## Debug startup
 
-Enable diagnostics only when needed:
-
 ```sh
-NODE_DEBUG=resenv resenv run --commands -- node app.cjs
-NODE_DEBUG=resenv node --require @ciqol/resenv/resolve-commands app.cjs
+NODE_DEBUG=resenv node --require @ciqol/resenv/resolve app.mjs
 ```
 
-For an application that calls the library after loading dotenv, enable the same
-flag on its usual command, for example `NODE_DEBUG=resenv nx serve app`.
-Set `NODE_DEBUG` when launching Node, before dotenv loading.
-
-Node's `util.debuglog('resenv')` writes to stderr. If there are no references
-to resolve, it prints only `Nothing to handle.` Otherwise, it prints success
-or failure for each attempted variable, then a `Done` summary. On failure,
-resolution stops and leaves the environment unchanged.
+For the Nx target above, use `NODE_DEBUG=resenv nx serve app`. Set `NODE_DEBUG`
+when launching Node, before dotenv loading. Diagnostics use `node:util`'s
+`debuglog` and are off by default:
 
 ```text
-RESENV 12345: Replaced secret value for "API_KEY".
+RESENV 12345: Replaced secret value for "API_TOKEN".
 RESENV 12345: Done: replaced 1 secret value(s).
 ```
 
-Logs omit values, private keys, ciphertext, commands and provider output.
-Diagnostics are off by default and create no log files.
+With no matching references, the only message is `Nothing to handle.` Failures
+include a safe error and completion summary. Logs omit values, tokens, command
+text and provider responses; no log files are created.
 
-## Development and verification
+## Install the private package
+
+From this repository:
 
 ```sh
 npm ci --ignore-scripts
 npm run build
-npm test
-npm run test:package
-npm audit signatures
-npm audit --omit=dev
+npm run pack:local
 ```
 
-Tests generate disposable dummy keys and never inherit developer credentials
-into child processes. They cover failure before startup, exact plaintext
-preservation, multiple keys, file preservation, CLI arguments and signals,
-and both preload forms. See [validation results](docs/validation.md) for the
-tested runtime versions and upstream compatibility check. See
-[CONTRIBUTING.md](CONTRIBUTING.md) for the optional real-Nx integration check.
+In a consuming project, install the resulting archive using its actual path:
 
-The only direct runtime dependency is `eciesjs`, the encryption library used
-by dotenvx primitives. Its API is wrapped in one module with explicit format
-parameters. See [dependency review](docs/dependencies.md).
+```sh
+npm install --save-exact --ignore-scripts /path/to/ciqol-resenv-0.6.0.tgz
+```
 
-Source, tests and build scripts use `.mjs`. Rollup emits CommonJS implementation
-files, ESM wrappers and matching `.d.cts`/`.d.mts` declarations into `dist/`.
-The wrappers share the implementation so mixed `import`/`require` consumers do
-not duplicate error classes or execute the same preload twice. Runtime
-dependencies stay external; Rollup and TypeScript are build-only dependencies.
-See [the build contract](docs/build.md) for package layout and CI coverage.
+This records the dependency in that project's manifest and lockfile. A local
+archive must be available wherever that project installs dependencies. Package
+overrides do not propagate to consumers; check the installed tree against the
+[dependency review](docs/dependencies.md). Keep distributed archives immutable.
 
-## Upstream alternatives
+### Local use without changing CI
 
-dotenv-expand 1000 adds decryption and command substitution during dotenv
-loading. The [dotenvx Nx guide](https://dotenvx.com/docs/nx) documents that path,
-and [Nx PR 37219](https://github.com/nrwl/nx/pull/37219) addresses environment
-precedence. [dotenvx issue 993](https://github.com/dotenvx/dotenvx/issues/993)
-tracks the inherited-environment request.
+Link this checkout's built `dist/` directory at the consumer's ignored
+`node_modules/@ciqol/resenv`, retaining any existing installation first. Keep
+references in an ignored `.env.serve.local` and the application's target edit
+local. The consumer's manifests, lockfile and CI stay unchanged.
 
-resenv is useful when the environment has already been loaded, decryption must
-fail on a missing key, or command execution must be explicitly enabled. Fetched
-and decrypted values stay literal. Use one resolver for each value; upgrading
-the parent loader to resolve commands itself can otherwise cause a second
-evaluation. Review this integration when upgrading Nx or dotenv-expand.
+Rebuild resenv after source changes and restart the application. `npm ci` can
+remove the local link; recreate it to continue using the local build. For login
+with just the package link, run `node node_modules/@ciqol/resenv/bin/resenv.cjs
+login doppler` from the consumer.
 
-See [SECURITY.md](SECURITY.md) for the trust model and reporting guidance.
+## Other implemented modes
+
+These earlier features are still implemented in version 0.6.0. They are separate
+from the Doppler reference flow above.
+
+- **Opt-in shell commands:** `/resolve-commands` resolves complete `$(command)`
+  values through `/bin/sh`. `resenv run --commands -- ...` enables commands
+  alongside Doppler references. The command preload itself does not enable
+  Doppler. Use only trusted configuration; commands run with your permissions.
+  Commands have closed stdin, a 30-second timeout and a 64 KiB combined output
+  limit. Trailing LF characters are removed; fetched output stays literal.
+  Embedded forms such as `prefix$(command)suffix` are unsupported.
+- **Dotenvx decryption:** original `encrypted:` values still trigger decryption
+  in the resolver, including `/resolve`. They need a matching
+  `DOTENV_PRIVATE_KEY` or `DOTENV_PRIVATE_KEY_<name>` in the environment;
+  missing or invalid keys stop startup. This is retained from the earlier
+  encrypted-file approach and is unnecessary for Doppler references.
+
+`/resolve-doppler` is an equivalent name for `/resolve`; `run --doppler` remains
+accepted. New integrations should use the canonical entry points above.
+
+## Development
+
+Source uses `.mjs`; Rollup builds CommonJS, ESM facades and declarations. Both
+formats share an implementation and preload cache. Build and verify with:
+
+```sh
+npm run build
+npm test
+npm run test:package
+```
+
+Tests use dummy values and provider responses. See [contributing](CONTRIBUTING.md),
+[build contract](docs/build.md), [validation history](docs/validation.md) and
+[release checklist](docs/releasing.md). Publication and repository visibility
+changes require a separate decision.

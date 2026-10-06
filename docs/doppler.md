@@ -1,7 +1,10 @@
 # Doppler references and login
 
-resenv can resolve individual Doppler secrets through HTTPS after Nx or another
-loader has populated the environment. This mode does not execute shell commands.
+Doppler is resenv's only built-in cloud provider. After Nx or another loader
+populates the environment, resenv fetches referenced values through HTTPS and
+replaces them in memory before application startup. It resolves once per startup;
+restart the application to fetch changed secrets. This mode does not execute
+shell commands.
 The canonical `--require @ciqol/resenv/resolve` preload infers Doppler from
 `doppler://` values. The equivalent `--import` and `resenv run -- ...` do the
 same. The library accepts `{ doppler: true }`. `resolve-doppler` and

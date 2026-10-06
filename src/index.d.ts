@@ -17,7 +17,7 @@ export declare class ResenvError extends Error {
 /** Return a resolved copy. Read no dotenv files and leave the input untouched. */
 export declare function resolveEnv(env?: Environment, options?: ResolveOptions): Environment
 
-/** Update the environment only after every command and decryption succeeds. */
+/** Update the environment only after every enabled resolution succeeds. */
 export declare function resolveEnvInPlace<T extends Environment>(env: T, options?: ResolveOptions): T
 export declare function resolveEnvInPlace(env?: undefined, options?: ResolveOptions): Environment
 

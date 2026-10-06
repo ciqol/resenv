@@ -2,7 +2,7 @@
   "name": "@ciqol/resenv",
   "version": "0.6.0",
   "private": true,
-  "description": "Resolve secret references and encrypted values already in an application's environment",
+  "description": "Replace environment references with their resolved values at application startup",
   "license": "UNLICENSED",
   "repository": {
     "type": "git",
