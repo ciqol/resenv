@@ -1,5 +1,32 @@
 # Validation
 
+## Unit-test coverage - 2026-10-06
+
+Added 23 tests for credential lookup, persistence and deletion failures, CLI
+credential selection and login verification, browser launch results, login
+fallback and challenge validation, worker response validation, HTTP response
+handling, UTF-8 size limits, environment copies and command deadline/cleanup
+failures. Credential helpers, browser launchers and provider requests use
+injected doubles with dummy data; these tests never access a real credential
+store or Doppler account. Runtime behavior and dependencies are unchanged.
+
+All 95 unit/process tests passed on local Node 24.19.0. Typed ESLint, strict
+TypeScript checks, the Rollup build, 13 packed-package runtime checks and both
+typed consumers passed. The offline package check required npm-cache access.
+
+Run the coverage check after building:
+
+```sh
+node --test --experimental-test-coverage test/*.test.mjs
+```
+
+Node's report for the compiled modules increased from 93.84% to 97.08% line
+coverage and from 85.35% to 91.96% branch coverage. Doppler auth, bridge, HTTP,
+reference parsing, resolution and system adapters each have 100% line coverage.
+Coverage from temporary package copies used by process fixtures is not included
+in these module totals. This local result does not establish Windows support
+or complete branch coverage.
+
 ## TypeScript implementation and maturity - 2026-10-06
 
 The library and CLI now compile from TypeScript through Rollup's official

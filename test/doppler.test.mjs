@@ -341,3 +341,129 @@ test('failed login revocation reports safe errors without retaining provider det
     })
   }
 })
+
+test('credential validation failures never fall back to another saved identity', async () => {
+  for (const code of ['DOPPLER_INVALID_TOKEN', 'DOPPLER_ACCESS_DENIED']) {
+    const err = failure(code)
+    let cliCalls = 0
+    await assert.rejects(credential({}, {
+      read: () => { throw err },
+      cliToken: () => { cliCalls++; return token }
+    }), thrown => thrown === err)
+    assert.equal(cliCalls, 0)
+  }
+})
+
+test('an unavailable keyring falls back before creating a browser authorization session', async () => {
+  const { deps, events } = loginFixture()
+  deps.system.read = () => { throw failure('DOPPLER_KEYRING_UNAVAILABLE') }
+  assert.equal(await login({}, deps), 'cli')
+  assert.deepEqual(events.map(([kind]) => kind), ['output', 'cli', 'output'])
+  deps.system.read = () => { throw failure('DOPPLER_INVALID_TOKEN') }
+  events.length = 0
+  await assert.rejects(login({}, deps), { code: 'DOPPLER_INVALID_TOKEN' })
+  assert.deepEqual(events, [])
+})
+
+test('CLI fallback replaces an older saved identity and reports persistence failures safely', async () => {
+  const { deps, events } = loginFixture()
+  deps.system.read = () => 'dp.ct.older0123456789'
+  assert.equal(await login({ cli: true }, deps), 'cli')
+  assert.deepEqual(events.filter(([kind]) => ['cli', 'write'].includes(kind)), [['cli'], ['write', token]])
+  for (const reason of ['write', 'token']) {
+    const failed = loginFixture()
+    if (reason === 'write') failed.deps.system.write = () => { throw new Error('dummy-sensitive-storage-detail') }
+    else failed.deps.system.cliToken = () => undefined
+    await assert.rejects(login({ cli: true }, failed.deps), err => {
+      assert.equal(err.code, 'DOPPLER_KEYRING_UNAVAILABLE')
+      assert.ok(!err.stack.includes('dummy-sensitive'))
+      assert.equal(err.cause, undefined)
+      return true
+    })
+    assert.ok(!failed.events.some(([kind, text]) => kind === 'output' && text.startsWith('Done:')))
+  }
+})
+
+test('malformed authorization codes fail before display, browser launch or polling', async () => {
+  for (const response of [null, {}, { ...challenge, code: 'short' }, { ...challenge, code: 'dummy\nsensitive-code' }, { ...challenge, polling_code: '' }, { ...challenge, polling_code: 'x'.repeat(513) }, { ...challenge, auth_url: 'not a URL' }]) {
+    const { deps, events } = loginFixture({ request: async () => response })
+    await assert.rejects(login({}, deps), { code: 'DOPPLER_INVALID_RESPONSE' })
+    assert.deepEqual(events, [])
+  }
+})
+
+test('an invalid issued token is not saved or reported as a successful login', async () => {
+  const { deps, events } = loginFixture({ request: async path => path.includes('generate') ? challenge : { token: 'dummy-sensitive-malformed-token' } })
+  await assert.rejects(login({}, deps), { code: 'DOPPLER_INVALID_TOKEN' })
+  assert.ok(!events.some(([kind]) => kind === 'write'))
+  assert.ok(!events.some(([kind, text]) => kind === 'output' && (text.includes('dummy-sensitive') || text.startsWith('Done:'))))
+})
+
+test('empty cloud resolution skips credentials, requests and worker startup', async () => {
+  const input = { TOKEN: 'literal', DOPPLER_TOKEN: 'unused-malformed-token' }
+  const unexpected = () => assert.fail('no cloud work should be attempted')
+  const values = await resolveReferences(input, { getCredential: unexpected, request: unexpected })
+  assert.deepEqual(Object.keys(values), [])
+  assert.equal(Object.getPrototypeOf(values), null)
+  assert.deepEqual(Object.keys(resolveDopplerSync(input, unexpected)), [])
+})
+
+test('worker responses must match every requested name with string values', () => {
+  const input = { ...env, SECOND: 'doppler://my-app/dev/SECOND' }
+  for (const response of [null, [], {}, { values: [] }, { values: { TOKEN: 'dummy-result' } }, { values: { TOKEN: 'dummy-result', UNREQUESTED: 'dummy-result' } }, { values: { TOKEN: 'dummy-result', SECOND: 'dummy-result', EXTRA: 'dummy-result' } }, { values: { TOKEN: 'dummy-result', SECOND: null } }, { values: { TOKEN: 'dummy-result', SECOND: 'dummy\0result' } }]) {
+    assert.throws(() => resolveDopplerSync(input, () => ({ status: 0, stdout: JSON.stringify(response) })), { code: 'DOPPLER_RESOLUTION_FAILED' })
+  }
+  assert.throws(() => resolveDopplerSync(env, () => ({ status: 0, stdout: 'not JSON' })), { code: 'DOPPLER_RESOLUTION_FAILED' })
+  assert.throws(() => resolveDopplerSync(env, () => ({ status: 1, stdout: JSON.stringify({ values: { TOKEN: 'dummy-result' } }) })), { code: 'DOPPLER_RESOLUTION_FAILED' })
+})
+
+test('worker failures preserve valid provider error codes and reject malformed error envelopes', () => {
+  const message = 'Dummy access denied'
+  assert.throws(() => resolveDopplerSync(env, () => ({ status: 1, stdout: JSON.stringify({ error: { code: 'DOPPLER_ACCESS_DENIED', message } }) })), { code: 'DOPPLER_ACCESS_DENIED', message })
+  for (const error of [null, [], { code: 'OTHER_ERROR', message: token }, { code: 'DOPPLER_bad', message: token }, { code: 'DOPPLER_ACCESS_DENIED', message: 1 }, { code: 1, message: token }]) {
+    assert.throws(() => resolveDopplerSync(env, () => ({ status: 1, stdout: JSON.stringify({ error }), stderr: token })), err => {
+      assert.equal(err.code, 'DOPPLER_RESOLUTION_FAILED')
+      assert.ok(!err.stack.includes(token))
+      return true
+    })
+  }
+})
+
+test('HTTPS cancels rejected bodies and treats 409 as pending only during authorization', async () => {
+  for (const [status, code] of [[401, 'DOPPLER_AUTH_REQUIRED'], [403, 'DOPPLER_ACCESS_DENIED'], [404, 'DOPPLER_ENDPOINT_UNAVAILABLE'], [405, 'DOPPLER_ENDPOINT_UNAVAILABLE'], [409, 'DOPPLER_REQUEST_FAILED'], [501, 'DOPPLER_ENDPOINT_UNAVAILABLE']]) {
+    let cancelled = 0
+    const request = createClient(async () => ({ status, ok: false, body: { cancel: async () => { cancelled++ } } }))
+    await assert.rejects(request('/v3/me'), { code })
+    assert.equal(cancelled, 1)
+  }
+  let cancelled = 0
+  const pending = createClient(async () => ({ status: 409, body: { cancel: async () => { cancelled++ } } }))
+  assert.equal(await pending('/v3/auth/cli/authorize', { pending: true }), null)
+  assert.equal(cancelled, 1)
+})
+
+test('HTTPS encodes POST bodies and decodes UTF-8 split across response chunks', async () => {
+  const bytes = Buffer.from(JSON.stringify({ value: { computed: 'dummy-🌍' } }))
+  const split = bytes.indexOf(Buffer.from('🌍')) + 1
+  const request = createClient(async (url, options) => {
+    assert.equal(url.origin, 'https://api.doppler.com')
+    assert.equal(options.method, 'POST')
+    assert.equal(options.headers.authorization, undefined)
+    assert.deepEqual(JSON.parse(options.body), { code: challenge.polling_code })
+    return { status: 200, ok: true, body: { async * [Symbol.asyncIterator] () { yield bytes.subarray(0, split); yield bytes.subarray(split) } } }
+  })
+  assert.deepEqual(await request('/v3/auth/cli/authorize', { body: { code: challenge.polling_code } }), { value: { computed: 'dummy-🌍' } })
+  for (const response of ['null', '[]', 'true', '"dummy-sensitive-value"', '{"error":"dummy-sensitive-detail"}']) {
+    await assert.rejects(createClient(async () => new Response(response))('/v3/me'), err => {
+      assert.equal(err.code, 'DOPPLER_INVALID_RESPONSE')
+      assert.ok(!err.stack.includes('dummy-sensitive'))
+      return true
+    })
+  }
+})
+
+test('cloud secret limits count UTF-8 bytes and accept the exact limit', async () => {
+  const value = '🌍'.repeat(16384)
+  assert.equal((await resolveReferences(env, { request: async () => ({ value: { computed: value } }) })).TOKEN, value)
+  await assert.rejects(resolveReferences(env, { request: async () => ({ value: { computed: `${value}a` } }) }), { code: 'DOPPLER_INVALID_VALUE' })
+})

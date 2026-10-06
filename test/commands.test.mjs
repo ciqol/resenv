@@ -76,6 +76,29 @@ test('commands have bounded time and output and reject invalid environment data'
   assert.throws(() => resolveEnv({ TOKEN: '$(printf test)' }, { commands: true, commandTimeoutMs: 0 }), { code: 'INVALID_OPTIONS' })
 })
 
+test('invalid command deadlines fail before any command executes', posix, t => {
+  const directory = mkdtempSync(join(tmpdir(), 'resenv-deadline-'))
+  t.after(() => rmSync(directory, { recursive: true, force: true }))
+  const command = expression(`require('node:fs').writeFileSync(${JSON.stringify(join(directory, 'started'))}, 'yes')`)
+  for (const commandTimeoutMs of [-1, 0, 1.5, NaN, Infinity, 2147483648, '100']) {
+    assert.throws(() => resolveEnv({ TOKEN: command }, { commands: true, commandTimeoutMs }), { code: 'INVALID_OPTIONS' })
+    assert.deepEqual(readdirSync(directory), [])
+  }
+})
+
+test('unexpected process-group cleanup failures remain safe and leave the caller unchanged', posix, t => {
+  t.mock.method(process, 'kill', () => { throw Object.assign(new Error('dummy-sensitive-cleanup-detail'), { code: 'EPERM' }) })
+  const env = { FIRST: '$(printf dummy-result)', SECOND: '$(exit 7)' }
+  const before = { ...env }
+  assert.throws(() => resolveEnvInPlace(env, options), err => {
+    assert.equal(err.code, 'COMMAND_CLEANUP_FAILED')
+    assert.ok(!err.stack.includes('dummy-sensitive'))
+    assert.equal(err.cause, undefined)
+    return true
+  })
+  assert.deepEqual(env, before)
+})
+
 test('command timeout cleans up the spawned process group', { ...posix, timeout: 5000 }, async t => {
   const directory = mkdtempSync(join(tmpdir(), 'resenv-timeout-'))
   const pidPath = join(directory, 'pid')
