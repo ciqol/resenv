@@ -10,6 +10,12 @@ On macOS arm64, all 54 unit/process tests passed on Node 20.20.2, 22.22.3 and
 on each version. Package checks now also validate the supplied archive's name,
 version, private manifest and CLI executable mode.
 
+The first hosted run exposed missing registry metadata in a fresh npm cache.
+The package check now constructs a consumer lockfile from the reviewed runtime
+entries and the supplied archive, then uses offline `npm ci`. Both archive
+paths passed with an isolated cache populated only by `npm ci`; no preexisting
+registry metadata or source-tree dependencies were available to the consumer.
+
 The changed workflow and contributor YAML files parsed successfully. A focused
 check verified event selection, read-only permissions, pinned action references,
 checkout credential handling, artifact prerequisites and absence of publishing.

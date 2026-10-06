@@ -72,7 +72,9 @@ prototype. There is no publishing workflow.
 instead packs into a temporary directory and installs it offline into a clean
 consumer. It checks imports, requires, preloads, CLI behavior and declarations;
 the consumer cannot load resenv's source files or build dependencies. The
-existing runtime lock versions are applied through consumer overrides.
+runtime entries from the repository lockfile are used in the consumer lockfile.
+Its only direct dependency is the packed archive. An offline `npm ci` verifies
+archive integrity and installs the reviewed versions without registry metadata.
 
 With `npm run test:package -- /path/to/package.tgz`, the same checks inspect
 and install the supplied archive without rebuilding it. Its name, version,

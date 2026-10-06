@@ -22,8 +22,9 @@ pull requests.
 
 The package check packs `dist/` and installs that tarball into a temporary
 consumer outside the repository. The install is offline, uses npm's existing
-cache and pins the reviewed runtime dependency versions. It does not link the
-source tree or publish. Run `npm ci` first to populate the cache. The check
+cache and the repository's reviewed runtime lock entries. It installs with
+`npm ci` without needing cached registry metadata. It does not link the source
+tree or publish. Run `npm ci` first to populate the archive cache. The check
 exercises both module formats, CLI and preloads, shared error identity, single
 preload execution and `.cts`/`.mts` consumer types.
 

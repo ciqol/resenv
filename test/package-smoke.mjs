@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { mkdtempSync, readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join, resolve, dirname } from 'node:path'
@@ -43,16 +44,40 @@ try {
   assert.ok(packed.files.every(file => !/^(src|test|scripts|node_modules)\//.test(file.path) && !file.path.split('/').some(part => part.startsWith('.env'))))
   if (source.license !== 'UNLICENSED') assert.ok(packed.files.some(file => file.path === 'LICENSE'))
   assert.ok(packed.files.find(file => file.path === 'bin/resenv.cjs').mode & 0o111, 'CLI must remain executable')
-  // Use the same reviewed runtime versions as the repository, without linking
-  // its node_modules. npm ci populates the cache before this offline install.
-  writeFileSync(join(directory, 'package.json'), JSON.stringify({ private: true, overrides: source.overrides }))
-  run('npm', [...npmOptions, 'install', suppliedArchive ?? join(directory, packed.filename)], directory)
+  const archive = suppliedArchive ?? join(directory, packed.filename)
+  const packedManifest = JSON.parse(run('tar', ['-xOf', archive, 'package/package.json'], root).stdout)
+  const dependency = `file:${archive}`
+  const dependencies = { [source.name]: dependency }
+  // npm ci caches archives, but not necessarily registry metadata. Reuse the
+  // reviewed lock entries so the clean consumer also installs offline with ci.
+  const sourceLock = JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'))
+  assert.equal(sourceLock.lockfileVersion, 3)
+  const runtimePackages = Object.fromEntries(Object.entries(sourceLock.packages).filter(([path, entry]) => path && !entry.dev))
+  writeFileSync(join(directory, 'package.json'), JSON.stringify({ private: true, dependencies, overrides: source.overrides }))
+  writeFileSync(join(directory, 'package-lock.json'), JSON.stringify({
+    lockfileVersion: 3,
+    requires: true,
+    packages: {
+      '': { dependencies },
+      ...runtimePackages,
+      [`node_modules/${source.name}`]: {
+        version: packedManifest.version,
+        resolved: dependency,
+        integrity: `sha512-${createHash('sha512').update(readFileSync(archive)).digest('base64')}`,
+        dependencies: packedManifest.dependencies,
+        bin: packedManifest.bin,
+        engines: packedManifest.engines
+      }
+    }
+  }))
+  run('npm', [...npmOptions, 'ci'], directory)
   const packageRoot = join(directory, 'node_modules/@ciqol/resenv')
   const manifest = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'))
   assert.equal(manifest.private, true)
   assert.equal(manifest.name, source.name)
   assert.equal(manifest.version, source.version)
   assert.equal(manifest.license, source.license)
+  assert.deepEqual(manifest.dependencies, source.dependencies)
   for (const field of ['scripts', 'devDependencies', 'type', 'overrides']) assert.equal(manifest[field], undefined)
   assert.equal(existsSync(join(directory, 'node_modules/rollup')), false)
   assert.equal(existsSync(join(directory, 'node_modules/typescript')), false)
