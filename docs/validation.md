@@ -20,8 +20,16 @@ measurement, not a live provider guarantee. See the
 
 Runtime dependency versions and integrity values are unchanged. The full
 development tree reported zero known vulnerabilities, 103 verified registry
-signatures and 37 verified attestations. Hosted validation of the review changes
-is pending. Existing distributed archives remain unchanged.
+signatures and 37 verified attestations locally. Existing distributed archives
+remain unchanged.
+
+[Hosted CI](https://github.com/ciqol/resenv/actions/runs/37462966577) passed for
+`e57a8fe`: the build passed audits, lint and declaration checks, then produced
+one archive. Linux jobs on Node 20, 22 and 24 and the macOS job on Node 24 each
+passed all 70 tests, 13 installed runtime checks and two typed consumers. The
+Linux build verified 103 registry signatures and 38 attestations. Counts apply
+to each platform's installed tree. The following documentation-only commit
+records this result without changing code.
 
 ## First public 0.1.0 candidate - 2026-10-06
 

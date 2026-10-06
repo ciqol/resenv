@@ -8,10 +8,10 @@ and measurements. It is not an independent audit or a security certification.
 
 | Priority | Finding reproduced | Change and regression coverage |
 | --- | --- | --- |
-| P1 | Node's `child_process` debug category printed dummy credentials from subprocess environment values and private worker stdin. | Reject resenv subprocess/helper operations before spawning when that native debug category is enabled. Cover wildcards, case, cached debug state and safe no-work preloads in [diagnostic tests](../test/diagnostics.test.mjs). |
-| P1 | Combining automatic resolution modes could interpret a fetched secret as a shell expression on the second pass. | Share preload state across CJS/ESM, reject mixed modes and reject CLI resolution after a preload. Verify both preload orders and the CLI combination in [runtime tests](../test/doppler-runtime.test.mjs). |
-| P2 | Invalid UTF-8 from the provider was silently converted to a different secret value; escaped lone surrogates were also accepted. | Decode JSON with fatal UTF-8 validation and reject malformed Unicode values. Cover both paths in [Doppler tests](../test/doppler.test.mjs). |
-| P2 | A non-writable second property could fail after the first environment property had already changed. | Preflight all changed descriptors before committing; reject setters and Proxy targets. Preserve writable sealed records. Cover atomicity in [resolver tests](../test/resolver.test.mjs). |
+| P1 | Node's `child_process` debug category printed dummy credentials from subprocess environment values and private worker stdin. | Reject resenv subprocess/helper operations before spawning when that native debug category is enabled. Cover wildcards, case, cached debug state and safe no-work preloads in [diagnostic tests](https://github.com/ciqol/resenv/blob/e57a8fe72ecf956fc99c661d40b1ca707bbcd172/test/diagnostics.test.mjs). |
+| P1 | Combining automatic resolution modes could interpret a fetched secret as a shell expression on the second pass. | Share preload state across CJS/ESM, reject mixed modes and reject CLI resolution after a preload. Verify both preload orders and the CLI combination in [runtime tests](https://github.com/ciqol/resenv/blob/e57a8fe72ecf956fc99c661d40b1ca707bbcd172/test/doppler-runtime.test.mjs). |
+| P2 | Invalid UTF-8 from the provider was silently converted to a different secret value; escaped lone surrogates were also accepted. | Decode JSON with fatal UTF-8 validation and reject malformed Unicode values. Cover both paths in [Doppler tests](https://github.com/ciqol/resenv/blob/e57a8fe72ecf956fc99c661d40b1ca707bbcd172/test/doppler.test.mjs). |
+| P2 | A non-writable second property could fail after the first environment property had already changed. | Preflight all changed descriptors before committing; reject setters and Proxy targets. Preserve writable sealed records. Cover atomicity in [resolver tests](https://github.com/ciqol/resenv/blob/e57a8fe72ecf956fc99c661d40b1ca707bbcd172/test/resolver.test.mjs). |
 | P2 | Unique Doppler lookups ran sequentially, making startup latency grow with each request. | Deduplicate references and allow four requests at a time. Stop scheduling after failure, await active requests and discard partial results. Deterministic tests check overlap, deduplication and failure behavior. |
 | P2 | The generic in-place return type preserved an input's literal reference type after its value had changed. | Return `Environment`; add compile-time regression checks to both installed CJS and ESM consumers. |
 
@@ -114,8 +114,15 @@ The new development dependencies and their provenance limits are recorded in
 - npm reported zero known vulnerabilities, 103 verified registry signatures
   and 37 verified attestations in the installed development tree. Advisory and
   signature checks do not rule out unknown vulnerabilities.
-- Hosted validation of these review changes is pending; its final result will
-  be recorded in [validation](validation.md).
+- [Hosted CI](https://github.com/ciqol/resenv/actions/runs/37462966577) passed for
+  `e57a8fe`: one build and four compatibility jobs on Linux (Node 20, 22 and 24)
+  and macOS (Node 24). Each job passed all 70 tests, 13 installed runtime checks
+  and two typed consumers against the same archive. The Linux build verified
+  103 registry signatures and 38 attestations with zero known vulnerabilities.
+  Counts apply to each platform's installed tree.
+- Workflow structure and documentation links passed local checks. Existing
+  distributed archives retained their original SHA-256 hashes. The final
+  documentation update records the tested commit; it does not change runtime code.
 
 Before public release, settle the license and whether to retain the older
 dotenvx decryption feature. The fresh native browser-login flow and live Linux
