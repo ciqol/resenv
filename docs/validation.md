@@ -19,7 +19,13 @@ registry metadata or source-tree dependencies were available to the consumer.
 The changed workflow and contributor YAML files parsed successfully. A focused
 check verified event selection, read-only permissions, pinned action references,
 checkout credential handling, artifact prerequisites and absence of publishing.
-This is local structural validation, not an actionlint or hosted-run result.
+This was local structural validation; actionlint was not available.
+
+[Hosted CI](https://github.com/ciqol/resenv/actions/runs/37443670608) passed for
+commit `5176128`: one Linux build and four test jobs on Linux (Node 20, 22 and
+24) and macOS (Node 24). Every test job installed the same archive, passed all
+13 runtime and two typed-consumer checks, then passed all 54 unit/process tests
+against the extracted build. The build's audit and signature checks also passed.
 
 Dependency audit reported no known vulnerabilities; ten registry signatures and
 seven attestations verified. The three existing commits were inspected for
@@ -27,8 +33,8 @@ dotenv/archive files, provider-token patterns, private-key blocks and personal
 paths, with no matches outside explicit dummy fixtures. This pattern-based
 check is not a complete secret audit or independent security review.
 
-License selection, the decryption-scope decision, fresh native browser login,
-hosted CI and live repository/release setup remain separate launch requirements.
+License selection, the decryption-scope decision, fresh native browser login
+and live repository/release setup remain separate launch requirements.
 No provider calls, credential writes or changes to the local application setup
 were needed for these checks. Both manifests stay private; no release or tag
 was created.
@@ -291,9 +297,9 @@ an application preload and target-specific dotenv files. It tests the installed
 Nx version listed above; other loaders or versions need their own integration
 check, particularly if they resolve commands before envref runs.
 
-Signal behavior has been tested on macOS only. Windows signal behavior and
-framework-specific reloaders remain unverified. The wrapper forwards signals
-to its direct child, not an arbitrary detached process tree.
+Signal behavior is covered by the Linux and macOS process tests. Windows signal
+behavior and framework-specific reloaders remain unverified. The wrapper
+forwards signals to its direct child, not an arbitrary detached process tree.
 
 This is a private prototype with no independent security audit. The application
 and any code granted the same credentials can read its environment.

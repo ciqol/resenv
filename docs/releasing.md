@@ -46,8 +46,9 @@ license requires rebuilding and rechecking it before approval.
   API reads have been checked; a new native login is not yet verified live.
   Linux keyring behavior is covered with process mocks, and Windows native
   login/storage is not implemented.
-- Observe green hosted CI for the candidate, including the same archive on
-  Linux and macOS. No real provider credentials belong in these jobs.
+- Keep hosted CI green for the final candidate, including the same archive on
+  Linux and macOS. The preparation run passed; see [validation](validation.md).
+  No real provider credentials belong in these jobs.
 - Confirm availability and publishing rights for `@ciqol/resenv` with npm.
   A public registry lookup alone cannot establish ownership or permissions.
 - Review and approve the settings plan below, enable a private vulnerability
