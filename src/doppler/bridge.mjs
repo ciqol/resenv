@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { ResenvError } from '../errors.mjs'
+import { assertSafeDiagnostics } from '../assert-safe-diagnostics.mjs'
 import { references } from './references.mjs'
 import { helperEnvironment } from './system.mjs'
 
@@ -10,6 +11,7 @@ const require = createRequire(import.meta.url)
 function resolveDopplerSync (env, run = spawnSync) {
   const entries = references(env)
   if (!entries.length) return Object.create(null)
+  assertSafeDiagnostics()
   const input = Object.fromEntries(entries.map(({ name }) => [name, env[name]]))
   if (env.DOPPLER_TOKEN !== undefined) input.DOPPLER_TOKEN = env.DOPPLER_TOKEN
   // Package self-resolution works both in the checkout and the packed artifact.

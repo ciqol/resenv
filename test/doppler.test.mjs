@@ -95,6 +95,11 @@ test('HTTPS failures discard provider messages and bound responses', async () =>
   await assert.rejects(createClient(async () => { throw new Error('dummy-sensitive-network-error') })('/v3/me'), error => !error.message.includes('sensitive'))
 })
 
+test('HTTPS rejects malformed UTF-8 instead of changing a secret', async () => {
+  const body = Buffer.concat([Buffer.from('{"value":{"computed":"'), Buffer.from([0xff]), Buffer.from('"}}')])
+  await assert.rejects(createClient(async () => new Response(body))('/v3/me'), { code: 'DOPPLER_INVALID_RESPONSE' })
+})
+
 test('native login polls, opens only Doppler and saves without exposing its token', async () => {
   const { events, deps } = loginFixture()
   assert.equal(await login({}, deps), 'native')
@@ -212,7 +217,7 @@ test('API resolution validates all references before credentials and rejects mis
   let accessed = false
   await assert.rejects(resolveReferences({ ...env, BAD: 'doppler://invalid' }, { getCredential: async () => { accessed = true } }), { code: 'DOPPLER_INVALID_REFERENCE' })
   assert.equal(accessed, false)
-  for (const value of [undefined, null, {}, { computed: null }, { computed: 'a\0b' }, { computed: 'x'.repeat(65537) }]) {
+  for (const value of [undefined, null, {}, { computed: null }, { computed: 'a\0b' }, { computed: '\ud800' }, { computed: '\udc00' }, { computed: 'x'.repeat(65537) }]) {
     await assert.rejects(resolveReferences(env, { request: async () => ({ value }) }), { code: 'DOPPLER_INVALID_VALUE' })
   }
   const result = await resolveReferences(env, { request: async () => ({ value: { computed: '' } }) })

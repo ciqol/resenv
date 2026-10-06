@@ -2,6 +2,7 @@
 
 import { spawn } from 'node:child_process'
 import { constants } from 'node:os'
+import { assertSafeDiagnostics } from '../src/assert-safe-diagnostics.mjs'
 import { resolveEnv, formatError } from '../src/index.mjs'
 import { login } from '../src/doppler/auth.mjs'
 import { createSystem } from '../src/doppler/system.mjs'
@@ -49,6 +50,7 @@ async function main () {
     return
   }
 
+  assertSafeDiagnostics()
   const child = spawn(args[2], args.slice(3), { env, stdio: 'inherit', shell: false })
   const signals = ['SIGINT', 'SIGTERM', 'SIGHUP']
   const handlers = new Map()

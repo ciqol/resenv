@@ -1,4 +1,4 @@
-import { debuglog } from 'node:util'
+import { debuglog, types } from 'node:util'
 import { createRequire } from 'node:module'
 import { resolveCommands } from './commands.mjs'
 import { ResenvError } from './errors.mjs'
@@ -139,11 +139,23 @@ function resolveEnv (env = process.env, options = {}) {
 }
 
 function resolveEnvInPlace (env = process.env, options = {}) {
+  // Proxy traps can fail during a later write after earlier values were changed.
+  if (types.isProxy(env)) {
+    throw new ResenvError('INVALID_ENV_TARGET', 'In-place resolution requires process.env or a record with writable data properties, not a Proxy.')
+  }
   const resolved = resolveEnv(env, options)
+  const updates = []
   for (const [name, value] of Object.entries(resolved)) {
-    if (env[name] !== value) {
-      Object.defineProperty(env, name, { value, writable: true, enumerable: true, configurable: true })
+    const descriptor = Object.getOwnPropertyDescriptor(env, name)
+    if (descriptor && 'value' in descriptor && descriptor.value === value) continue
+    if (descriptor ? !descriptor.writable : !Object.isExtensible(env)) {
+      throw new ResenvError('INVALID_ENV_TARGET', `Cannot replace ${variableName(name)} on a target without a writable data property.`)
     }
+    updates.push([name, { ...(descriptor || { writable: true, enumerable: true, configurable: true }), value }])
+  }
+  // Preflight every write. No setters or Proxy traps run during this commit.
+  for (const [name, descriptor] of updates) {
+    Object.defineProperty(env, name, descriptor)
   }
   return env
 }

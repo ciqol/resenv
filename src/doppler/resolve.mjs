@@ -15,7 +15,7 @@ async function resolveReferences (env, { request = createClient(), getCredential
     if (!cache.has(path)) {
       const result = await request(path, { token })
       const value = result.value?.computed
-      if (typeof value !== 'string' || value.includes('\0') || Buffer.byteLength(value) > 65536) {
+      if (typeof value !== 'string' || !value.isWellFormed() || value.includes('\0') || Buffer.byteLength(value) > 65536) {
         throw new ResenvError('DOPPLER_INVALID_VALUE', `Doppler did not return a usable value for ${JSON.stringify(entry.name)}.`)
       }
       cache.set(path, value)

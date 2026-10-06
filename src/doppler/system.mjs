@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { userInfo } from 'node:os'
 import { ResenvError } from '../errors.mjs'
+import { assertSafeDiagnostics } from '../assert-safe-diagnostics.mjs'
 import { validateToken } from './http.mjs'
 
 // Preserve saved logins from before the package rename.
@@ -19,10 +20,14 @@ function helperEnvironment () {
 }
 
 function createSystem ({ platform = process.platform, run = spawnSync, exists = existsSync } = {}) {
-  const invoke = (file, args, options = {}) => run(file, args, {
-    env: helperEnvironment(), encoding: 'utf8', timeout: 15000,
-    maxBuffer: 16384, stdio: ['pipe', 'pipe', 'pipe'], shell: false, ...options
-  })
+  const invoke = (file, args, options = {}) => {
+    assertSafeDiagnostics()
+
+    return run(file, args, {
+      env: helperEnvironment(), encoding: 'utf8', timeout: 15000,
+      maxBuffer: 16384, stdio: ['pipe', 'pipe', 'pipe'], shell: false, ...options
+    })
+  }
   const mac = platform === 'darwin' && exists('/usr/bin/security')
   const linux = platform === 'linux' && exists('/usr/bin/secret-tool')
   const cli = ['/opt/homebrew/bin/doppler', '/usr/local/bin/doppler', '/usr/bin/doppler'].find(exists)

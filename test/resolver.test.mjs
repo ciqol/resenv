@@ -106,3 +106,26 @@ test('decrypted strings are literal values and are not recursively resolved', ()
   const { privateKey, ciphertext } = fixture('encrypted:literal-application-value')
   assert.equal(resolveEnv({ TOKEN: ciphertext, DOTENV_PRIVATE_KEY: privateKey }).TOKEN, 'encrypted:literal-application-value')
 })
+
+test('in-place resolution rejects a read-only property before changing any value', () => {
+  const { privateKey, ciphertext } = fixture()
+  const env = { FIRST: ciphertext, DOTENV_PRIVATE_KEY: privateKey }
+  Object.defineProperty(env, 'SECOND', { value: ciphertext, enumerable: true })
+  assert.throws(() => resolveEnvInPlace(env), { code: 'INVALID_ENV_TARGET' })
+  assert.equal(env.FIRST, ciphertext)
+  assert.equal(env.SECOND, ciphertext)
+})
+
+test('in-place resolution preserves writable property flags and rejects setters and proxies', () => {
+  const { privateKey, ciphertext } = fixture()
+  const env = Object.seal({ TOKEN: ciphertext, DOTENV_PRIVATE_KEY: privateKey })
+  resolveEnvInPlace(env)
+  assert.equal(env.TOKEN, 'dummy-value')
+  assert.equal(Object.getOwnPropertyDescriptor(env, 'TOKEN').configurable, false)
+  const accessor = { FIRST: ciphertext, DOTENV_PRIVATE_KEY: privateKey }
+  Object.defineProperty(accessor, 'SECOND', { get: () => ciphertext, set: () => assert.fail('setter must not run'), enumerable: true })
+  assert.throws(() => resolveEnvInPlace(accessor), { code: 'INVALID_ENV_TARGET' })
+  assert.equal(accessor.FIRST, ciphertext)
+  const proxy = new Proxy({ TOKEN: ciphertext }, { defineProperty: () => assert.fail('Proxy trap must not run') })
+  assert.throws(() => resolveEnvInPlace(proxy), { code: 'INVALID_ENV_TARGET' })
+})

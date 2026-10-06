@@ -114,6 +114,28 @@ test('canonical and compatibility preloads do not resolve fetched references twi
   assert.equal(result.stdout, literal)
 })
 
+test('mixing cloud and command preloads cannot execute a fetched shell expression', t => {
+  const { directory } = fixture(t, { API_KEY: { body: { value: { computed: '$(printf dummy-expanded)' } } } })
+  const result = run([
+    '--require', '@ciqol/resenv/resolve', '--require', '@ciqol/resenv/resolve-commands',
+    '-e', 'process.stdout.write(process.env.TOKEN)'
+  ], directory, { TOKEN: 'doppler://dummy/dev/API_KEY', DOPPLER_TOKEN: token })
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /CONFLICTING_PRELOADS/)
+  assert.equal(result.stdout, '')
+})
+
+test('command-first mixed preloads also fail before reinterpreting resolved output', t => {
+  const { directory } = fixture(t, {})
+  const result = run([
+    '--require', '@ciqol/resenv/resolve-commands', '--import', '@ciqol/resenv/resolve',
+    '-e', 'process.stdout.write(process.env.TOKEN)'
+  ], directory, { TOKEN: '$(printf encrypted:literal)' })
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /CONFLICTING_PRELOADS/)
+  assert.equal(result.stdout, '')
+})
+
 test('no-reference startup needs no credentials or worker and shell commands stay literal', t => {
   const { directory, pkg } = fixture(t, {})
   writeFileSync(join(pkg, 'doppler-worker.cjs'), "throw new Error('worker-must-not-start')")

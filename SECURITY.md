@@ -32,10 +32,29 @@ access files and the network; failed resolution cannot undo their external
 effects. Commands are bounded by timeout and output limits, and their output
 is not included in resenv diagnostics.
 
+Node's `child_process` debug category prints spawn options, including stdin
+and environment values. resenv refuses its own subprocess and credential-helper
+operations when that category is enabled, including through `NODE_DEBUG=*`.
+Use `NODE_DEBUG=resenv` for diagnostics that omit values. This guard does not
+control application logs, other instrumentation, or a debugger attached to the
+process.
+
 All values are resolved before resenv updates the caller's environment or
 starts the application. Missing keys, invalid ciphertext, command failures and
 invalid environment values stop startup. Fetched or decrypted values are
 never evaluated recursively. Application logs are outside resenv's control.
+
+Different automatic preload modes cannot be combined in one process. Otherwise
+the second mode could execute or decrypt literal data fetched by the first.
+Use one `resenv run --commands` invocation or one library call with both options
+enabled to resolve cloud references and commands together. Repeated manual
+library calls are separate operations; only pass original configuration to them.
+
+Provider responses must be valid UTF-8 and JSON, and resolved strings must not
+contain lone Unicode surrogates or null bytes. In-place replacement preflights
+all changed properties; read-only properties, setters and Proxy targets are
+rejected before any values are committed. Use `resolveEnv()` to obtain a copy
+when the input is not a writable environment record.
 
 The private prototype has not had an independent security audit. Validation
 evidence and platform limits are recorded in [docs/validation.md](docs/validation.md).

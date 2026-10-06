@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process'
+import { assertSafeDiagnostics } from './assert-safe-diagnostics.mjs'
 
 function resolveCommands (env, { commandTimeoutMs = 30000 }, ResenvError, debug) {
   const resolved = Object.assign(Object.create(null), env)
@@ -21,6 +22,7 @@ function resolveCommands (env, { commandTimeoutMs = 30000 }, ResenvError, debug)
   for (const [name, value] of entries) {
     let result
     try {
+      assertSafeDiagnostics()
       result = spawnSync('/bin/sh', ['-c', value.slice(2, -1)], {
         env,
         stdio: ['ignore', 'pipe', 'pipe'],

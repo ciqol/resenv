@@ -154,6 +154,10 @@ The library currently requires `{ doppler: true }`; the `/resolve` preload and
 `require('@ciqol/resenv')`. Both formats share the `ResenvError` class, whose
 `code` identifies the failure. CLI and preload failures exit with a safe message.
 
+In-place updates require `process.env` or writable data properties. A read-only
+property, setter or Proxy target fails before any replacement is committed.
+Use `resolveEnv()` when a resolved copy is more suitable.
+
 ## Debug startup
 
 ```sh
@@ -172,6 +176,10 @@ RESENV 12345: Done: replaced 1 secret value(s).
 With no matching references, the only message is `Nothing to handle.` Failures
 include a safe error and completion summary. Logs omit values, tokens, command
 text and provider responses; no log files are created.
+
+`NODE_DEBUG=child_process` (including `NODE_DEBUG=*`) makes Node print spawn
+options containing credentials. resenv blocks its subprocess operations with
+`UNSAFE_DEBUG_LOGGING` in that mode. Use `NODE_DEBUG=resenv` instead.
 
 ## Install the private package
 
@@ -226,6 +234,11 @@ separate from the Doppler reference flow above.
 
 `/resolve-doppler` is an equivalent name for `/resolve`; `run --doppler` remains
 accepted. New integrations should use the canonical entry points above.
+
+Use one preload mode per process. Combining `/resolve` and `/resolve-commands`
+fails with `CONFLICTING_PRELOADS` to prevent reinterpreting fetched values.
+For both modes together, use `resenv run --commands -- ...` or one library call
+with `{ doppler: true, commands: true }`.
 
 ## Development
 

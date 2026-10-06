@@ -37,7 +37,13 @@ function createClient (fetchImpl = globalThis.fetch) {
         if (size > 1048576) throw new ResenvError('DOPPLER_INVALID_RESPONSE', 'Doppler response exceeded the size limit.')
         chunks.push(chunk)
       }
-      const result = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+      let result
+      try {
+        result = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks)))
+      } catch (err) {
+        if (!(err instanceof TypeError || err instanceof SyntaxError)) throw err
+        throw new ResenvError('DOPPLER_INVALID_RESPONSE', 'Doppler returned invalid UTF-8 or JSON.')
+      }
       if (!result || typeof result !== 'object' || Array.isArray(result) || result.success === false || result.error) {
         throw new ResenvError('DOPPLER_INVALID_RESPONSE', 'Doppler returned an unsuccessful or malformed response.')
       }
