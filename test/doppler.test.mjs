@@ -239,6 +239,52 @@ test('API failures never retry using another credential or expose partial result
   assert.equal(input.TOKEN, env.TOKEN)
 })
 
+test('API resolution overlaps four unique lookups and shares results for duplicates', async () => {
+  const input = Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`KEY_${i}`, `doppler://dummy/dev/KEY_${i % 8}`]))
+  const pending = []
+  let calls = 0
+  let credentials = 0
+  const result = resolveReferences(input, {
+    getCredential: async () => { credentials++; return token },
+    request: async () => {
+      calls++
+      await new Promise(resolve => pending.push(resolve))
+      return { value: { computed: 'dummy-value' } }
+    }
+  })
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(calls, 4)
+  for (const release of pending.splice(0)) release()
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(calls, 8)
+  assert.equal(pending.length, 4)
+  for (const release of pending.splice(0)) release()
+  const values = await result
+  assert.equal(credentials, 1)
+  assert.equal(Object.keys(values).length, 16)
+  assert.ok(Object.values(values).every(value => value === 'dummy-value'))
+})
+
+test('a failed parallel lookup stops new requests and waits for active ones', async () => {
+  const input = Object.fromEntries(Array.from({ length: 9 }, (_, i) => [`KEY_${i}`, `doppler://dummy/dev/KEY_${i}`]))
+  const pending = []
+  let calls = 0
+  let settled = false
+  const result = resolveReferences(input, {
+    getCredential: async () => token,
+    request: () => { calls++; return new Promise((resolve, reject) => pending.push({ resolve, reject })) }
+  })
+  const rejection = assert.rejects(result, { code: 'DOPPLER_ACCESS_DENIED' }).then(() => { settled = true })
+  await new Promise(resolve => setImmediate(resolve))
+  pending.shift().reject(failure('DOPPLER_ACCESS_DENIED'))
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(settled, false)
+  for (const task of pending) task.resolve({ value: { computed: 'dummy' } })
+  await rejection
+  assert.equal(calls, 4)
+  assert.equal(input.KEY_0, 'doppler://dummy/dev/KEY_0')
+})
+
 test('synchronous bridge sends only references and credential through private stdin', () => {
   const values = resolveDopplerSync({ ...env, UNRELATED: 'dummy-secret' }, (file, args, options) => {
     assert.equal(file, process.execPath)

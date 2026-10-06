@@ -118,7 +118,10 @@ tokens from Doppler's CLI Tokens page.
   environment untouched. Existing command mode remains separately opt-in.
 - Uses a fixed HTTPS origin, disables redirects, and has a ten-second timeout
   per request. The synchronous preload uses a private Node worker with a
-  sixty-second overall limit. Limits are 128 references, 64 KiB per value and
+  sixty-second overall limit. Up to four distinct lookups run concurrently;
+  duplicate references share one lookup. After a failure, no new lookups are
+  scheduled and active requests settle before failure is returned. Limits are
+  128 references, 64 KiB per value and
   1 MiB for each response and the worker's captured output.
 - Preloads use a child Node process to wait for asynchronous HTTPS while
   retaining `--require` compatibility. It receives only references and an
