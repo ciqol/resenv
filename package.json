@@ -65,10 +65,14 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --project tsconfig.json",
+    "bench": "node scripts/benchmark.mjs",
     "test": "node --test test/*.test.mjs",
     "test:package": "node test/package-smoke.mjs",
     "test:nx": "node test/nx-interop.mjs",
-    "verify": "npm run build && npm test && npm run test:package",
+    "verify": "npm run lint && npm run typecheck && npm run build && npm test && npm run test:package",
     "release:check": "npm run verify && npm pack ./dist --dry-run --ignore-scripts",
     "pack:local": "npm pack ./dist --ignore-scripts"
   },
@@ -76,8 +80,10 @@
     "eciesjs": "0.5.0"
   },
   "devDependencies": {
+    "eslint": "10.12.0",
     "rollup": "4.63.5",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.1"
   },
   "overrides": {
     "@ecies/ciphers": "0.2.6",

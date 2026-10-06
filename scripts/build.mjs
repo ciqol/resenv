@@ -44,7 +44,7 @@ try {
   }
   chmodSync(resolve(directory, manifest.bin.resenv), 0o755)
   process.stdout.write('Built CommonJS, ESM facades, declarations and private package manifest in dist/.\n')
-} catch (error) {
+} catch (err) {
   rmSync(directory, { recursive: true, force: true })
-  throw error
+  throw err
 }

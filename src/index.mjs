@@ -100,16 +100,16 @@ function resolveEnv (env = process.env, options = {}) {
     // Reject invalid references before any optional command can have effects.
     const dopplerEntries = options.doppler === true ? references(snapshot) : []
     const resolved = options.commands === true
-      ? resolveCommands(snapshot, options, ResenvError, debug)
+      ? resolveCommands(snapshot, options, debug)
       : Object.assign(Object.create(null), snapshot)
     if (dopplerEntries.length) {
       // Resolve only original references. Command and cloud output stays literal.
       const cloudInput = Object.fromEntries(dopplerEntries.map(({ name }) => [name, snapshot[name]]))
       if (resolved.DOPPLER_TOKEN !== undefined) cloudInput.DOPPLER_TOKEN = resolved.DOPPLER_TOKEN
       let values
-      try { values = resolveDopplerSync(cloudInput) } catch (error) {
+      try { values = resolveDopplerSync(cloudInput) } catch (err) {
         debug('Failed to resolve Doppler references.')
-        throw error
+        throw err
       }
       for (const { name } of dopplerEntries) {
         resolved[name] = values[name]
@@ -124,17 +124,17 @@ function resolveEnv (env = process.env, options = {}) {
           keys ??= privateKeys(resolved)
           resolved[name] = decryptValue(name, value, keys)
           debug('Replaced secret value for %s.', variableName(name))
-        } catch (error) {
+        } catch (err) {
           debug('Failed to replace secret value for %s.', variableName(name))
-          throw error
+          throw err
         }
       }
     }
     debug('Done: replaced %d secret value(s).', total)
     return resolved
-  } catch (error) {
-    debug('Done: failed (%s); environment unchanged.', error instanceof ResenvError ? error.code : 'STARTUP_FAILED')
-    throw error
+  } catch (err) {
+    debug('Done: failed (%s); environment unchanged.', err instanceof ResenvError ? err.code : 'STARTUP_FAILED')
+    throw err
   }
 }
 

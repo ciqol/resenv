@@ -29,9 +29,7 @@ Use the Node version in `.nvmrc` and the pinned lockfile.
 
 ```sh
 npm ci --ignore-scripts
-npm run build
-npm test
-npm run test:package
+npm run verify
 ```
 
 For Nx integration, pass an existing, reviewed installation:
@@ -39,8 +37,12 @@ For Nx integration, pass an existing, reviewed installation:
 Tests must use dummy credentials and temporary fixtures. No test may depend on
 the developer's OS credential store or authenticated provider access.
 
-`npm run verify` runs the build and tests. CI builds one archive and all matrix
-jobs test that same archive through `npm run test:package -- <archive.tgz>`.
+`npm run verify` runs lint, strict declaration checks, the build and tests.
+Public object shapes use type aliases and readonly properties; `Environment`
+remains mutable. Preserve existing `.mjs` formatting and run `npm run lint:fix`
+for available fixes. Add no lint suppressions to bypass the contract.
+CI builds one archive and all matrix jobs test that same archive through
+`npm run test:package -- <archive.tgz>`.
 Use `npm run release:check` for the non-publishing preparation check. Keep
 the CI push filter aligned with GitHub's actual default branch.
 

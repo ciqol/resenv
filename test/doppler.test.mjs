@@ -298,3 +298,35 @@ test('synchronous bridge sends only references and credential through private st
   assert.equal(values.TOKEN, 'dummy-result')
   assert.throws(() => resolveDopplerSync(env, () => ({ status: 1, stdout: token, stderr: token })), error => error.code === 'DOPPLER_RESOLUTION_FAILED' && !error.message.includes(token))
 })
+
+test('worker cleanup distinguishes an exited process group from an unexpected failure', t => {
+  let code = 'ESRCH'
+  t.mock.method(process, 'kill', () => { throw Object.assign(new Error('dummy-sensitive-cleanup-detail'), { code }) })
+  const run = () => ({ error: new Error('dummy-sensitive-spawn-detail'), pid: 123 })
+  assert.throws(() => resolveDopplerSync(env, run), err => err.code === 'DOPPLER_RESOLUTION_FAILED' && /startup time/.test(err.message))
+  code = 'EPERM'
+  assert.throws(() => resolveDopplerSync(env, run), err => {
+    assert.equal(err.code, 'DOPPLER_RESOLUTION_FAILED')
+    assert.match(err.message, /Could not stop/)
+    assert.ok(!err.stack.includes('dummy-sensitive'))
+    return true
+  })
+})
+
+test('failed login revocation reports safe errors without retaining provider details', async () => {
+  for (const err of [failure('DOPPLER_REQUEST_FAILED'), new Error('dummy-sensitive-revocation-detail')]) {
+    const { deps } = loginFixture()
+    deps.system.write = () => { throw failure('DOPPLER_KEYRING_UNAVAILABLE') }
+    deps.request = async path => {
+      if (path.includes('generate')) return challenge
+      if (path.includes('authorize')) return { token }
+      throw err
+    }
+    await assert.rejects(login({}, deps), thrown => {
+      assert.equal(thrown.code, 'DOPPLER_KEYRING_UNAVAILABLE')
+      assert.ok(!thrown.stack.includes('dummy-sensitive'))
+      assert.equal(thrown.cause, undefined)
+      return true
+    })
+  }
+})

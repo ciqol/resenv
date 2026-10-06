@@ -253,9 +253,13 @@ npm test
 npm run test:package
 ```
 
-`npm run verify` runs all three checks. `npm run release:check` also previews
+`npm run verify` runs lint, declaration checks, build and tests.
+`npm run release:check` also previews
 the packed file list without publishing. CI tests one built archive across its
 Node and platform matrix.
+
+`npm run bench` measures startup and mocked lookup performance without provider
+access. See the [security and performance review](docs/security-performance-review.md).
 
 Tests use dummy values and provider responses. See [contributing](CONTRIBUTING.md),
 [build contract](docs/build.md), [validation history](docs/validation.md) and

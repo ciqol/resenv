@@ -1,5 +1,28 @@
 # Validation
 
+## Security, performance and standards review - 2026-10-06
+
+All 70 unit/process tests passed locally on Node 20.20.2, 22.22.3 and 24.19.0
+on macOS arm64. The installed 0.1.0 candidate passed 13 runtime checks and two
+strict typed consumers on Node 24. Lint and declaration checks passed.
+
+Nx 23.2.1 passed command and Doppler resolution, target loading, local/shell
+precedence, target isolation and strict startup failures. The test used dummy
+credentials and a temporary workspace with the existing Nx installation
+read-only. No Cachely files or live provider credentials were used.
+
+The review reproduced and fixed native subprocess debug leakage, repeated
+automatic resolution, malformed provider Unicode and partial in-place updates.
+Cloud lookups now deduplicate and run with bounded concurrency. The mocked
+eight-request benchmark fell from 332.069 ms to 81.705 ms; this is a synthetic
+measurement, not a live provider guarantee. See the
+[full review](security-performance-review.md) for evidence and limitations.
+
+Runtime dependency versions and integrity values are unchanged. The full
+development tree reported zero known vulnerabilities, 103 verified registry
+signatures and 37 verified attestations. Hosted validation of the review changes
+is pending. Existing distributed archives remain unchanged.
+
 ## First public 0.1.0 candidate - 2026-10-06
 
 The public version sequence starts at 0.1.0 as requested. Earlier sections

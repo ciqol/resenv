@@ -81,6 +81,8 @@ try {
   for (const field of ['scripts', 'devDependencies', 'type', 'overrides']) assert.equal(manifest[field], undefined)
   assert.equal(existsSync(join(directory, 'node_modules/rollup')), false)
   assert.equal(existsSync(join(directory, 'node_modules/typescript')), false)
+  assert.equal(existsSync(join(directory, 'node_modules/eslint')), false)
+  assert.equal(existsSync(join(directory, 'node_modules/typescript-eslint')), false)
   for (const entry of Object.values(manifest.exports)) {
     if (typeof entry !== 'object') continue
     assert.equal(Object.keys(entry)[0], 'types')
@@ -153,10 +155,15 @@ try {
     resolveEnv(env, { commands: 'yes' });
     // @ts-expect-error environment values must be strings or undefined
     resolveEnv({ TOKEN: 42 });
+    // @ts-expect-error resolver options are immutable
+    options.commands = false;
+    const resolvedLiteral = resolveEnvInPlace({ TOKEN: 'doppler://dummy/dev/API_KEY' as const });
+    // @ts-expect-error resolved values cannot retain the original reference's literal type
+    const staleLiteral: 'doppler://dummy/dev/API_KEY' = resolvedLiteral.TOKEN;
   `
   const consumers = ['consumer.cts', 'consumer.mts'].map(name => join(directory, name))
   for (const file of consumers) writeFileSync(file, consumer)
-  const program = ts.createProgram(consumers, { strict: true, noEmit: true, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, target: ts.ScriptTarget.ES2022 })
+  const program = ts.createProgram(consumers, { strict: true, noUncheckedIndexedAccess: true, noEmit: true, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, target: ts.ScriptTarget.ES2022 })
   const diagnostics = ts.getPreEmitDiagnostics(program)
   assert.equal(diagnostics.length, 0, ts.formatDiagnosticsWithColorAndContext(diagnostics, {
     getCanonicalFileName: file => file, getCurrentDirectory: () => directory, getNewLine: () => '\n'

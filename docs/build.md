@@ -56,6 +56,14 @@ module format, as described by
 Consumer compilation checks both formats, including invalid inputs that must
 remain type errors.
 
+Public options use type aliases and readonly properties. `Environment` stays
+mutable for in-place replacement. `resolveEnvInPlace()` returns `Environment`
+instead of preserving a generic input type: resolved strings cannot retain a
+literal reference type. This intentionally tightens the unpublished API.
+ESLint enforces declaration style, and the compiler checks declarations and both
+consumer formats with `strict` and `noUncheckedIndexedAccess`. The `.mjs`
+implementation is covered by runtime tests, not TypeScript implementation checks.
+
 ## Generated manifest and packing
 
 The build removes stale output first. It derives `dist/package.json` from the
@@ -87,8 +95,9 @@ consumer artifact is rebuilt in place by these tests.
 ## CI
 
 The `build` job installs with scripts disabled, checks dependency advisories and
-signatures, builds once and uploads the packed archive. The `test` matrix
-downloads that artifact, verifies the installed package, extracts the same build
+signatures, runs lint and declaration checks, builds once and uploads the packed
+archive. The `test` matrix downloads that artifact, verifies the installed
+package, extracts the same build
 for the unit/process tests, and never recompiles it. The matrix checks Node 20
 and 22 on Linux plus the `.nvmrc` version on Linux and macOS.
 

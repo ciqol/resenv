@@ -48,8 +48,8 @@ function createClient (fetchImpl = globalThis.fetch) {
         throw new ResenvError('DOPPLER_INVALID_RESPONSE', 'Doppler returned an unsuccessful or malformed response.')
       }
       return result
-    } catch (error) {
-      if (error instanceof ResenvError) throw error
+    } catch (err) {
+      if (err instanceof ResenvError) throw err
       throw new ResenvError('DOPPLER_REQUEST_FAILED', 'Could not complete the HTTPS request to Doppler. Check your connection and retry.')
     }
   }

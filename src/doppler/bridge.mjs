@@ -26,12 +26,18 @@ function resolveDopplerSync (env, run = spawnSync) {
   })
   if (result.error || result.signal) {
     if (result.pid && process.platform !== 'win32') {
-      try { process.kill(-result.pid, 'SIGKILL') } catch {}
+      try { process.kill(-result.pid, 'SIGKILL') } catch (err) {
+        if (err.code !== 'ESRCH') {
+          throw new ResenvError('DOPPLER_RESOLUTION_FAILED', 'Could not stop resolver child processes after a resolution failure.')
+        }
+      }
     }
     throw new ResenvError('DOPPLER_RESOLUTION_FAILED', 'Doppler resolution exceeded its startup time or output limit.')
   }
   let response
-  try { response = JSON.parse(result.stdout) } catch {}
+  try { response = JSON.parse(result.stdout) } catch (err) {
+    if (!(err instanceof SyntaxError)) throw err
+  }
   if (response?.error && /^DOPPLER_[A-Z_]+$/.test(response.error.code) && typeof response.error.message === 'string') {
     throw new ResenvError(response.error.code, response.error.message)
   }

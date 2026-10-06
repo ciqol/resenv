@@ -1,5 +1,65 @@
 # Dependency review
 
+## Lint enforcement - 2026-10-06
+
+Selected for the requested TypeScript standards review. These are development
+tools; neither is included in the generated package or loaded at runtime.
+
+| Package | Pinned version | Distributed license | Purpose |
+| --- | --- | --- | --- |
+| eslint | 10.12.0 | MIT | Enforce JavaScript correctness and local style rules |
+| typescript-eslint | 8.71.1 | MIT | Parse declarations and enforce public TypeScript contracts |
+
+- **Need:** prose alone did not enforce declaration consistency or catch empty
+  error handlers. Node's compiler does not enforce those style rules.
+- **Alternatives and fit:** a checker built on the existing TypeScript parser
+  would avoid dependencies but require maintaining our own lint rules. ESLint
+  directly supports the standards' established rules. Other lint engines would
+  require a separate rule mapping. The development toolchain uses Node 24;
+  ESLint also supports the tested Node 20.20.2 and 22 versions. The TypeScript
+  integration supports the existing TypeScript 6.0.3 compiler. Runtime support
+  and dependencies do not change.
+- **Usage and maintenance:** npm reported 672,661,327 ESLint downloads and
+  374,467,603 typescript-eslint downloads for September 5 through October 4,
+  2026. The releases were published October 2 and October 5 respectively.
+  Registry maintainers are `openjsfoundation` / `eslintbot` and `jameshenry` /
+  `bradzacher`; both projects have public teams and active release histories.
+  At review their issue trackers showed 97 and 174 open issues. Their advisory
+  pages listed no published advisories. These signals do not establish safety.
+- **Provenance:** both downloaded archives matched npm's SHA-512 metadata.
+  All 411 distributed ESLint JavaScript/license files matched source commit
+  `a438ec39512c3381f4785a1f3058982ce9845970`. ESLint supplied registry signatures
+  but no provenance attestation for this version. typescript-eslint supplied
+  provenance; the isolated tree verified all 95 signatures and 30 attestations.
+  Account MFA and a complete ownership-transfer history are not publicly
+  established by these checks and are not claimed as verified.
+- **License:** the two distributed LICENSE files are MIT. The isolated tree
+  contains MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC and BlueOak-1.0.0;
+  no license field was missing. The Blue Oak notice requirement was reviewed.
+  These tools and their notices stay in the development installation, outside
+  the runtime archive. Reassess obligations if vendoring or redistribution changes.
+- **Security and weight:** the isolated review installed 95 packages, including
+  the already-used TypeScript compiler. No install lifecycle scripts were
+  declared and installation disabled scripts. `npm audit` reported zero known
+  vulnerabilities. ESLint is about 2.95 MB unpacked; the TypeScript wrapper is
+  about 43 KB before its parser/plugin dependencies. Lint runs local JavaScript
+  configuration with the developer/CI account's filesystem permissions; it has
+  no provider credentials or publishing grant in CI. No telemetry operation was
+  observed in the reviewed setup; this is not a full transitive-code audit.
+- **Control and exit:** exact direct versions and lockfile integrity pin the
+  tree. ciqol maintainers review the existing weekly Dependabot updates. Remove
+  these tools, the lint configuration and CI step together if replacing them;
+  public declaration and installed-package tests must remain.
+
+Sources: [ESLint release](https://eslint.org/blog/2026/10/eslint-v10.12.0-released/),
+[TypeScript integration support](https://typescript-eslint.io/users/dependency-versions/),
+[ESLint source](https://github.com/eslint/eslint/tree/a438ec39512c3381f4785a1f3058982ce9845970),
+[TypeScript lint source](https://github.com/typescript-eslint/typescript-eslint),
+[ESLint advisories](https://github.com/eslint/eslint/security/advisories),
+[TypeScript lint advisories](https://github.com/typescript-eslint/typescript-eslint/security/advisories),
+[npm ESLint metadata](https://registry.npmjs.org/eslint/10.12.0),
+[npm TypeScript lint metadata](https://registry.npmjs.org/typescript-eslint/8.71.1).
+
 ## First public release preparation - 2026-10-06
 
 The planned first public version is `0.1.0`; earlier versions identify private

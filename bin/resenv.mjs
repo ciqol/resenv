@@ -46,8 +46,8 @@ async function main () {
   try {
     assertNoPreload()
     env = resolveEnv(process.env, options)
-  } catch (error) {
-    process.stderr.write(`${formatError(error)}\n`)
+  } catch (err) {
+    process.stderr.write(`${formatError(err)}\n`)
     process.exitCode = 1
     return
   }
@@ -64,11 +64,11 @@ async function main () {
   function cleanup () {
     for (const [signal, handler] of handlers) process.removeListener(signal, handler)
   }
-  child.once('error', error => {
+  child.once('error', err => {
     cleanup()
-    const code = error.code === 'ENOENT' ? 'COMMAND_NOT_FOUND' : 'COMMAND_START_FAILED'
+    const code = err.code === 'ENOENT' ? 'COMMAND_NOT_FOUND' : 'COMMAND_START_FAILED'
     process.stderr.write(`[resenv] ${code}: Could not start the requested command.\n`)
-    process.exitCode = error.code === 'ENOENT' ? 127 : 126
+    process.exitCode = err.code === 'ENOENT' ? 127 : 126
   })
   child.once('exit', (code, signal) => {
     cleanup()
@@ -81,7 +81,7 @@ async function main () {
   })
 }
 
-main().catch(error => {
-  process.stderr.write(`${formatError(error)}\n`)
+main().catch(err => {
+  process.stderr.write(`${formatError(err)}\n`)
   process.exitCode = 1
 })

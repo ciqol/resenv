@@ -10,8 +10,8 @@ async function credential (env, system = createSystem()) {
   // An explicitly selected identity is never replaced after an API rejection.
   if (env.DOPPLER_TOKEN !== undefined) return validateToken(env.DOPPLER_TOKEN)
   let saved
-  try { saved = system.read() } catch (error) {
-    if (error.code !== 'DOPPLER_KEYRING_UNAVAILABLE') throw error
+  try { saved = system.read() } catch (err) {
+    if (err.code !== 'DOPPLER_KEYRING_UNAVAILABLE') throw err
   }
   if (saved) return saved
   const token = system.cliToken()
@@ -41,8 +41,8 @@ async function login ({ cli = false, noBrowser = false } = {}, {
   }
   if (cli || !system.canStore) return fallback()
   // Check keyring access before creating an authorization session.
-  try { system.read() } catch (error) {
-    if (error.code !== 'DOPPLER_KEYRING_UNAVAILABLE') throw error
+  try { system.read() } catch (err) {
+    if (err.code !== 'DOPPLER_KEYRING_UNAVAILABLE') throw err
     return fallback(true)
   }
   let challenge
@@ -51,12 +51,14 @@ async function login ({ cli = false, noBrowser = false } = {}, {
     // Identify resenv honestly rather than impersonating Doppler's MCP client.
     const query = new URLSearchParams({ hostname: 'resenv', version: `v${version}`, os: process.platform, arch: process.arch })
     challenge = await request(`/v3/auth/cli/generate/2?${query}`)
-  } catch (error) {
-    if (error.code === 'DOPPLER_ENDPOINT_UNAVAILABLE') return fallback()
-    throw error
+  } catch (err) {
+    if (err.code === 'DOPPLER_ENDPOINT_UNAVAILABLE') return fallback()
+    throw err
   }
   let url
-  try { url = new URL(challenge.auth_url) } catch {}
+  try { url = new URL(challenge.auth_url) } catch (err) {
+    if (!(err instanceof TypeError)) throw err
+  }
   if (!url || url.origin !== 'https://dashboard.doppler.com' || url.username || url.password || url.pathname !== '/workplace/auth/cli' ||
       typeof challenge.code !== 'string' || !/^[A-Za-z0-9_-]{8,256}$/.test(challenge.code) ||
       typeof challenge.polling_code !== 'string' || !/^[A-Za-z0-9_.-]{8,512}$/.test(challenge.polling_code)) {
@@ -73,7 +75,11 @@ async function login ({ cli = false, noBrowser = false } = {}, {
       const token = validateToken(result.token)
       try { system.write(token) } catch {
         // Do not leave a newly minted, unpersisted credential active if storage fails.
-        try { await request('/v3/auth/revoke', { token, body: { token } }) } catch {}
+        try { await request('/v3/auth/revoke', { token, body: { token } }) } catch (err) {
+          if (!(err instanceof ResenvError)) {
+            throw new ResenvError('DOPPLER_KEYRING_UNAVAILABLE', 'Could not save or revoke the login credential. Check Doppler CLI Tokens before retrying.')
+          }
+        }
         throw new ResenvError('DOPPLER_KEYRING_UNAVAILABLE', 'Could not save the login credential. Revocation was attempted; check Doppler CLI Tokens, then try resenv login doppler --cli.')
       }
       output('Done: Doppler login saved in the OS credential store.')

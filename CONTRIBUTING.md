@@ -10,15 +10,20 @@ Use the Node version in `.nvmrc` and npm:
 ```sh
 nvm use
 npm ci --ignore-scripts
-npm run build
-npm test
-npm run test:package
+npm run verify
 ```
 
 Author JavaScript as `.mjs`; the Rollup build produces both module formats and
 matching TypeScript declarations. Tests use generated keys and dummy commands.
 Never use real secrets in fixtures, terminal output, screenshots, issues, or
 pull requests.
+
+ESLint enforces runtime/build JavaScript rules and the public declaration style.
+Use `npm run lint:fix` for available automatic fixes; preserve the repository's
+existing compact formatting. Public object shapes use `type` with `readonly`
+properties. `Environment` is intentionally mutable because in-place resolution
+updates it. `npm run typecheck` checks declarations with `strict` and
+`noUncheckedIndexedAccess`; it does not type-check the `.mjs` implementation.
 
 The package check packs `dist/` and installs that tarball into a temporary
 consumer outside the repository. The install is offline, uses npm's existing
@@ -31,7 +36,7 @@ preload execution and `.cts`/`.mts` consumer types.
 Pass an existing archive to test the same build CI uses:
 `npm run test:package -- /absolute/path/to/package.tgz`. The supplied package's
 name, version, executable mode and manifest are checked before runtime probes.
-`npm run verify` builds and runs the complete local checks; `npm run release:check`
+`npm run verify` runs lint, typecheck, build and tests; `npm run release:check`
 also previews the package contents. Neither publishes or creates a tag.
 
 Rebuild after source, declarations, metadata or documentation changes. The build
@@ -40,6 +45,11 @@ cleans `dist/` first and generates its manifest from the root package. See
 separate release decision; never edit the generated manifest by hand.
 
 ## Optional integration checks
+
+`npm run bench` measures fresh-process startup, a plain 200-variable environment,
+and a mocked provider with eight distinct lookups. It needs a build first and
+does not contact a provider. Timings are observations, not CI pass/fail thresholds.
+See [the review](docs/security-performance-review.md) for the recorded comparison.
 
 With an existing Nx installation:
 

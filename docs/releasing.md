@@ -15,8 +15,9 @@ npm ci --ignore-scripts
 npm run release:check
 ```
 
-This builds, runs unit/process tests, installs a packed archive in a clean
-consumer, checks both module formats and TypeScript declarations, and previews
+This runs lint and strict declaration checks, builds, runs unit/process tests,
+installs a packed archive in a clean consumer, checks both module formats and
+TypeScript declarations, and previews
 the package file list. It is a local preparation check, not a publishing command
 or a claim that the launch requirements below are complete.
 
@@ -35,6 +36,8 @@ license requires rebuilding and rechecking it before approval.
 
 ## Launch requirements
 
+- Review the [security and performance findings](security-performance-review.md)
+  and their remaining platform and trust limitations.
 - Settle the license and copyright holder. MIT with `titan-ron`, as used by
   the reference client, is proposed. Until confirmed, the manifest remains
   `UNLICENSED` and there is no LICENSE file.

@@ -10,9 +10,9 @@ async function main () {
     if (Buffer.byteLength(input) > 1048576) throw new Error('Input exceeds limit')
     const values = await resolveReferences(JSON.parse(input))
     process.stdout.write(JSON.stringify({ values }))
-  } catch (error) {
-    process.stdout.write(JSON.stringify({ error: error instanceof ResenvError
-      ? { code: error.code, message: error.message }
+  } catch (err) {
+    process.stdout.write(JSON.stringify({ error: err instanceof ResenvError
+      ? { code: err.code, message: err.message }
       : { code: 'DOPPLER_RESOLUTION_FAILED', message: 'Doppler resolution failed.' } }))
     process.exitCode = 1
   }
