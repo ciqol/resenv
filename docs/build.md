@@ -1,7 +1,9 @@
 # Build and package contract
 
-The repository is one Node.js package. All authored JavaScript uses `.mjs`;
-CommonJS is generated for consumers that call `require` or use `--require`.
+The repository is one Node.js package. The library and CLI are authored in
+strict TypeScript. Tests and build orchestration use `.mjs`. Rollup's official
+TypeScript plugin compiles the implementation; consumers need no TypeScript
+loader or compiler.
 
 ```sh
 npm ci --ignore-scripts
@@ -36,11 +38,16 @@ alongside the entries but is not a public export. It is located through package
 self-resolution, so the installed tarball does not depend on source paths.
 
 The root exports map defines the public entries. The build compiles their
-source with Rollup, then generates ESM facades from the compiler's exported
+source with Rollup and its TypeScript plugin, then generates ESM facades from the exported
 names. Both formats load one CommonJS implementation. This preserves error
 class identity and shares the module cache when both preload forms are used.
 It follows Node's documented mitigation for the
 [dual-package hazard](https://nodejs.org/api/packages.html#dual-commonjs-es-module-packages).
+
+The CommonJS build preserves the module graph. Internal provider tests import
+those compiled modules, so hosted unit/process and clean-consumer tests all
+exercise the same archive; matrix jobs do not recompile TypeScript. Only the
+entries in the exports map are public package imports.
 
 Runtime and peer dependencies stay external. The crypto library is still loaded
 only when ciphertext needs decryption, using Node's `createRequire` API in the
@@ -49,8 +56,12 @@ output; browser-like globals in a Node test environment cannot change it.
 [Rollup's external option](https://rollupjs.org/configuration-options/#external)
 controls which imports remain outside the bundle.
 
-The existing public declaration source is copied into format-specific files.
-The exports map lists `types` first and selects declarations for the consumer's
+The compiler emits declarations into `dist/types/`. Generated `.d.mts` and
+`.d.cts` entry facades re-export that shared declaration graph; there is no
+handwritten public declaration file or separate declaration-bundler dependency.
+The generated package has no `type` field, so its shared `.d.ts` graph describes
+the CommonJS implementation. The exports map lists `types` first and selects
+the entry facade for the consumer's
 module format, as described by
 [TypeScript's ESM/CommonJS package guidance](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-7.html).
 Consumer compilation checks both formats, including invalid inputs that must
@@ -60,9 +71,15 @@ Public options use type aliases and readonly properties. `Environment` stays
 mutable for in-place replacement. `resolveEnvInPlace()` returns `Environment`
 instead of preserving a generic input type: resolved strings cannot retain a
 literal reference type. This intentionally tightens the unpublished API.
-ESLint enforces declaration style, and the compiler checks declarations and both
-consumer formats with `strict` and `noUncheckedIndexedAccess`. The `.mjs`
-implementation is covered by runtime tests, not TypeScript implementation checks.
+ESLint uses type information and enforces the selected style rules. The compiler
+checks all library/CLI source and both consumer formats with `strict` and
+`noUncheckedIndexedAccess`. Provider responses and parsed worker input start as
+`unknown` and are validated before use. Compiler failures stop the build.
+
+The source target is ES2023. `ES2024.String` supplies the declaration for
+`isWellFormed()`, whose availability is also checked by the Node 20/22/24 runtime
+tests. Node types match the Node 24 development toolchain; the runtime matrix
+remains necessary to detect use of APIs absent from the oldest supported Node.
 
 ## Generated manifest and packing
 
@@ -95,7 +112,7 @@ consumer artifact is rebuilt in place by these tests.
 ## CI
 
 The `build` job installs with scripts disabled, checks dependency advisories and
-signatures, runs lint and declaration checks, builds once and uploads the packed
+signatures, runs typed lint and implementation checks, builds once and uploads the packed
 archive. The `test` matrix downloads that artifact, verifies the installed
 package, extracts the same build
 for the unit/process tests, and never recompiles it. The matrix checks Node 20
@@ -106,3 +123,9 @@ registry secrets. Missing artifacts and digest mismatches fail the run. The
 archive is retained for seven days for maintainer review. The workflow has no
 publish or deploy step. Hosted results must be observed before treating the
 workflow definition as a passing CI run.
+
+Checkout and setup/download actions use full commit pins. The GitHub-owned
+upload action uses the Tashtit exception for a complete release tag; major tags
+and third-party movable refs are not permitted. Installs disable lifecycle
+scripts because no required step depends on one; build commands run explicitly.
+See the [maturity evaluation](maturity.md) for the static catalog results.

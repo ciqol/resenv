@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { references } from '../src/doppler/references.mjs'
-import { createClient, validateToken } from '../src/doppler/http.mjs'
-import { credential, login } from '../src/doppler/auth.mjs'
-import { createSystem } from '../src/doppler/system.mjs'
-import { resolveReferences } from '../src/doppler/resolve.mjs'
-import { resolveDopplerSync } from '../src/doppler/bridge.mjs'
-import { ResenvError } from '../src/errors.mjs'
+import { references } from '../dist/doppler/references.cjs'
+import { createClient, validateToken } from '../dist/doppler/http.cjs'
+import { credential, login } from '../dist/doppler/auth.cjs'
+import { createSystem } from '../dist/doppler/system.cjs'
+import { resolveReferences } from '../dist/doppler/resolve.cjs'
+import { resolveDopplerSync } from '../dist/doppler/bridge.cjs'
+import { ResenvError } from '../dist/errors.cjs'
 
 const token = 'dp.ct.dummy0123456789'
 const challenge = { code: 'dummy_human_code', polling_code: 'dummy_poll_code', auth_url: 'https://dashboard.doppler.com/workplace/auth/cli' }
@@ -98,6 +98,17 @@ test('HTTPS failures discard provider messages and bound responses', async () =>
 test('HTTPS rejects malformed UTF-8 instead of changing a secret', async () => {
   const body = Buffer.concat([Buffer.from('{"value":{"computed":"'), Buffer.from([0xff]), Buffer.from('"}}')])
   await assert.rejects(createClient(async () => new Response(body))('/v3/me'), { code: 'DOPPLER_INVALID_RESPONSE' })
+})
+
+test('HTTPS rejects missing or non-byte response bodies with a safe error', async () => {
+  for (const body of [null, { async * [Symbol.asyncIterator] () { yield 'dummy-sensitive-response' } }]) {
+    const request = createClient(async () => ({ ok: true, status: 200, body }))
+    await assert.rejects(request('/v3/me'), err => {
+      assert.equal(err.code, 'DOPPLER_INVALID_RESPONSE')
+      assert.ok(!err.stack.includes('dummy-sensitive'))
+      return true
+    })
+  }
 })
 
 test('native login polls, opens only Doppler and saves without exposing its token', async () => {

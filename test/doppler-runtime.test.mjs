@@ -10,6 +10,19 @@ import { PrivateKey, encrypt } from 'eciesjs'
 const root = fileURLToPath(new URL('..', import.meta.url))
 const token = 'dp.ct.dummy0123456789'
 
+test('private worker rejects malformed environment input before credential lookup', () => {
+  for (const input of [null, [], { TOKEN: 42 }, { TOKEN: { secret: 'dummy-sensitive-input' } }]) {
+    const result = spawnSync(process.execPath, [join(root, 'dist/doppler-worker.cjs')], {
+      input: JSON.stringify(input), env: {}, encoding: 'utf8', timeout: 10000
+    })
+    assert.equal(result.error, undefined)
+    assert.equal(result.status, 1)
+    assert.equal(JSON.parse(result.stdout).error.code, 'DOPPLER_RESOLUTION_FAILED')
+    assert.ok(!result.stdout.includes('dummy-sensitive'))
+    assert.equal(result.stderr, '')
+  }
+})
+
 function fixture (t, responses) {
   const directory = mkdtempSync(join(tmpdir(), 'resenv-cloud-'))
   t.after(() => rmSync(directory, { recursive: true, force: true }))

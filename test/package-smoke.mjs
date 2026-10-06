@@ -42,6 +42,10 @@ try {
     assert.ok(packed.files.some(file => file.path === path), `Missing package file: ${path}`)
   }
   assert.ok(packed.files.every(file => !/^(src|test|scripts|node_modules)\//.test(file.path) && !file.path.split('/').some(part => part.startsWith('.env'))))
+  assert.ok(packed.files.every(file => !file.path.endsWith('.ts') || file.path.endsWith('.d.ts')), 'TypeScript implementation must not ship')
+  for (const path of ['types/src/index.d.ts', 'types/src/types.d.ts', 'types/src/errors.d.ts']) {
+    assert.ok(packed.files.some(file => file.path === path), `Missing generated declaration: ${path}`)
+  }
   if (source.license !== 'UNLICENSED') assert.ok(packed.files.some(file => file.path === 'LICENSE'))
   assert.ok(packed.files.find(file => file.path === 'bin/resenv.cjs').mode & 0o111, 'CLI must remain executable')
   const archive = suppliedArchive ?? join(directory, packed.filename)
@@ -83,6 +87,12 @@ try {
   assert.equal(existsSync(join(directory, 'node_modules/typescript')), false)
   assert.equal(existsSync(join(directory, 'node_modules/eslint')), false)
   assert.equal(existsSync(join(directory, 'node_modules/typescript-eslint')), false)
+  for (const dependency of ['@rollup/plugin-typescript', '@types/node', 'tslib']) {
+    assert.equal(existsSync(join(directory, 'node_modules', dependency)), false)
+  }
+  for (const file of packed.files.filter(file => /\.(cjs|mjs)$/.test(file.path))) {
+    assert.ok(!/\b(?:require\(['"]tslib['"]\)|from ['"]tslib['"])/.test(readFileSync(join(packageRoot, file.path), 'utf8')), 'Runtime output must not depend on compiler helpers')
+  }
   for (const entry of Object.values(manifest.exports)) {
     if (typeof entry !== 'object') continue
     assert.equal(Object.keys(entry)[0], 'types')
@@ -163,7 +173,7 @@ try {
   `
   const consumers = ['consumer.cts', 'consumer.mts'].map(name => join(directory, name))
   for (const file of consumers) writeFileSync(file, consumer)
-  const program = ts.createProgram(consumers, { strict: true, noUncheckedIndexedAccess: true, noEmit: true, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, target: ts.ScriptTarget.ES2022 })
+  const program = ts.createProgram(consumers, { strict: true, noUncheckedIndexedAccess: true, noEmit: true, types: [], module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, target: ts.ScriptTarget.ES2022 })
   const diagnostics = ts.getPreEmitDiagnostics(program)
   assert.equal(diagnostics.length, 0, ts.formatDiagnosticsWithColorAndContext(diagnostics, {
     getCanonicalFileName: file => file, getCurrentDirectory: () => directory, getNewLine: () => '\n'

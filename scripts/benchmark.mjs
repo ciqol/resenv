@@ -4,7 +4,7 @@ import { performance } from 'node:perf_hooks'
 import { setTimeout as delay } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
 import { resolveEnv } from '../dist/index.mjs'
-import { resolveReferences } from '../src/doppler/resolve.mjs'
+import { resolveReferences } from '../dist/doppler/resolve.cjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const env = Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`VALUE_${i}`, 'dummy-plain-value']))

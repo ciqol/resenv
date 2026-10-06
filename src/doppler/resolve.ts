@@ -1,33 +1,49 @@
-import { ResenvError } from '../errors.mjs'
-import { references } from './references.mjs'
-import { credential } from './auth.mjs'
-import { createClient } from './http.mjs'
+import { ResenvError } from '../errors.js'
+import type { Environment } from '../types.js'
+import { copyEnvironment, isRecord } from '../values.js'
+import { references } from './references.js'
+import { credential } from './auth.js'
+import { createClient } from './http.js'
+import type { Request } from './http.js'
+
+type ResolveDependencies = {
+  readonly request?: Request
+  readonly getCredential?: typeof credential
+}
+
+type ReferenceGroup = {
+  readonly path: string
+  readonly names: string[]
+}
 
 // 2026-10-06: cap startup fan-out at four to overlap latency without a burst of
 // all 128 permitted references. The overall startup deadline still applies.
 const CONCURRENT_REQUESTS = 4
 
-async function resolveReferences (env, { request = createClient(), getCredential = credential } = {}) {
+async function resolveReferences (env: Readonly<Environment>, { request = createClient(), getCredential = credential }: ResolveDependencies = {}): Promise<Environment> {
   const entries = references(env)
-  const values = Object.create(null)
+  const values = copyEnvironment({})
   if (!entries.length) return values
-  const groups = new Map()
+  const groups = new Map<string, ReferenceGroup>()
   for (const entry of entries) {
     const query = new URLSearchParams({ project: entry.project, config: entry.config, name: entry.key })
-    const path = `/v3/configs/config/secret?${query}`
-    if (!groups.has(path)) groups.set(path, { path, names: [] })
-    groups.get(path).names.push(entry.name)
+    const path = `/v3/configs/config/secret?${query.toString()}`
+    const group = groups.get(path) || { path, names: [] }
+    group.names.push(entry.name)
+    groups.set(path, group)
   }
   const tasks = [...groups.values()]
   const token = await getCredential(env)
   let next = 0
-  let failure
-  const worker = async () => {
+  let failure: { readonly err: unknown } | undefined
+  const worker = async (): Promise<void> => {
     while (!failure && next < tasks.length) {
-      const { path, names } = tasks[next++]
+      const task = tasks[next++]
+      if (!task) return
+      const { path, names } = task
       try {
         const result = await request(path, { token })
-        const value = result.value?.computed
+        const value = isRecord(result?.value) ? result.value.computed : undefined
         if (typeof value !== 'string' || !value.isWellFormed() || value.includes('\0') || Buffer.byteLength(value) > 65536) {
           throw new ResenvError('DOPPLER_INVALID_VALUE', `Doppler did not return a usable value for ${JSON.stringify(names[0])}.`)
         }

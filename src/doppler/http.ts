@@ -1,9 +1,18 @@
-import { ResenvError } from '../errors.mjs'
+import { ResenvError } from '../errors.js'
+import { isRecord } from '../values.js'
+
+export type RequestOptions = {
+  readonly token?: string
+  readonly body?: Readonly<Record<string, string>>
+  readonly pending?: boolean
+}
+
+export type Request = (path: string, options?: RequestOptions) => Promise<Record<string, unknown> | null>
 
 const API_ORIGIN = 'https://api.doppler.com'
 
 // No environment-controlled endpoint or redirects: credentials stay at Doppler.
-function createClient (fetchImpl = globalThis.fetch) {
+function createClient (fetchImpl: typeof globalThis.fetch = globalThis.fetch): Request {
   return async function request (path, { token, body, pending = false } = {}) {
     let response
     try {
@@ -32,19 +41,22 @@ function createClient (fetchImpl = globalThis.fetch) {
       }
       const chunks = []
       let size = 0
-      for await (const chunk of response.body) {
+      if (!response.body) throw new ResenvError('DOPPLER_INVALID_RESPONSE', 'Doppler returned an empty response.')
+      for await (const raw of response.body) {
+        const chunk: unknown = raw
+        if (!(chunk instanceof Uint8Array)) throw new ResenvError('DOPPLER_INVALID_RESPONSE', 'Doppler returned invalid response bytes.')
         size += chunk.length
         if (size > 1048576) throw new ResenvError('DOPPLER_INVALID_RESPONSE', 'Doppler response exceeded the size limit.')
         chunks.push(chunk)
       }
-      let result
+      let result: unknown
       try {
         result = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks)))
       } catch (err) {
         if (!(err instanceof TypeError || err instanceof SyntaxError)) throw err
         throw new ResenvError('DOPPLER_INVALID_RESPONSE', 'Doppler returned invalid UTF-8 or JSON.')
       }
-      if (!result || typeof result !== 'object' || Array.isArray(result) || result.success === false || result.error) {
+      if (!isRecord(result) || result.success === false || result.error) {
         throw new ResenvError('DOPPLER_INVALID_RESPONSE', 'Doppler returned an unsuccessful or malformed response.')
       }
       return result
@@ -55,7 +67,7 @@ function createClient (fetchImpl = globalThis.fetch) {
   }
 }
 
-function validateToken (token) {
+function validateToken (token: unknown): string {
   if (typeof token !== 'string' || !/^dp\.[a-z]+\.[A-Za-z0-9_.-]{10,512}$/.test(token)) {
     throw new ResenvError('DOPPLER_INVALID_TOKEN', 'The Doppler credential is malformed. Run resenv login doppler or supply a valid DOPPLER_TOKEN.')
   }

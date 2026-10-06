@@ -27,12 +27,14 @@ try {
     return Object.fromEntries(Object.entries(value).map(([name, entry]) => [name, rebase(entry)]))
   }
   for (const field of ['main', 'module', 'types', 'exports', 'bin']) manifest[field] = rebase(source[field])
-  manifest.files = ['*.cjs', '*.mjs', '*.d.cts', '*.d.mts', 'chunks', 'bin', 'README.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md', 'docs']
+  manifest.files = ['*.cjs', '*.mjs', '*.d.cts', '*.d.mts', 'doppler', 'bin', 'types', 'README.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md', 'docs']
   writeFileSync(resolve(directory, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`)
 
   for (const [entry, paths] of Object.entries(manifest.exports)) {
     if (typeof paths !== 'object') continue
-    const declaration = entry === '.' ? readFileSync('src/index.d.ts', 'utf8') : 'export {}\n'
+    const name = entry === '.' ? 'index' : entry.slice(2)
+    const declaration = `export * from './types/src/${name}.js'\n`
+    if (!existsSync(resolve(directory, `types/src/${name}.d.ts`))) throw new Error(`Missing generated declaration for ${entry}`)
     for (const path of [paths.types.import, paths.types.require]) {
       const target = resolve(directory, path)
       mkdirSync(dirname(target), { recursive: true })

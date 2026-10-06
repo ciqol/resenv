@@ -13,17 +13,23 @@ npm ci --ignore-scripts
 npm run verify
 ```
 
-Author JavaScript as `.mjs`; the Rollup build produces both module formats and
-matching TypeScript declarations. Tests use generated keys and dummy commands.
+Author library and CLI code as `.ts`; Rollup's TypeScript plugin produces both
+module formats and declarations from that implementation. Tests and build
+orchestration use `.mjs`. Tests use generated keys and dummy commands.
 Never use real secrets in fixtures, terminal output, screenshots, issues, or
 pull requests.
 
-ESLint enforces runtime/build JavaScript rules and the public declaration style.
+ESLint applies rules that use type information to the TypeScript implementation
+and checks the JavaScript build tooling.
 Use `npm run lint:fix` for available automatic fixes; preserve the repository's
 existing compact formatting. Public object shapes use `type` with `readonly`
 properties. `Environment` is intentionally mutable because in-place resolution
-updates it. `npm run typecheck` checks declarations with `strict` and
-`noUncheckedIndexedAccess`; it does not type-check the `.mjs` implementation.
+updates it. `npm run typecheck` checks the entire library and CLI with `strict`
+and `noUncheckedIndexedAccess`. Do not maintain separate handwritten declarations.
+
+Dependency lifecycle hooks are disabled deliberately in `.npmrc` and CI. No
+required build depends on an install hook; run the explicit build/check commands.
+Reassess that assumption whenever adding a dependency that declares such a hook.
 
 The package check packs `dist/` and installs that tarball into a temporary
 consumer outside the repository. The install is offline, uses npm's existing

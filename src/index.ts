@@ -1,9 +1,14 @@
 import { debuglog, types } from 'node:util'
 import { createRequire } from 'node:module'
-import { resolveCommands } from './commands.mjs'
-import { ResenvError } from './errors.mjs'
-import { references } from './doppler/references.mjs'
-import { resolveDopplerSync } from './doppler/bridge.mjs'
+import type { decrypt as eciesDecrypt } from 'eciesjs'
+import { resolveCommands } from './commands.js'
+import { ResenvError } from './errors.js'
+import { references } from './doppler/references.js'
+import { resolveDopplerSync } from './doppler/bridge.js'
+import { copyEnvironment } from './values.js'
+import type { Environment, ResolveOptions } from './types.js'
+
+export type { Environment, ResolveOptions } from './types.js'
 
 const debug = debuglog('resenv')
 // Preserve synchronous resolution without loading cryptography for plain values.
@@ -13,12 +18,12 @@ const PREFIX = 'encrypted:'
 const PRIVATE_KEY_NAME = /^DOTENV_PRIVATE_KEY(?:_.+)?$/
 const PRIVATE_KEY_HEX = /^[a-fA-F0-9]{64}$/
 
-function variableName (name) {
+function variableName (name: string): string {
   return JSON.stringify(name)
 }
 
-function privateKeys (env) {
-  const keys = new Set()
+function privateKeys (env: Readonly<Environment>): string[] {
+  const keys = new Set<string>()
   for (const [name, value] of Object.entries(env)) {
     if (!PRIVATE_KEY_NAME.test(name) || value === undefined || value === '') continue
     if (typeof value !== 'string') {
@@ -37,7 +42,7 @@ function privateKeys (env) {
   return [...keys]
 }
 
-function decryptValue (name, value, keys) {
+function decryptValue (name: string, value: string, keys: readonly string[]): string {
   const encoded = value.slice(PREFIX.length)
   const payload = Buffer.from(encoded, 'base64')
   // Dotenvx uses an uncompressed secp256k1 point, a 16-byte nonce and a 16-byte tag.
@@ -45,10 +50,10 @@ function decryptValue (name, value, keys) {
     throw new ResenvError('INVALID_CIPHERTEXT', `Encrypted value for ${variableName(name)} is malformed.`)
   }
 
-  const { decrypt } = require('eciesjs')
+  const { decrypt } = require('eciesjs') as { readonly decrypt: typeof eciesDecrypt }
   // Pass a private configuration so another dependency cannot change our format
   // by mutating eciesjs's shared ECIES_CONFIG object.
-  const config = {
+  const config: NonNullable<Parameters<typeof decrypt>[2]> = {
     ellipticCurve: 'secp256k1',
     isEphemeralKeyCompressed: false,
     isHkdfKeyCompressed: false,
@@ -80,10 +85,11 @@ function decryptValue (name, value, keys) {
   throw new ResenvError('DECRYPTION_FAILED', `Could not decrypt ${variableName(name)} with the supplied private keys.`)
 }
 
-function resolveEnv (env = process.env, options = {}) {
-  const snapshot = Object.assign(Object.create(null), env)
+/** Resolve a copy of the environment; never read dotenv files. */
+function resolveEnv (env: Readonly<Environment> = process.env, options: ResolveOptions = {}): Environment {
+  const snapshot = copyEnvironment(env)
   // Only original ciphertext is decrypted. Fetched secrets remain literal data.
-  const entries = Object.entries(snapshot).filter(([, value]) => typeof value === 'string' && value.startsWith(PREFIX))
+  const entries = Object.entries(snapshot).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1].startsWith(PREFIX))
   const commandReferences = options.commands === true
     ? Object.values(snapshot).filter(value => typeof value === 'string' && value.includes('$(')).length
     : 0
@@ -101,7 +107,7 @@ function resolveEnv (env = process.env, options = {}) {
     const dopplerEntries = options.doppler === true ? references(snapshot) : []
     const resolved = options.commands === true
       ? resolveCommands(snapshot, options, debug)
-      : Object.assign(Object.create(null), snapshot)
+      : copyEnvironment(snapshot)
     if (dopplerEntries.length) {
       // Resolve only original references. Command and cloud output stays literal.
       const cloudInput = Object.fromEntries(dopplerEntries.map(({ name }) => [name, snapshot[name]]))
@@ -138,13 +144,14 @@ function resolveEnv (env = process.env, options = {}) {
   }
 }
 
-function resolveEnvInPlace (env = process.env, options = {}) {
+/** Commit replacements only after all enabled resolution succeeds. */
+function resolveEnvInPlace (env: Environment = process.env, options: ResolveOptions = {}): Environment {
   // Proxy traps can fail during a later write after earlier values were changed.
   if (types.isProxy(env)) {
     throw new ResenvError('INVALID_ENV_TARGET', 'In-place resolution requires process.env or a record with writable data properties, not a Proxy.')
   }
   const resolved = resolveEnv(env, options)
-  const updates = []
+  const updates: [string, PropertyDescriptor][] = []
   for (const [name, value] of Object.entries(resolved)) {
     const descriptor = Object.getOwnPropertyDescriptor(env, name)
     if (descriptor && 'value' in descriptor && descriptor.value === value) continue
@@ -160,7 +167,7 @@ function resolveEnvInPlace (env = process.env, options = {}) {
   return env
 }
 
-function formatError (error) {
+function formatError (error: unknown): string {
   if (error instanceof ResenvError) return `[resenv] ${error.code}: ${error.message}`
   return '[resenv] STARTUP_FAILED: Environment resolution failed.'
 }

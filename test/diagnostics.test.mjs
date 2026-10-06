@@ -13,7 +13,7 @@ const cases = [
   ['Doppler bridge', ['--require', './dist/resolve.cjs', '-e', "throw new Error('application-must-not-start')"]],
   ['CLI child', ['./dist/bin/resenv.cjs', 'run', '--', process.execPath, '-e', "throw new Error('application-must-not-start')"]],
   ['credential helpers', ['--input-type=module', '-e', `
-    import { createSystem } from './src/doppler/system.mjs';
+    import { createSystem } from './dist/doppler/system.cjs';
     const system = createSystem({ platform: 'darwin', exists: () => true, run: () => { throw new Error('helper-must-not-start'); } });
     system.write('dp.ct.dummy0123456789');
   `]]

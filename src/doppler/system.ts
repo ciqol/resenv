@@ -1,9 +1,24 @@
 import { spawnSync } from 'node:child_process'
+import type { SpawnSyncOptionsWithStringEncoding, SpawnSyncReturns } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { userInfo } from 'node:os'
-import { ResenvError } from '../errors.mjs'
-import { assertSafeDiagnostics } from '../assert-safe-diagnostics.mjs'
-import { validateToken } from './http.mjs'
+import { ResenvError } from '../errors.js'
+import { assertSafeDiagnostics } from '../assert-safe-diagnostics.js'
+import type { Environment } from '../types.js'
+import { validateToken } from './http.js'
+
+// Node's sync implementation accepts detached, which its declarations omit.
+type SyncOptions = SpawnSyncOptionsWithStringEncoding & { readonly detached?: boolean }
+
+export type SyncRunner = (file: string, args: readonly string[], options: SyncOptions) => SpawnSyncReturns<string>
+
+type SystemOptions = {
+  readonly platform?: NodeJS.Platform
+  readonly run?: SyncRunner
+  readonly exists?: typeof existsSync
+}
+
+export type CredentialSystem = ReturnType<typeof createSystem>
 
 // Preserve saved logins from before the package rename.
 const SERVICE = 'ciqol.envref.doppler'
@@ -11,16 +26,16 @@ const ACCOUNT = 'default'
 
 // Do not pass application secrets, NODE_OPTIONS, loader variables or a
 // repository's PATH to credential helpers. No helper is invoked via a shell.
-function helperEnvironment () {
-  const env = { HOME: userInfo().homedir, PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' }
+function helperEnvironment (): Environment {
+  const env: Environment = { HOME: userInfo().homedir, PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' }
   for (const key of ['SystemRoot', 'USERPROFILE', 'DBUS_SESSION_BUS_ADDRESS', 'XDG_RUNTIME_DIR', 'DISPLAY', 'WAYLAND_DISPLAY']) {
     if (process.env[key]) env[key] = process.env[key]
   }
   return env
 }
 
-function createSystem ({ platform = process.platform, run = spawnSync, exists = existsSync } = {}) {
-  const invoke = (file, args, options = {}) => {
+function createSystem ({ platform = process.platform, run = spawnSync, exists = existsSync }: SystemOptions = {}) {
+  const invoke = (file: string, args: readonly string[], options: Pick<SpawnSyncOptionsWithStringEncoding, 'input' | 'stdio' | 'timeout'> = {}) => {
     assertSafeDiagnostics()
 
     return run(file, args, {
@@ -43,7 +58,7 @@ function createSystem ({ platform = process.platform, run = spawnSync, exists = 
     throw unavailable()
   }
 
-  function write (token) {
+  function write (token: string): void {
     validateToken(token)
     if (!mac && !linux) throw unavailable()
     // security's interactive interpreter receives the token on stdin, never
@@ -78,7 +93,7 @@ function createSystem ({ platform = process.platform, run = spawnSync, exists = 
     if (!cliToken()) throw new ResenvError('DOPPLER_LOGIN_FAILED', 'Doppler CLI login did not provide a credential.')
   }
 
-  function openBrowser (url) {
+  function openBrowser (url: string): boolean {
     const file = mac ? '/usr/bin/open' : '/usr/bin/xdg-open'
     if (!exists(file)) return false
     const result = invoke(file, [url])

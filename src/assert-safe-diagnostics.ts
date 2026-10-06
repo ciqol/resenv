@@ -1,9 +1,9 @@
 import { debuglog } from 'node:util'
-import { ResenvError } from './errors.mjs'
+import { ResenvError } from './errors.js'
 
 const childProcessDebug = debuglog('child_process')
 
-export function assertSafeDiagnostics () {
+export function assertSafeDiagnostics (): void {
   // Node logs spawn options, including stdin and env, before starting a child.
   // Test Node's actual debug state, including wildcard selectors and caching.
   if (childProcessDebug.enabled) {

@@ -1,14 +1,16 @@
-import { ResenvError, resolveEnvInPlace, formatError } from './index.mjs'
+import { ResenvError, resolveEnvInPlace, formatError } from './index.js'
 
-let activeMode
+type PreloadMode = 'commands' | 'doppler'
 
-export function assertNoPreload () {
+let activeMode: PreloadMode | undefined
+
+export function assertNoPreload (): void {
   if (activeMode) {
     throw new ResenvError('CONFLICTING_PRELOADS', 'Use the resenv CLI or a resenv preload for this process. Combining them can reinterpret fetched values.')
   }
 }
 
-export function resolvePreload (mode) {
+export function resolvePreload (mode: PreloadMode): void {
   try {
     // A second mode could interpret data fetched by the first as executable input.
     if (activeMode && activeMode !== mode) {

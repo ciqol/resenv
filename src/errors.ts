@@ -1,5 +1,7 @@
 class ResenvError extends Error {
-  constructor (code, message) {
+  readonly code: string
+
+  constructor (code: string, message: string) {
     super(message)
     this.name = 'ResenvError'
     this.code = code

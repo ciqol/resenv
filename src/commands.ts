@@ -1,10 +1,14 @@
 import { spawnSync } from 'node:child_process'
-import { assertSafeDiagnostics } from './assert-safe-diagnostics.mjs'
-import { ResenvError } from './errors.mjs'
+import type { SpawnSyncOptionsWithBufferEncoding, SpawnSyncReturns } from 'node:child_process'
+import type { DebugLogger } from 'node:util'
+import { assertSafeDiagnostics } from './assert-safe-diagnostics.js'
+import { ResenvError } from './errors.js'
+import { copyEnvironment, hasErrorCode } from './values.js'
+import type { Environment, ResolveOptions } from './types.js'
 
-function resolveCommands (env, { commandTimeoutMs = 30000 }, debug) {
-  const resolved = Object.assign(Object.create(null), env)
-  const entries = Object.entries(env).filter(([, value]) => typeof value === 'string' && value.includes('$('))
+function resolveCommands (env: Readonly<Environment>, { commandTimeoutMs = 30000 }: ResolveOptions, debug: DebugLogger): Environment {
+  const resolved = copyEnvironment(env)
+  const entries = Object.entries(env).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1].includes('$('))
   if (!entries.length) return resolved
   if (process.platform === 'win32') {
     throw new ResenvError('UNSUPPORTED_PLATFORM', 'Command resolution requires a POSIX /bin/sh shell.')
@@ -21,28 +25,30 @@ function resolveCommands (env, { commandTimeoutMs = 30000 }, debug) {
     }
   }
   for (const [name, value] of entries) {
-    let result
+    let result: SpawnSyncReturns<Buffer> | undefined
     try {
       assertSafeDiagnostics()
-      result = spawnSync('/bin/sh', ['-c', value.slice(2, -1)], {
+      // Node supports detached sync children; its declaration omits the option.
+      const spawnOptions = {
         env,
         stdio: ['ignore', 'pipe', 'pipe'],
         timeout: commandTimeoutMs,
         killSignal: 'SIGKILL',
         maxBuffer: 65536,
         detached: true
-      })
+      } satisfies SpawnSyncOptionsWithBufferEncoding & { readonly detached: boolean }
+      result = spawnSync('/bin/sh', ['-c', value.slice(2, -1)], spawnOptions)
       if (result.error || result.signal || result.status !== 0) {
         // Each command has its own process group. Clean up surviving children
         // after a timeout, output limit, signal or failed command.
         if (result.pid) {
           try { process.kill(-result.pid, 'SIGKILL') } catch (err) {
-            if (err.code !== 'ESRCH') {
+            if (!hasErrorCode(err, 'ESRCH')) {
               throw new ResenvError('COMMAND_CLEANUP_FAILED', 'Could not stop the command process group after a resolution failure.')
             }
           }
         }
-        const code = result.error?.code === 'ETIMEDOUT' ? 'COMMAND_TIMEOUT' : 'COMMAND_FAILED'
+        const code = hasErrorCode(result.error, 'ETIMEDOUT') ? 'COMMAND_TIMEOUT' : 'COMMAND_FAILED'
         throw new ResenvError(code, `Could not resolve ${JSON.stringify(name)}. Check the command and your secret-provider login.`)
       }
       let output

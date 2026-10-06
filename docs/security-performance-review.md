@@ -4,6 +4,12 @@ Reviewed on 2026-10-06 against the private 0.1.0 candidate, starting at
 `b50fa9b`. This is a source review with targeted reproductions, regression tests
 and measurements. It is not an independent audit or a security certification.
 
+A later change on the same day migrates the implementation and CLI to strict
+TypeScript. The findings below describe the reviewed baseline and fixes; see
+[the current build contract](build.md) and [validation](validation.md) for the
+generated declarations and implementation checks that supersede the earlier
+declaration-only setup.
+
 ## Findings and changes
 
 | Priority | Finding reproduced | Change and regression coverage |

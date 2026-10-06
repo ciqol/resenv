@@ -244,7 +244,8 @@ with `{ doppler: true, commands: true }`.
 
 ## Development
 
-Source uses `.mjs`; Rollup builds CommonJS, ESM facades and declarations. Both
+Library and CLI source use strict TypeScript. Rollup builds CommonJS, ESM
+facades and declarations from the implementation. Both
 formats share an implementation and preload cache. Build and verify with:
 
 ```sh
@@ -253,7 +254,7 @@ npm test
 npm run test:package
 ```
 
-`npm run verify` runs lint, declaration checks, build and tests.
+`npm run verify` runs typed lint, implementation checks, build and tests.
 `npm run release:check` also previews
 the packed file list without publishing. CI tests one built archive across its
 Node and platform matrix.

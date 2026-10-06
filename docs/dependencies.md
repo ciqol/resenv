@@ -1,5 +1,59 @@
 # Dependency review
 
+## TypeScript implementation build - 2026-10-06
+
+The requested migration needs compiler integration and Node API declarations.
+These additions are development dependencies only:
+
+| Package | Version | Distributed license | Purpose |
+| --- | --- | --- | --- |
+| @rollup/plugin-typescript | 12.3.0 | MIT | Compile TypeScript and emit declarations through Rollup |
+| @types/node | 24.19.1 | MIT | Type-check Node APIs against the development runtime |
+| tslib | 2.8.1 | 0BSD | Required peer of the TypeScript plugin |
+
+- **Need and alternatives:** the existing compiler can emit JavaScript before
+  Rollup, but the requested library-build standard uses Rollup's maintained
+  TypeScript plugin. This avoids a custom transpilation plugin. Handwritten
+  Node declarations would be incomplete. A declaration bundler was considered;
+  generated declaration files with format-specific entry facades need no extra
+  bundler. `rollup-plugin-dts` was inspected but is not installed.
+- **Fit:** the plugin supports Rollup 4 and TypeScript >=3.7; all tools fit the
+  Node 24 development environment. Production remains Node >=20 and is tested
+  separately. The compiler target uses native language features, so tslib must
+  not be imported by or bundled into the distributable. Package checks enforce
+  that build dependencies stay outside the consumer tree.
+- **Usage and health:** npm reported 13,833,923 plugin downloads, 1,776,524,012
+  tslib downloads and 1,843,836,518 Node-types downloads for September 5 through
+  October 4, 2026. Releases are dated 2025-10-23, 2024-10-31 and 2026-10-01.
+  The plugin has four registry maintainers, tslib eight, and Node types use
+  DefinitelyTyped's shared publisher. Their source projects have active issue
+  and contribution histories. The older tslib release is accepted as a stable
+  compiler helper peer; the chosen target requires no emitted helper imports.
+- **Provenance:** all three archives matched npm SHA-512 metadata. The official
+  plugin release points to `973054d`; tslib metadata identifies source commit
+  `d72d6f70b36286bc3f94a3dda1e64dcb568b1370`. Node types identify the canonical
+  DefinitelyTyped source directory. The isolated tree verified 19 registry
+  signatures and four attestations. These checks authenticate registry
+  artifacts; they do not establish reproducible builds for every addition.
+  Public metadata does not establish account MFA or complete transfer history.
+- **Licenses and capabilities:** licenses were read from the downloaded
+  archives. The plugin runs compiler code with local build permissions; Node
+  types are declarations. Neither needs provider credentials. Installation
+  disables lifecycle scripts. No new component is vendored into runtime output.
+  The isolated tree's audit found zero known vulnerabilities; advisory checks
+  are not an independent code audit.
+- **Weight and control:** the isolated tree has 19 installed packages including
+  the already-reviewed compiler and Rollup. Direct unpacked sizes are about
+  160 KB, 2.61 MB and 90 KB respectively. Exact versions and lockfile integrity
+  fix the tree. ciqol maintainers own updates through the existing dependency
+  review process. Removal means returning to compiler emit before Rollup while
+  retaining strict implementation and packed-consumer checks.
+
+Sources: [Rollup plugin and requirements](https://github.com/rollup/plugins/tree/master/packages/typescript),
+[plugin release](https://github.com/rollup/plugins/releases/tag/typescript-v12.3.0),
+[tslib release](https://github.com/microsoft/tslib/releases/tag/v2.8.1),
+[Node types source](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node).
+
 ## Lint enforcement - 2026-10-06
 
 Selected for the requested TypeScript standards review. These are development

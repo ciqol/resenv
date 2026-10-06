@@ -2,10 +2,17 @@
   "compilerOptions": {
     "strict": true,
     "noUncheckedIndexedAccess": true,
-    "noEmit": true,
+    "noEmitOnError": true,
+    "verbatimModuleSyntax": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "target": "ES2022"
+    "target": "ES2023",
+    "lib": ["ES2023", "ES2024.String"],
+    "types": ["node"],
+    "rootDir": ".",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationDir": "dist/types"
   },
-  "files": ["src/index.d.ts"]
+  "include": ["src/**/*.ts", "bin/**/*.ts"]
 }

@@ -12,7 +12,9 @@ preparation and settings decisions are recorded in `docs/releasing.md`.
 
 ## Implementation
 
-- Author JavaScript in `.mjs`; Rollup generates CommonJS and ESM facades.
+- Author the library and CLI in strict TypeScript. Rollup's TypeScript plugin
+  generates CommonJS, ESM facades and declarations from the implementation.
+- Keep test/build orchestration in `.mjs`; tests import compiled modules.
 - Edit `src/`, `bin/`, tests and docs; regenerate `dist/` with `npm run build`.
 - `@ciqol/resenv/resolve` is the canonical preload. Infer providers from values
   already in `process.env`. Let Nx or the caller choose and load dotenv files.
@@ -37,9 +39,9 @@ For Nx integration, pass an existing, reviewed installation:
 Tests must use dummy credentials and temporary fixtures. No test may depend on
 the developer's OS credential store or authenticated provider access.
 
-`npm run verify` runs lint, strict declaration checks, the build and tests.
+`npm run verify` runs typed lint, strict implementation checks, the build and tests.
 Public object shapes use type aliases and readonly properties; `Environment`
-remains mutable. Preserve existing `.mjs` formatting and run `npm run lint:fix`
+remains mutable. Preserve existing formatting and run `npm run lint:fix`
 for available fixes. Add no lint suppressions to bypass the contract.
 CI builds one archive and all matrix jobs test that same archive through
 `npm run test:package -- <archive.tgz>`.

@@ -15,7 +15,7 @@ npm ci --ignore-scripts
 npm run release:check
 ```
 
-This runs lint and strict declaration checks, builds, runs unit/process tests,
+This runs typed lint and strict implementation checks, builds, runs unit/process tests,
 installs a packed archive in a clean consumer, checks both module formats and
 TypeScript declarations, and previews
 the package file list. It is a local preparation check, not a publishing command
@@ -117,13 +117,14 @@ push branch filter in the same transition.
 - Clean-consumer verification of the built archive, including CLI/preload paths,
   shared error identity, types, and failure before application startup.
 - A single CI artifact tested on the supported Node/platform combinations,
-  read-only jobs, pinned actions, dependency audits and explicit timeouts.
+  read-only jobs, reviewed action versions, dependency audits and explicit timeouts.
 - CODEOWNERS, a focused contribution template, a bug form that requests dummy
   data, and grouped weekly dependency-update configuration.
 
-The existing `.mjs` sources and Node test runner fit this package. The client's
-TypeScript compiler plugin, Jest, Docker service, coverage-upload permissions,
-commit hooks and automatic publishing are not requirements for this resolver.
+The library and CLI now use TypeScript with Rollup's TypeScript plugin, generated
+declarations and strict implementation checks. The Node test runner remains.
+The client's Jest setup, Docker service, coverage-upload permissions, commit
+hooks and automatic publishing are not requirements for this resolver.
 
 ## Draft 0.1.0 release notes
 

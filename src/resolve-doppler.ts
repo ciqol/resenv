@@ -1,2 +1,2 @@
 // Compatibility entry point. Share the canonical preload's execution cache.
-import './resolve.mjs'
+import './resolve.js'

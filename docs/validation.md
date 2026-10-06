@@ -1,5 +1,38 @@
 # Validation
 
+## TypeScript implementation and maturity - 2026-10-06
+
+The library and CLI now compile from TypeScript through Rollup's official
+plugin. All 72 unit/process tests passed on local Node 24.19.0, along with
+typed ESLint, strict implementation checks and the clean-consumer checks.
+The archive passed 13 runtime checks and two strict typed consumers. Those
+consumers have no Node types or build dependencies installed and do not rely
+on implicit ambient types. Declarations come from the source implementation.
+
+Nx 23.2.1 again passed target loading, local/shell precedence, isolation and
+strict failure tests using dummy values and a temporary workspace. The existing
+Cachely installation was used read-only. No real credentials were accessed.
+
+The benchmark recorded 84.262 ms for eight unique mocked requests with 16
+references and 40 ms simulated request latency, with peak concurrency four.
+No-work resolution took 0.046 ms. Fresh-process medians were 44.776 ms for Node
+alone, 52.256 ms with the CommonJS preload and 53.258 ms with the ESM preload.
+These observations use the same benchmark method as the earlier review; small
+startup differences include scheduling/filesystem noise.
+
+The [static maturity report](maturity.md) records 88% across the full discovered
+tree, including generated output, and 96% for maintained source. Remaining
+catalog findings are the documented install-hook policy and development files
+intentionally absent from the generated distribution. Workflow YAML and
+documentation links passed structural checks. actionlint was not installed;
+the local check is not an actionlint result.
+
+Runtime dependency versions and integrity values remain unchanged. The complete
+local development tree reported zero known vulnerabilities, 116 verified
+registry signatures and 39 verified attestations. Hosted CI for the migration
+is pending. The repository and generated package stay private
+at 0.1.0; no PR, release or visibility change is part of the migration.
+
 ## Security, performance and standards review - 2026-10-06
 
 All 70 unit/process tests passed locally on Node 20.20.2, 22.22.3 and 24.19.0
