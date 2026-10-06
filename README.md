@@ -236,7 +236,9 @@ separate from the Doppler reference flow above.
 accepted. New integrations should use the canonical entry points above.
 
 Use one preload mode per process. Combining `/resolve` and `/resolve-commands`
-fails with `CONFLICTING_PRELOADS` to prevent reinterpreting fetched values.
+or combining a preload with `resenv run` fails with `CONFLICTING_PRELOADS` to
+prevent reinterpreting fetched values. Do not configure a second resolver in
+the child process through `NODE_OPTIONS` or other launch hooks.
 For both modes together, use `resenv run --commands -- ...` or one library call
 with `{ doppler: true, commands: true }`.
 

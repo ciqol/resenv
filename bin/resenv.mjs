@@ -3,6 +3,7 @@
 import { spawn } from 'node:child_process'
 import { constants } from 'node:os'
 import { assertSafeDiagnostics } from '../src/assert-safe-diagnostics.mjs'
+import { assertNoPreload } from '../src/preload.mjs'
 import { resolveEnv, formatError } from '../src/index.mjs'
 import { login } from '../src/doppler/auth.mjs'
 import { createSystem } from '../src/doppler/system.mjs'
@@ -43,6 +44,7 @@ async function main () {
 
   let env
   try {
+    assertNoPreload()
     env = resolveEnv(process.env, options)
   } catch (error) {
     process.stderr.write(`${formatError(error)}\n`)

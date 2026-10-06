@@ -136,6 +136,17 @@ test('command-first mixed preloads also fail before reinterpreting resolved outp
   assert.equal(result.stdout, '')
 })
 
+test('a preload combined with the CLI cannot resolve fetched values again', t => {
+  const { directory, pkg } = fixture(t, { API_KEY: { body: { value: { computed: '$(printf dummy-expanded)' } } } })
+  const result = run([
+    '--require', '@ciqol/resenv/resolve', join(pkg, 'bin/resenv.cjs'), 'run', '--commands', '--',
+    process.execPath, '-e', 'process.stdout.write(process.env.TOKEN)'
+  ], directory, { TOKEN: 'doppler://dummy/dev/API_KEY', DOPPLER_TOKEN: token })
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /CONFLICTING_PRELOADS/)
+  assert.equal(result.stdout, '')
+})
+
 test('no-reference startup needs no credentials or worker and shell commands stay literal', t => {
   const { directory, pkg } = fixture(t, {})
   writeFileSync(join(pkg, 'doppler-worker.cjs'), "throw new Error('worker-must-not-start')")

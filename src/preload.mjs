@@ -2,6 +2,12 @@ import { ResenvError, resolveEnvInPlace, formatError } from './index.mjs'
 
 let activeMode
 
+export function assertNoPreload () {
+  if (activeMode) {
+    throw new ResenvError('CONFLICTING_PRELOADS', 'Use the resenv CLI or a resenv preload for this process. Combining them can reinterpret fetched values.')
+  }
+}
+
 export function resolvePreload (mode) {
   try {
     // A second mode could interpret data fetched by the first as executable input.
