@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { test } from 'vitest'
 import { PrivateKey, encrypt, ECIES_CONFIG } from 'eciesjs'
-import { ResenvError, resolveEnv, resolveEnvInPlace, formatError } from '../dist/index.mjs'
+import type { Environment } from './types.js'
+import { ResenvError, resolveEnv, resolveEnvInPlace, formatError } from './index.js'
 
-function fixture (plaintext = 'dummy-value') {
+function fixture (plaintext: string | Buffer = 'dummy-value') {
   const key = new PrivateKey()
   return {
     privateKey: key.toHex(),
@@ -48,15 +49,15 @@ test('named keys and comma-separated rotation keys resolve a mixed environment',
 
 test('missing, invalid and wrong keys fail with safe errors', () => {
   const { ciphertext } = fixture('private-dummy-plaintext')
-  for (const [key, code] of [[undefined, 'MISSING_PRIVATE_KEY'], ['invalid-dummy-key', 'INVALID_PRIVATE_KEY'], [new PrivateKey().toHex(), 'DECRYPTION_FAILED']]) {
-    assert.throws(() => resolveEnv({ TOKEN: ciphertext, DOTENV_PRIVATE_KEY: key }), error => {
-      assert.ok(error instanceof ResenvError)
-      assert.equal(error.code, code)
-      const report = `${formatError(error)}\n${error.stack}`
+  for (const [key, code] of <readonly (readonly [string | undefined, string])[]>[[undefined, 'MISSING_PRIVATE_KEY'], ['invalid-dummy-key', 'INVALID_PRIVATE_KEY'], [new PrivateKey().toHex(), 'DECRYPTION_FAILED']]) {
+    assert.throws(() => resolveEnv({ TOKEN: ciphertext, DOTENV_PRIVATE_KEY: key }), (err: unknown) => {
+      assert.ok(err instanceof ResenvError)
+      assert.equal(err.code, code)
+      const report = `${formatError(err)}\n${err.stack}`
       assert.ok(!report.includes(ciphertext))
       assert.ok(!report.includes('private-dummy-plaintext'))
       if (key) assert.ok(!report.includes(key))
-      assert.equal(error.cause, undefined)
+      assert.equal(err.cause, undefined)
       return true
     })
   }
@@ -66,7 +67,7 @@ test('missing, invalid and wrong keys fail with safe errors', () => {
 test('malformed and tampered ciphertext abort before mutating any values', () => {
   const { privateKey, ciphertext } = fixture()
   const tampered = Buffer.from(ciphertext.slice('encrypted:'.length), 'base64')
-  tampered[tampered.length - 1] ^= 1
+  tampered[tampered.length - 1] = (tampered[tampered.length - 1] || 0) ^ 1
   for (const invalid of ['encrypted:', 'encrypted:abc', `${ciphertext}\n`, `encrypted:${tampered.toString('base64')}`]) {
     const env = { FIRST: ciphertext, SECOND: invalid, DOTENV_PRIVATE_KEY: privateKey }
     const original = { ...env }
@@ -95,7 +96,7 @@ test('cryptographic configuration is independent of eciesjs global settings', ()
 
 test('special environment names do not modify object prototypes', () => {
   const { privateKey, ciphertext } = fixture()
-  const env = JSON.parse(JSON.stringify({ DOTENV_PRIVATE_KEY: privateKey }))
+  const env: Environment = { DOTENV_PRIVATE_KEY: privateKey }
   Object.defineProperty(env, '__proto__', { value: ciphertext, enumerable: true, writable: true, configurable: true })
   resolveEnvInPlace(env)
   assert.equal(env.__proto__, 'dummy-value')
@@ -109,7 +110,7 @@ test('decrypted strings are literal values and are not recursively resolved', ()
 
 test('in-place resolution rejects a read-only property before changing any value', () => {
   const { privateKey, ciphertext } = fixture()
-  const env = { FIRST: ciphertext, DOTENV_PRIVATE_KEY: privateKey }
+  const env: Environment = { FIRST: ciphertext, DOTENV_PRIVATE_KEY: privateKey }
   Object.defineProperty(env, 'SECOND', { value: ciphertext, enumerable: true })
   assert.throws(() => resolveEnvInPlace(env), { code: 'INVALID_ENV_TARGET' })
   assert.equal(env.FIRST, ciphertext)
@@ -121,11 +122,16 @@ test('in-place resolution preserves writable property flags and rejects setters 
   const env = Object.seal({ TOKEN: ciphertext, DOTENV_PRIVATE_KEY: privateKey })
   resolveEnvInPlace(env)
   assert.equal(env.TOKEN, 'dummy-value')
-  assert.equal(Object.getOwnPropertyDescriptor(env, 'TOKEN').configurable, false)
+  assert.equal(Object.getOwnPropertyDescriptor(env, 'TOKEN')?.configurable, false)
   const accessor = { FIRST: ciphertext, DOTENV_PRIVATE_KEY: privateKey }
   Object.defineProperty(accessor, 'SECOND', { get: () => ciphertext, set: () => assert.fail('setter must not run'), enumerable: true })
   assert.throws(() => resolveEnvInPlace(accessor), { code: 'INVALID_ENV_TARGET' })
   assert.equal(accessor.FIRST, ciphertext)
   const proxy = new Proxy({ TOKEN: ciphertext }, { defineProperty: () => assert.fail('Proxy trap must not run') })
   assert.throws(() => resolveEnvInPlace(proxy), { code: 'INVALID_ENV_TARGET' })
+})
+
+test('commands require explicit opt-in and ignore an environment toggle', () => {
+  const env = { TOKEN: '$(must-not-run)', RESENV_COMMANDS: 'true' }
+  assert.deepEqual({ ...resolveEnv(env) }, env)
 })

@@ -1,5 +1,31 @@
 # Validation
 
+## Colocated Vitest specs - 2026-10-07
+
+Unit tests now live beside their source modules as `*.spec.ts` and run with
+Vitest 4.1.11. The ten suites cover the resolver, commands, preload state,
+value guards and each Doppler module. All previous regression cases remain;
+new isolated command/preload checks bring the suite to 65 unit tests. The
+40 process tests remain in `test/` alongside package and integration checks.
+Unit tests import source and mock or inject external effects; process tests
+exercise compiled output with dummy values and temporary fixtures.
+
+Typed ESLint, strict source/spec TypeScript checks, the dual-format Rollup build,
+65 unit tests and 40 process tests passed locally on Node 24.19.0. Specs are
+excluded from production JavaScript and declarations. The packed-package check
+also rejects spec files and the Vitest/Vite development dependencies.
+
+`npm run test:coverage` reports 92.41% source line coverage and 90.36% branch
+coverage from unit tests alone. It includes the worker and preload entry files
+whose process behavior is checked separately; the earlier compiled-module
+figures below combine a different set of tests and are not directly comparable.
+Text and lcov reports are generated locally. CI runs source unit coverage before
+building, then tests the same archive across its runtime matrix.
+
+The updated development tree reported zero known vulnerabilities, 175 verified
+registry signatures and 68 verified attestations. Existing dependency versions
+and integrity hashes did not change; the additions are development-only.
+
 ## Unit-test coverage - 2026-10-06
 
 Added 23 tests for credential lookup, persistence and deletion failures, CLI

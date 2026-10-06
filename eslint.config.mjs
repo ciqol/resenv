@@ -38,7 +38,7 @@ export default [
   },
   {
     files: ['src/**/*.ts', 'bin/**/*.ts'],
-    languageOptions: { parser: tseslint.parser, parserOptions: { projectService: true } },
+    languageOptions: { parser: tseslint.parser, parserOptions: { project: ['./tsconfig.json', './tsconfig.spec.json'] } },
     plugins: { '@typescript-eslint': tseslint.plugin },
     rules: {
       ...typedRules,

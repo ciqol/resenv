@@ -1,7 +1,8 @@
 # Build and package contract
 
 The repository is one Node.js package. The library and CLI are authored in
-strict TypeScript. Tests and build orchestration use `.mjs`. Rollup's official
+strict TypeScript. Vitest unit specs use colocated `*.spec.ts` files. Process,
+package and integration checks and build orchestration use `.mjs`. Rollup's official
 TypeScript plugin compiles the implementation; consumers need no TypeScript
 loader or compiler.
 
@@ -44,9 +45,9 @@ class identity and shares the module cache when both preload forms are used.
 It follows Node's documented mitigation for the
 [dual-package hazard](https://nodejs.org/api/packages.html#dual-commonjs-es-module-packages).
 
-The CommonJS build preserves the module graph. Internal provider tests import
-those compiled modules, so hosted unit/process and clean-consumer tests all
-exercise the same archive; matrix jobs do not recompile TypeScript. Only the
+The CommonJS build preserves the module graph. Source unit specs import their
+adjacent modules; higher-level process and clean-consumer checks exercise the
+compiled modules and the same archive. Matrix jobs do not recompile TypeScript. Only the
 entries in the exports map are public package imports.
 
 Runtime and peer dependencies stay external. The crypto library is still loaded
@@ -72,7 +73,7 @@ mutable for in-place replacement. `resolveEnvInPlace()` returns `Environment`
 instead of preserving a generic input type: resolved strings cannot retain a
 literal reference type. This intentionally tightens the unpublished API.
 ESLint uses type information and enforces the selected style rules. The compiler
-checks all library/CLI source and both consumer formats with `strict` and
+checks all library/CLI source, colocated unit specs and both consumer formats with `strict` and
 `noUncheckedIndexedAccess`. Provider responses and parsed worker input start as
 `unknown` and are validated before use. Compiler failures stop the build.
 
@@ -112,10 +113,11 @@ consumer artifact is rebuilt in place by these tests.
 ## CI
 
 The `build` job installs with scripts disabled, checks dependency advisories and
-signatures, runs typed lint and implementation checks, builds once and uploads the packed
+signatures, runs typed lint, implementation/spec checks and Vitest source coverage,
+builds once and uploads the packed
 archive. The `test` matrix downloads that artifact, verifies the installed
 package, extracts the same build
-for the unit/process tests, and never recompiles it. The matrix checks Node 20
+for the process tests, and never recompiles it. The matrix checks Node 20
 and 22 on Linux plus the `.nvmrc` version on Linux and macOS.
 
 Jobs have read-only repository permissions and receive no application or

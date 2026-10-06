@@ -74,9 +74,13 @@
     "build": "node scripts/build.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "typecheck": "tsc --project tsconfig.json --noEmit && tsc --project tsconfig.spec.json",
     "bench": "node scripts/benchmark.mjs",
-    "test": "node --test test/*.test.mjs",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "node --test test/*.test.mjs",
     "test:package": "node test/package-smoke.mjs",
     "test:nx": "node test/nx-interop.mjs",
     "verify": "npm run lint && npm run typecheck && npm run build && npm test && npm run test:package",
@@ -89,11 +93,13 @@
   "devDependencies": {
     "@rollup/plugin-typescript": "12.3.0",
     "@types/node": "24.19.1",
+    "@vitest/coverage-v8": "4.1.11",
     "eslint": "10.12.0",
     "rollup": "4.63.5",
     "tslib": "2.8.1",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.71.1"
+    "typescript-eslint": "8.71.1",
+    "vitest": "4.1.11"
   },
   "overrides": {
     "@ecies/ciphers": "0.2.6",

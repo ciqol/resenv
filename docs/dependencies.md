@@ -1,5 +1,53 @@
 # Dependency review
 
+## Vitest unit runner - 2026-10-07
+
+The user requested Vitest with unit specs beside each source module. Added
+`vitest` and `@vitest/coverage-v8`, both exactly 4.1.11, as development-only
+dependencies. Both distributed licenses are MIT; the runner's bundled notices
+also cover BSD-3-Clause and ISC code. The isolated tree contains MIT, ISC,
+BSD-3-Clause, Apache-2.0 and MPL-2.0 packages. MPL applies to unmodified
+Lightning CSS development binaries; none of this tooling is redistributed
+in resenv's archive. Existing runtime dependencies are unchanged.
+
+- **Need and fit:** Node's test runner remains suitable for process tests but
+  cannot run the requested TypeScript specs and Vitest mocks directly. Keeping
+  Node alone or using Jest were alternatives; Vitest matches the requested
+  workflow without adding a second TypeScript transform configuration.
+  Version 4.1.11 retains Node 20 support, while Vitest 5 requires Node 22.12+.
+  The resolved Vite 8.3.3 requires Node 20.19+ or 22.12+, covered by the actual
+  test matrix and Node 24 development runtime.
+- **Health:** npm reported 454,419,379 Vitest downloads and 167,168,819 coverage
+  provider downloads for September 5 through October 4, 2026. Vitest has five
+  registry maintainers. Public repository metadata showed 17,188 stars,
+  357 open issues/PRs and a push on October 6. Version 4.1.11 was released on
+  August 18; Vitest 5.0.3 was released September 30. Published security reports
+  have patched-version ranges; 4.1.11 fixes the redirect-mock advisory
+  GHSA-82fw-gwwq-j7x9. Browser/UI packages are not installed or enabled.
+- **Provenance:** package metadata points to the canonical vitest-dev/vitest
+  source, and both artifacts declare provenance attestations. The isolated
+  installation verified 64 registry signatures and 31 attestations. npm
+  integrity pins authenticate archive bytes; account MFA and complete ownership
+  history are not exposed by this review.
+- **Security and capabilities:** the isolated tree reported zero known
+  vulnerabilities. Installation disables scripts, including the optional
+  fsevents hook. Tests execute local code with filesystem/process permissions;
+  no real credentials are supplied. The runner uses Node mode with API and
+  browser servers disabled. Native transform binaries are development tooling.
+  The lock contains 88 dependency entries including platform-specific packages;
+  64 were installed on this machine. This is a larger development tree than
+  the previous Node-only runner and is accepted for the requested testing setup.
+- **Control:** the maintainer's request authorizes this addition. Exact direct
+  versions and lockfile integrity pin the tree. ciqol maintainers own updates
+  through the existing dependency review process and advisory checks. Removal
+  means returning unit specs to Node's runner with an explicit TypeScript
+  compilation step. Clean-consumer checks ensure this tooling is not shipped.
+
+Sources: [Vitest 4 requirements](https://v4.vitest.dev/guide/),
+[registry metadata](https://www.npmjs.com/package/vitest/v/4.1.11),
+[coverage provider](https://www.npmjs.com/package/@vitest/coverage-v8/v/4.1.11),
+and [redirect-mock fix](https://github.com/vitest-dev/vitest/security/advisories/GHSA-82fw-gwwq-j7x9).
+
 ## TypeScript implementation build - 2026-10-06
 
 The requested migration needs compiler integration and Node API declarations.

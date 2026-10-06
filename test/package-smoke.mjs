@@ -38,6 +38,7 @@ try {
   const packed = JSON.parse(run('npm', [...npmOptions, ...packArgs], root).stdout)[0]
   assert.equal(packed.name, source.name)
   assert.equal(packed.version, source.version)
+  assert.ok(!packed.files.some(file => /\.spec\./.test(file.path)), 'Unit specs must not be packed')
   for (const path of ['index.cjs', 'index.mjs', 'index.d.cts', 'index.d.mts', 'resolve-commands.cjs', 'resolve-commands.mjs', 'resolve-doppler.cjs', 'resolve-doppler.mjs', 'doppler-worker.cjs', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/dependencies.md', 'docs/validation.md', 'docs/releasing.md', 'docs/doppler.md']) {
     assert.ok(packed.files.some(file => file.path === path), `Missing package file: ${path}`)
   }
@@ -87,7 +88,7 @@ try {
   assert.equal(existsSync(join(directory, 'node_modules/typescript')), false)
   assert.equal(existsSync(join(directory, 'node_modules/eslint')), false)
   assert.equal(existsSync(join(directory, 'node_modules/typescript-eslint')), false)
-  for (const dependency of ['@rollup/plugin-typescript', '@types/node', 'tslib']) {
+  for (const dependency of ['@rollup/plugin-typescript', '@types/node', 'tslib', 'vitest', '@vitest/coverage-v8', 'vite']) {
     assert.equal(existsSync(join(directory, 'node_modules', dependency)), false)
   }
   for (const file of packed.files.filter(file => /\.(cjs|mjs)$/.test(file.path))) {

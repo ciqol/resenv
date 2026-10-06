@@ -14,7 +14,10 @@ preparation and settings decisions are recorded in `docs/releasing.md`.
 
 - Author the library and CLI in strict TypeScript. Rollup's TypeScript plugin
   generates CommonJS, ESM facades and declarations from the implementation.
-- Keep test/build orchestration in `.mjs`; tests import compiled modules.
+- Colocate Vitest unit tests as `*.spec.ts` beside the source module they test.
+  Unit specs import source and use injected or mocked external effects.
+  Keep process, package and integration checks in `test/` as `.mjs`; those
+  checks import compiled modules or exercise the packed artifact.
 - Edit `src/`, `bin/`, tests and docs; regenerate `dist/` with `npm run build`.
 - `@ciqol/resenv/resolve` is the canonical preload. Infer providers from values
   already in `process.env`. Let Nx or the caller choose and load dotenv files.
@@ -40,11 +43,16 @@ Tests must use dummy credentials and temporary fixtures. No test may depend on
 the developer's OS credential store or authenticated provider access.
 
 `npm run verify` runs typed lint, strict implementation checks, the build and tests.
+`npm run test:unit` runs Vitest specs; `npm run test:coverage` measures source
+unit coverage. `npm run test:integration` runs process tests against `dist/`.
+The compiler checks unit specs separately and excludes them from build output.
 Public object shapes use type aliases and readonly properties; `Environment`
 remains mutable. Preserve existing formatting and run `npm run lint:fix`
 for available fixes. Add no lint suppressions to bypass the contract.
 CI builds one archive and all matrix jobs test that same archive through
 `npm run test:package -- <archive.tgz>`.
+Source unit specs run before the CI build; matrix jobs run only higher-level
+tests against that archive and never recompile the source.
 Use `npm run release:check` for the non-publishing preparation check. Keep
 the CI push filter aligned with GitHub's actual default branch.
 

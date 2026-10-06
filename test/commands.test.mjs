@@ -14,11 +14,6 @@ const posix = { skip: process.platform === 'win32' }
 const quote = value => `'${value.replaceAll("'", "'\\''")}'`
 const expression = script => `$(exec ${quote(process.execPath)} -e ${quote(script)})`
 
-test('commands require explicit opt-in and ignore an environment toggle', () => {
-  const env = { TOKEN: '$(must-not-run)', RESENV_COMMANDS: 'true' }
-  assert.deepEqual({ ...resolveEnv(env) }, env)
-})
-
 test('commands preserve whitespace, UTF-8 and literal command-looking output', posix, () => {
   for (const output of ['', ' space \n\n', '\uFEFF🌍\nnext', '$(must-not-run)', 'encrypted:literal']) {
     const env = { TOKEN: expression(`process.stdout.write(${JSON.stringify(output)})`) }

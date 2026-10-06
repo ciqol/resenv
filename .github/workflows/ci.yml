@@ -35,6 +35,8 @@ jobs:
         run: npm run lint
       - name: Check TypeScript implementation
         run: npm run typecheck
+      - name: Run colocated unit specs
+        run: npm run test:coverage
       - name: Build ESM, CommonJS and declarations
         run: npm run build
       - run: npm run pack:local
@@ -85,4 +87,4 @@ jobs:
         run: |
           mkdir dist
           tar -xzf artifacts/*.tgz -C dist --strip-components=1
-      - run: npm test
+      - run: npm run test:integration

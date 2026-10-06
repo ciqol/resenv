@@ -14,18 +14,33 @@ npm run verify
 ```
 
 Author library and CLI code as `.ts`; Rollup's TypeScript plugin produces both
-module formats and declarations from that implementation. Tests and build
-orchestration use `.mjs`. Tests use generated keys and dummy commands.
+module formats and declarations from that implementation. Colocate Vitest unit
+specs as `*.spec.ts` beside each tested module and import its source. Keep
+process, package and integration checks in `test/` as `.mjs`; they exercise
+compiled output and installed packages. Tests use generated keys and dummy commands.
 Never use real secrets in fixtures, terminal output, screenshots, issues, or
 pull requests.
 
-ESLint applies rules that use type information to the TypeScript implementation
+ESLint applies rules that use type information to the TypeScript implementation and specs
 and checks the JavaScript build tooling.
 Use `npm run lint:fix` for available automatic fixes; preserve the repository's
 existing compact formatting. Public object shapes use `type` with `readonly`
 properties. `Environment` is intentionally mutable because in-place resolution
 updates it. `npm run typecheck` checks the entire library and CLI with `strict`
-and `noUncheckedIndexedAccess`. Do not maintain separate handwritten declarations.
+and `noUncheckedIndexedAccess`. A separate spec configuration checks tests without
+shipping them in JavaScript or declarations. Do not maintain separate handwritten declarations.
+
+```sh
+npm run test:unit         # colocated Vitest specs, no build required
+npm run test:watch        # watch unit specs while editing
+npm run test:coverage     # source unit coverage, text and lcov output
+npm run test:integration  # process checks, requires a build
+```
+
+`npm test` runs unit and process tests. Mock or inject provider calls, credential
+helpers, browser launchers and process control in unit tests. Keep checks that
+spawn actual commands or temporary applications in `test/`. The unit coverage
+report measures source and is separate from packed-package and process checks.
 
 Dependency lifecycle hooks are disabled deliberately in `.npmrc` and CI. No
 required build depends on an install hook; run the explicit build/check commands.
