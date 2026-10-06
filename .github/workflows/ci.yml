@@ -27,14 +27,19 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           package-manager-cache: false
+      # No dependency lifecycle hook is required; build steps run explicitly.
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm audit --audit-level=high
       - run: npm audit signatures
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run build
+      - name: Lint implementation and build tooling
+        run: npm run lint
+      - name: Check TypeScript implementation
+        run: npm run typecheck
+      - name: Build ESM, CommonJS and declarations
+        run: npm run build
       - run: npm run pack:local
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      # GitHub-owned action: the exact release-tag exception is intentional.
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: 'resenv-package'
           path: 'ciqol-resenv-*.tgz'
