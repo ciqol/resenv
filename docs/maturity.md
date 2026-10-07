@@ -1,5 +1,10 @@
 # Maturity evaluation
 
+Installation-policy update on 2026-10-07: `.npmrc`, setup commands, package
+checks and CI no longer disable lifecycle scripts. The `npm-ignore-scripts`
+finding below describes the earlier snapshot and is resolved in the current
+workflow. The historical score has not been recalculated.
+
 Evaluated on 2026-10-06 with the Tashtit maturity 0.3.1 catalog. Findings use
 static working-tree evidence only; test runs and hosted checks are recorded
 separately in [validation](validation.md). This score covers the catalog's

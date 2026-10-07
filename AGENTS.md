@@ -34,7 +34,7 @@ preparation and settings decisions are recorded in `docs/releasing.md`.
 Use the Node version in `.nvmrc` and the pinned lockfile.
 
 ```sh
-npm ci --ignore-scripts
+npm ci
 npm run verify
 ```
 
@@ -57,6 +57,11 @@ tests against that archive and never recompile the source.
 Use `npm run release:check` for the non-publishing preparation check. Keep
 the CI push filter aligned with GitHub's actual default branch and `titan/beta`.
 Beta publication must use the `beta` npm dist-tag; never promote it to `latest`.
+
+README documents how application users install and use resenv. Contributor setup,
+tests, local linking and release preparation belong in CONTRIBUTING.md and docs/.
+Use normal npm lifecycle behavior; review required dependency hooks rather than
+globally disabling scripts in setup, package checks or CI.
 
 ## Local consumers
 

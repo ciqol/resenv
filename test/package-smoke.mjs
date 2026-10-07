@@ -30,7 +30,7 @@ try {
   const npmOptions = [
     '--userconfig', userConfig, '--globalconfig', globalConfig,
     '--cache', process.env.npm_config_cache || join(homedir(), '.npm'),
-    '--ignore-scripts', '--offline', '--no-audit', '--no-fund'
+    '--offline', '--no-audit', '--no-fund'
   ]
   const packArgs = suppliedArchive
     ? ['pack', suppliedArchive, '--dry-run', '--json']
@@ -100,6 +100,10 @@ try {
     assert.equal(Object.keys(entry)[0], 'types')
     for (const target of [entry.import, entry.require, entry.types.import, entry.types.require]) assert.ok(existsSync(resolve(packageRoot, target)))
   }
+
+  const help = run('npx', [...npmOptions, '--no-install', 'resenv', '--help'], directory)
+  assert.match(help.stdout, /Usage: resenv run/)
+  assert.equal(help.stderr, '')
 
   const key = new PrivateKey()
   const ciphertext = `encrypted:${Buffer.from(encrypt(key.publicKey.toHex(), Buffer.from('dummy-package-secret'))).toString('base64')}`
@@ -180,7 +184,7 @@ try {
   assert.equal(diagnostics.length, 0, ts.formatDiagnosticsWithColorAndContext(diagnostics, {
     getCanonicalFileName: file => file, getCurrentDirectory: () => directory, getNewLine: () => '\n'
   }))
-  process.stdout.write(`Packed package: ${probes.length + 3} runtime checks and 2 typed consumers passed.\n`)
+  process.stdout.write(`Packed package: ${probes.length + 4} runtime checks and 2 typed consumers passed.\n`)
 } finally {
   rmSync(directory, { recursive: true, force: true })
 }

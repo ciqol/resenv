@@ -1,5 +1,21 @@
 # Validation
 
+## User and contributor documentation - 2026-10-07
+
+The README now leads with package installation and application use. Checkout
+setup, build/test commands, local packaging and application links live in
+CONTRIBUTING.md. Standard setup, CI and package checks no longer suppress npm
+lifecycle scripts; dependency versions and lock entries are unchanged.
+
+A fresh offline install from the existing cache passed on Node 24.19.0/npm
+11.17.0 with normal script behavior, followed by all 65 unit tests, 40 process
+tests, lint, strict type checks and the dual-format build. npm warned about
+script-review metadata for optional fsevents; see [the inspection](dependencies.md).
+
+Package verification now also runs the documented `npx --no-install resenv
+--help` invocation in the isolated installed consumer. This checks npm's CLI
+link, using an offline cache and empty user/global npm configuration files.
+
 ## First beta preparation - 2026-10-07
 
 The `titan/beta` candidate uses `0.1.0-beta.1` in the development manifest,

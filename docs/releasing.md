@@ -42,7 +42,7 @@ through `latest`. Stable `0.1.0` needs its own reviewed candidate and promotion.
 ## Verify the candidate
 
 ```sh
-npm ci --ignore-scripts
+npm ci
 npm run release:check
 ```
 

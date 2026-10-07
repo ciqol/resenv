@@ -1,5 +1,26 @@
 # Dependency review
 
+## Installation policy - 2026-10-07
+
+At the user's request, standard setup, CI and clean-consumer checks use normal
+npm lifecycle behavior. The root `.npmrc` no longer disables scripts, and pack
+commands do not suppress lifecycle hooks. No dependency version or integrity
+entry changed as part of this policy update.
+
+The installed Node 24/macOS tree was inspected for `preinstall`, `install` and
+`postinstall` scripts and implicit `binding.gyp` builds; none were present. The
+lockfile marks optional `fsevents@2.3.3` with `hasInstallScript`, but its installed
+artifact declares no such script and contains no `binding.gyp`. Platform-specific
+behavior still requires the hosted Linux/macOS clean-install checks. A fresh
+local install on npm 11.17.0 completed and warned that the lockfile's optional
+fsevents entry is not covered by an `allowScripts` decision; no approval or
+blanket script override was added.
+
+Review scripts and native setup whenever dependencies change. A lockfile pins
+dependency bytes but does not make executing their code safe. Explicit build,
+advisory, signature and package checks remain part of validation. Older entries
+below describe the installation policy used at the time of those reviews.
+
 ## Vitest unit runner - 2026-10-07
 
 The user requested Vitest with unit specs beside each source module. Added
@@ -300,8 +321,9 @@ omitted from the generated package manifest.
   complete ownership histories are not publicly established by these checks.
 - **Security and capabilities:** OSV reported no advisories for either exact
   top-level version; npm audit reported none for the isolated dependency tree.
-  Installs use `--ignore-scripts`. The optional fsevents install hook is not
-  needed by the one-shot build. Rollup loads native parser code and reads/writes
+  That review installed with scripts disabled. Setup and CI now use normal
+  npm lifecycle behavior; see the installation-policy update above. Rollup
+  loads native parser code and reads/writes
   build files; TypeScript reads consumer fixtures and declarations. Neither
   receives application credentials in CI. Configuration files are executable
   build code and must be reviewed. These checks are not a security audit.

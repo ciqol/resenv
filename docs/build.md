@@ -7,7 +7,7 @@ TypeScript plugin compiles the implementation; consumers need no TypeScript
 loader or compiler.
 
 ```sh
-npm ci --ignore-scripts
+npm ci
 npm run build
 npm test
 npm run test:package
@@ -112,7 +112,7 @@ consumer artifact is rebuilt in place by these tests.
 
 ## CI
 
-The `build` job installs with scripts disabled, checks dependency advisories and
+The `build` job uses normal npm lifecycle behavior, checks dependency advisories and
 signatures, runs typed lint, implementation/spec checks and Vitest source coverage,
 builds once and uploads the packed
 archive. The `test` matrix downloads that artifact, verifies the installed
@@ -128,6 +128,7 @@ workflow definition as a passing CI run.
 
 Checkout and setup/download actions use full commit pins. The GitHub-owned
 upload action uses the Tashtit exception for a complete release tag; major tags
-and third-party movable refs are not permitted. Installs disable lifecycle
-scripts because no required step depends on one; build commands run explicitly.
+and third-party movable refs are not permitted. Installs use normal npm lifecycle
+behavior, and dependency updates require an install-hook review. Build commands
+run explicitly.
 See the [maturity evaluation](maturity.md) for the static catalog results.

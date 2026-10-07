@@ -20,11 +20,23 @@ Resolution happens once at startup. It does not watch the provider for changes;
 restart the application to fetch updated values. No filename is passed to
 resenv, and dotenv files are never rewritten.
 
-The first prerelease candidate is **0.1.0-beta.1** on `titan/beta`; the first
-stable release is planned as **0.1.0**. The repository is still private and the
-package is unpublished. Requires Node.js 20 or later. See
-[private installation](#install-the-private-package) and the
-[release preparation](docs/releasing.md).
+Requires Node.js 20 or later. This is an experimental beta, currently distributed
+as a private package archive; it has not been published to npm.
+
+## Install
+
+Install the archive supplied by the maintainer in your application project:
+
+```sh
+npm install --save-exact /path/to/ciqol-resenv-0.1.0-beta.1.tgz
+```
+
+This records resenv in your project's manifest and lockfile. Keep the archive
+available wherever that project installs dependencies. Once the beta is
+published to npm, you will be able to install `@ciqol/resenv@beta` instead.
+
+The CLI examples below use `npx --no-install` to run the copy installed in your
+project. In an npm script, use `resenv` directly.
 
 ## Use with Doppler
 
@@ -33,13 +45,7 @@ package is unpublished. Requires Node.js 20 or later. See
 After installing the package, run:
 
 ```sh
-resenv login doppler
-```
-
-Or, from this repository after building:
-
-```sh
-node dist/bin/resenv.cjs login doppler
+npx --no-install resenv login doppler
 ```
 
 Each developer authenticates with their own Doppler access. Secret reads use
@@ -49,7 +55,9 @@ and stops; it does not open a login prompt.
 
 Native login uses the browser flow observed in Doppler's official MCP client
 and saves the token in macOS Keychain or Linux Secret Service. The CLI is a
-fallback; the browser protocol is not a public OAuth contract. See
+fallback; the browser protocol is not a public OAuth contract and fresh native
+login is not yet verified end to end. Windows needs `DOPPLER_TOKEN` because
+native login/storage is not implemented there. See
 [Doppler login and platform details](docs/doppler.md).
 
 ### 2. Declare references in the environment your app already loads
@@ -81,7 +89,7 @@ imports execute. It infers Doppler from the value, so no provider flag is needed
 Alternatively, wrap a command whose environment is already populated:
 
 ```sh
-resenv run -- node app.mjs
+npx --no-install resenv run -- node app.mjs
 ```
 
 The wrapper supplies resolved values to the child process. It inherits
@@ -182,43 +190,7 @@ text and provider responses; no log files are created.
 options containing credentials. resenv blocks its subprocess operations with
 `UNSAFE_DEBUG_LOGGING` in that mode. Use `NODE_DEBUG=resenv` instead.
 
-## Install the private package
-
-From this repository:
-
-```sh
-npm ci --ignore-scripts
-npm run build
-npm run pack:local
-```
-
-In a consuming project, install the resulting archive using its actual path:
-
-```sh
-npm install --save-exact --ignore-scripts /path/to/ciqol-resenv-0.1.0-beta.1.tgz
-```
-
-This records the dependency in that project's manifest and lockfile. A local
-archive must be available wherever that project installs dependencies. Package
-overrides do not propagate to consumers; check the installed tree against the
-[dependency review](docs/dependencies.md). Keep distributed archives immutable.
-
-### Local use without changing CI
-
-Link this checkout's built `dist/` directory at the consumer's ignored
-`node_modules/@ciqol/resenv`, retaining any existing installation first. Keep
-references in an ignored `.env.serve.local` and the application's target edit
-local. The consumer's manifests, lockfile and CI stay unchanged.
-
-Rebuild resenv after source changes and restart the application. `npm ci` can
-remove the local link; recreate it to continue using the local build. For login
-with just the package link, run `node node_modules/@ciqol/resenv/bin/resenv.cjs
-login doppler` from the consumer.
-
-## Other implemented modes
-
-These earlier features are still implemented in the private candidate. They are
-separate from the Doppler reference flow above.
+## Commands and encrypted values
 
 - **Opt-in shell commands:** `/resolve-commands` resolves complete `$(command)`
   values through `/bin/sh`. `resenv run --commands -- ...` enables commands
@@ -230,8 +202,8 @@ separate from the Doppler reference flow above.
 - **Dotenvx decryption:** original `encrypted:` values still trigger decryption
   in the resolver, including `/resolve`. They need a matching
   `DOTENV_PRIVATE_KEY` or `DOTENV_PRIVATE_KEY_<name>` in the environment;
-  missing or invalid keys stop startup. This is retained from the earlier
-  encrypted-file approach and is unnecessary for Doppler references.
+  missing or invalid keys stop startup. Doppler references do not need
+  a dotenvx private key.
 
 `/resolve-doppler` is an equivalent name for `/resolve`; `run --doppler` remains
 accepted. New integrations should use the canonical entry points above.
@@ -243,27 +215,7 @@ the child process through `NODE_OPTIONS` or other launch hooks.
 For both modes together, use `resenv run --commands -- ...` or one library call
 with `{ doppler: true, commands: true }`.
 
-## Development
+## Contributing
 
-Library and CLI source use strict TypeScript. Rollup builds CommonJS, ESM
-facades and declarations from the implementation. Both
-formats share an implementation and preload cache. Build and verify with:
-
-```sh
-npm run build
-npm test
-npm run test:package
-```
-
-`npm run verify` runs typed lint, implementation checks, build and tests.
-`npm run release:check` also previews
-the packed file list without publishing. CI tests one built archive across its
-Node and platform matrix.
-
-`npm run bench` measures startup and mocked lookup performance without provider
-access. See the [security and performance review](docs/security-performance-review.md).
-
-Tests use dummy values and provider responses. See [contributing](CONTRIBUTING.md),
-[build contract](docs/build.md), [validation history](docs/validation.md) and
-[release checklist](docs/releasing.md). Publication and repository visibility
-changes require a separate decision.
+For checkout setup, building, testing, trying local changes in another project
+and submitting fixes, see [CONTRIBUTING.md](CONTRIBUTING.md).

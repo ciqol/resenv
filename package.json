@@ -89,8 +89,8 @@
     "test:package": "node test/package-smoke.mjs",
     "test:nx": "node test/nx-interop.mjs",
     "verify": "npm run lint && npm run typecheck && npm run build && npm test && npm run test:package",
-    "release:check": "npm run verify && npm pack ./dist --dry-run --ignore-scripts",
-    "pack:local": "npm pack ./dist --ignore-scripts"
+    "release:check": "npm run verify && npm pack ./dist --dry-run",
+    "pack:local": "npm pack ./dist"
   },
   "dependencies": {
     "eciesjs": "0.5.0"
