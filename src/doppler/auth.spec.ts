@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
+import { createRequire } from 'node:module'
 import { test } from 'vitest'
 import { ResenvError } from '../errors.js'
 import type { Environment } from '../types.js'
+import { isRecord } from '../values.js'
 import { credential, login } from './auth.js'
 import type { Request, RequestOptions } from './http.js'
 import type { CredentialSystem } from './system.js'
@@ -9,6 +11,9 @@ import type { CredentialSystem } from './system.js'
 const token = 'dp.ct.dummy0123456789'
 const failure = (code: string) => new ResenvError(code, 'Dummy failure')
 const challenge = { code: 'dummy_human_code', polling_code: 'dummy_poll_code', auth_url: 'https://dashboard.doppler.com/workplace/auth/cli' }
+const manifest: unknown = createRequire(import.meta.url)('@ciqol/resenv/package.json')
+assert.ok(isRecord(manifest) && typeof manifest.version === 'string')
+const { version } = manifest
 
 type LoginDependencies = NonNullable<Parameters<typeof login>[1]>
 type Event = readonly ['write' | 'browser' | 'output', string] | readonly ['cli'] | readonly ['request', string, RequestOptions | undefined]
@@ -26,7 +31,7 @@ function loginFixture (overrides: Partial<Omit<LoginDependencies, 'system'>> = {
   const request: Request = (path, options) => Promise.resolve().then(() => {
     events.push(['request', path, options])
     if (path.startsWith('/v3/auth/cli/generate/2?')) {
-      assert.match(new URLSearchParams(path.split('?')[1] || '').get('version') || '', /^v\d+\.\d+\.\d+$/)
+      assert.equal(new URLSearchParams(path.split('?')[1] || '').get('version'), `v${version}`)
       return challenge
     }
     assert.equal(path, '/v3/auth/cli/authorize')

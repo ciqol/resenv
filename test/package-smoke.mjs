@@ -79,6 +79,7 @@ try {
   const packageRoot = join(directory, 'node_modules/@ciqol/resenv')
   const manifest = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'))
   assert.equal(manifest.private, true)
+  assert.deepEqual(manifest.publishConfig, source.publishConfig)
   assert.equal(manifest.name, source.name)
   assert.equal(manifest.version, source.version)
   assert.equal(manifest.license, source.license)

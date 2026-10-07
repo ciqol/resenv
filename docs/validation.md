@@ -1,5 +1,39 @@
 # Validation
 
+## First beta preparation - 2026-10-07
+
+The `titan/beta` candidate uses `0.1.0-beta.1` in the development manifest,
+lockfile and generated distribution manifest. Both manifests remain private;
+the intended npm channel is explicitly `beta`. No package, release or tag has
+been published. The first stable version remains `0.1.0`.
+
+`npm run release:check` passed on Node 24.19.0: lint, strict source/spec type
+checks, dual-format build, all 65 Vitest unit tests, all 40 process tests, 13
+installed-package runtime probes and both typed consumers. The pack dry run
+reported the beta name/version and 60 files. The installed-package check also
+verifies that the generated manifest retains the intended registry/channel.
+
+Preparation exposed a stable-only version assertion in the login fixture. It
+now checks the exact manifest version, including its prerelease suffix.
+Generated coverage output is excluded from lint so collecting coverage does
+not change subsequent lint results.
+
+The workflow parsed successfully and its branch filters, read-only permissions,
+timeouts and credential-free checkouts passed structural checks. Push validation
+now covers `titan/beta` and GitHub's observed default branch,
+`titan/prepare-first-release`.
+
+Gitleaks scanned all local Git refs with redacted output. Its nine detections
+were reviewed as synthetic token fixtures in current and older tests. No real
+credential was identified. No tracked dotenv/key/archive files or personal
+absolute paths were found in the reviewed history. The previously distributed
+`0.1.0` archive retained its recorded SHA-256. These checks do not establish that
+the repository is free of every possible sensitive value.
+
+The registry lookup returned 404, and local npm identity was unavailable
+(`ENEEDAUTH`). License approval, verified npm publishing access and the release
+publishing workflow remain outstanding. See [release preparation](releasing.md).
+
 ## Colocated Vitest specs - 2026-10-07
 
 Unit tests now live beside their source modules as `*.spec.ts` and run with

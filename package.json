@@ -1,9 +1,14 @@
 {
   "name": "@ciqol/resenv",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.1",
   "private": true,
   "description": "Replace environment references with their resolved values at application startup",
   "license": "UNLICENSED",
+  "publishConfig": {
+    "access": "public",
+    "tag": "beta",
+    "registry": "https://registry.npmjs.org/"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ciqol/resenv.git"

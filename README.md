@@ -20,8 +20,9 @@ Resolution happens once at startup. It does not watch the provider for changes;
 restart the application to fetch updated values. No filename is passed to
 resenv, and dotenv files are never rewritten.
 
-The first public release is planned as **0.1.0**. The repository is still private
-and the package is unpublished. Requires Node.js 20 or later. See
+The first prerelease candidate is **0.1.0-beta.1** on `titan/beta`; the first
+stable release is planned as **0.1.0**. The repository is still private and the
+package is unpublished. Requires Node.js 20 or later. See
 [private installation](#install-the-private-package) and the
 [release preparation](docs/releasing.md).
 
@@ -194,7 +195,7 @@ npm run pack:local
 In a consuming project, install the resulting archive using its actual path:
 
 ```sh
-npm install --save-exact --ignore-scripts /path/to/ciqol-resenv-0.1.0.tgz
+npm install --save-exact --ignore-scripts /path/to/ciqol-resenv-0.1.0-beta.1.tgz
 ```
 
 This records the dependency in that project's manifest and lockfile. A local

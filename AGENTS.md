@@ -5,7 +5,8 @@ both package manifests `private: true`, and the package unpublished until the
 user explicitly approves release. The license remains `UNLICENSED` pending a
 separate license choice.
 
-The requested first public version is 0.1.0. Earlier versions were unpublished
+The first prerelease candidate is 0.1.0-beta.1 on `titan/beta`; the requested
+first stable public version remains 0.1.0. Earlier versions were unpublished
 prototypes; preserve their archives and validation history. Hold PR creation,
 public visibility, tags and publishing until explicitly requested. The release
 preparation and settings decisions are recorded in `docs/releasing.md`.
@@ -54,7 +55,8 @@ CI builds one archive and all matrix jobs test that same archive through
 Source unit specs run before the CI build; matrix jobs run only higher-level
 tests against that archive and never recompile the source.
 Use `npm run release:check` for the non-publishing preparation check. Keep
-the CI push filter aligned with GitHub's actual default branch.
+the CI push filter aligned with GitHub's actual default branch and `titan/beta`.
+Beta publication must use the `beta` npm dist-tag; never promote it to `latest`.
 
 ## Local consumers
 

@@ -4,7 +4,7 @@ const runtimeFiles = ['src/**/*.ts', 'bin/**/*.ts', 'scripts/**/*.mjs', '*.confi
 const typedRules = Object.assign({}, ...tseslint.configs.recommendedTypeChecked.map(config => config.rules))
 
 export default [
-  { ignores: ['dist/**', 'node_modules/**'] },
+  { ignores: ['dist/**', 'node_modules/**', 'coverage/**', '.vitest/**'] },
   {
     files: runtimeFiles,
     languageOptions: {

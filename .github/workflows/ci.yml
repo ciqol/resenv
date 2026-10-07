@@ -2,8 +2,8 @@ name: CI
 
 on:
   push:
-    # Keep this aligned with GitHub's actual default branch.
-    branches: ['titan/bootstrap-envref']
+    # Validate the current default branch and the prerelease branch.
+    branches: ['titan/prepare-first-release', 'titan/beta']
   pull_request:
   workflow_dispatch:
 

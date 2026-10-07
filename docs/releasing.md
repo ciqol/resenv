@@ -1,12 +1,43 @@
-# First public release: 0.1.0
+# First beta: 0.1.0-beta.1
 
-The first public release will be `@ciqol/resenv@0.1.0`. Earlier version numbers
+The first prerelease candidate is `@ciqol/resenv@0.1.0-beta.1` on `titan/beta`.
+The first stable public release will be `@ciqol/resenv@0.1.0`. Earlier version numbers
 belong to unpublished prototypes; they are not public releases. Existing local
 archives stay unchanged. The root manifest and lockfile now use the requested
-first version, and the build generates the same version into `dist/`.
+beta version, and the build generates the same version into `dist/`.
 
 The repository remains private. Both manifests keep `private: true`, and no
 workflow publishes, creates a release or writes a tag. PR creation is on hold.
+
+## Beta branch and registry channel
+
+`titan/beta` is the release preparation branch. CI runs on pushes to this
+branch and the current default branch, `titan/prepare-first-release`. Creating
+the beta branch does not change the default branch or repository visibility.
+
+The initial version was set with npm's version command, without a Git tag or
+lifecycle scripts. This bootstraps the explicitly chosen first release line;
+subsequent commit-derived version automation remains a launch requirement.
+
+The manifest's `publishConfig` selects the public npm registry and the `beta`
+dist-tag. Once publication is enabled and approved, the protected CI job must
+publish the exact tested archive with `--tag beta --access public`. Consumers
+will install `@ciqol/resenv@beta`; ordinary installs must not select a prerelease
+through `latest`. Stable `0.1.0` needs its own reviewed candidate and promotion.
+
+### Readiness checks - 2026-10-07
+
+- The previous implementation CI passed with 65 source unit tests, 40 process
+  tests and installed-package checks across Linux Node 20/22/24 and macOS
+  Node 24. See [validation](validation.md) for the exact tested commit.
+- The public npm lookup returned 404 for `@ciqol/resenv`. This does not prove
+  the name is available to this account. `npm whoami` returned `ENEEDAUTH`, so
+  npm identity, `ciqol` membership and publishing rights remain unverified.
+- Gitleaks reviewed all local Git refs. Its nine findings are synthetic token
+  fixtures in tests, including older test locations. No real credential was
+  identified; this is a scan result, not a guarantee that none exists.
+- License approval and a private vulnerability reporting channel remain open.
+  Native browser-login and platform limitations below still apply to the beta.
 
 ## Verify the candidate
 
@@ -27,7 +58,7 @@ install and test the supplied archive without rebuilding it. To reproduce that:
 ```sh
 npm run build
 npm run pack:local
-npm run test:package -- ciqol-resenv-0.1.0.tgz
+npm run test:package -- ciqol-resenv-0.1.0-beta.1.tgz
 ```
 
 The CI artifact is named `resenv-package` and is kept for seven days for review.
@@ -61,14 +92,15 @@ license requires rebuilding and rechecking it before approval.
 
 ## Versioning and publishing
 
-The first `0.1.0` version is explicitly requested, so it is prepared without a
+The first stable `0.1.0` version is explicitly requested, so the beta is prepared without a
 Git tag or registry operation. Do not create fake release tags for the prototype
 history. The reference client's semantic-release setup cannot be copied
 unchanged: its normal initial release does not support a `0.x` starting
 version. See the [semantic-release FAQ](https://semantic-release.org/support/faq/).
 
 Choose and review the version automation before enabling publication, including
-a dry run that reports exactly `0.1.0` and a tested policy for subsequent `0.x`
+a dry run that reports `0.1.0-beta.1` on `titan/beta`, keeps the `beta` dist-tag,
+and follows a tested policy for subsequent prereleases and stable `0.x`
 versions. No release-tool dependency or unattended publishing job is installed
 by this preparation.
 
@@ -91,7 +123,7 @@ settings, not changes made to GitHub:
 
 | Setting | resenv now | Proposed |
 | --- | --- | --- |
-| Default branch | `titan/bootstrap-envref` | `main`, after reviewing the branch transition |
+| Default branch | `titan/prepare-first-release` | `main`, after reviewing the branch transition |
 | Merge methods | Merge, rebase, squash | Squash only |
 | Squash message | Not reviewed | PR title and commit details |
 | Delete merged branches | Off | On |
@@ -122,11 +154,12 @@ push branch filter in the same transition.
   data, and grouped weekly dependency-update configuration.
 
 The library and CLI now use TypeScript with Rollup's TypeScript plugin, generated
-declarations and strict implementation checks. The Node test runner remains.
+declarations and strict implementation checks. Colocated TypeScript unit specs
+use Vitest; process tests use Node's test runner against the compiled archive.
 The client's Jest setup, Docker service, coverage-upload permissions, commit
 hooks and automatic publishing are not requirements for this resolver.
 
-## Draft 0.1.0 release notes
+## Draft 0.1.0-beta.1 release notes
 
 - Resolve Doppler references already loaded in `process.env` before application
   startup, preserving the caller's dotenv loading and precedence.
@@ -139,3 +172,8 @@ hooks and automatic publishing are not requirements for this resolver.
 
 Finalize the notes after the license and decryption-scope decisions. The native
 login compatibility and platform limits must remain visible in the first release.
+This is an experimental prerelease. Native login relies on the browser protocol
+observed in Doppler's official MCP client, and a fresh login is not yet verified
+end to end. Linux credential-store integration has mock coverage; Windows native
+login and storage are not implemented. Explicit tokens and existing CLI login
+remain supported. Read [SECURITY.md](../SECURITY.md) before use.
