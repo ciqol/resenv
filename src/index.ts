@@ -98,9 +98,7 @@ function resolveEnv (env: Readonly<Environment> = process.env, options: ResolveO
   const commandReferences = options.commands === true
     ? Object.values(snapshot).filter(value => typeof value === 'string' && value.includes('$(')).length
     : 0
-  const dopplerCount = options.doppler === true
-    ? Object.values(snapshot).filter(value => typeof value === 'string' && value.startsWith('doppler://')).length
-    : 0
+  const dopplerCount = Object.values(snapshot).filter(value => typeof value === 'string' && value.startsWith('doppler://')).length
   const total = commandReferences + entries.length + dopplerCount
   if (total === 0) {
     if (inPlace) replaceEnvironment(env, snapshot)
@@ -110,7 +108,7 @@ function resolveEnv (env: Readonly<Environment> = process.env, options: ResolveO
 
   try {
     // Reject invalid references before any optional command can have effects.
-    const dopplerEntries = options.doppler === true ? references(snapshot) : []
+    const dopplerEntries = references(snapshot)
     const resolved = options.commands === true
       ? resolveCommands(snapshot, options, debug)
       : copyEnvironment(snapshot)

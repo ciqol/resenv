@@ -1,8 +1,15 @@
 import assert from 'node:assert/strict'
-import { test } from 'vitest'
+import { beforeEach, test, vi } from 'vitest'
 import { PrivateKey, encrypt, ECIES_CONFIG } from 'eciesjs'
 import type { Environment } from './types.js'
 import { ResenvError, resolveEnv, formatError } from './index.js'
+import { resolveDopplerSync } from './doppler/bridge.js'
+
+vi.mock('./doppler/bridge.js', () => ({ resolveDopplerSync: vi.fn() }))
+
+beforeEach(() => {
+  vi.mocked(resolveDopplerSync).mockReset()
+})
 
 function fixture (plaintext: string | Buffer = 'dummy-value') {
   const key = new PrivateKey()
@@ -167,4 +174,59 @@ test('in-place resolution preserves writable property flags and rejects setters 
 test('commands require explicit opt-in and ignore an environment toggle', () => {
   const env = { TOKEN: '$(must-not-run)', RESENV_COMMANDS: 'true' }
   assert.deepEqual({ ...resolveEnv(env) }, env)
+})
+
+test('infers Doppler in default, explicit copy and in-place modes', () => {
+  const reference = 'doppler://dummy/dev/API_KEY'
+  for (const options of [undefined, {}, { inPlace: false }, { inPlace: true }]) {
+    vi.mocked(resolveDopplerSync).mockReset().mockReturnValue({ TOKEN: 'dummy-cloud' })
+    const env = { TOKEN: reference, DOPPLER_TOKEN: 'dummy-token', PORT: '3000' }
+    const result = resolveEnv(env, options)
+    assert.equal(result.TOKEN, 'dummy-cloud')
+    assert.equal(result.PORT, '3000')
+    assert.notEqual(result, env)
+    assert.equal(env.TOKEN, options?.inPlace ? 'dummy-cloud' : reference)
+    assert.deepEqual(vi.mocked(resolveDopplerSync).mock.calls, [[{ TOKEN: reference, DOPPLER_TOKEN: 'dummy-token' }]])
+  }
+})
+
+test('no references skip cloud resolution and preserve command expressions by default', () => {
+  const env = { TOKEN: '$(must-not-run)', URL: 'https://example.invalid/', EMPTY: '', UNSET: undefined }
+  assert.deepEqual({ ...resolveEnv(env) }, env)
+  assert.equal(vi.mocked(resolveDopplerSync).mock.calls.length, 0)
+})
+
+test('invalid inferred references fail before optional commands execute', () => {
+  const env = { TOKEN: 'doppler://missing-config', COMMAND: '$(must-not-run)' }
+  assert.throws(() => resolveEnv(env, { commands: true, inPlace: true }), (err: unknown) => {
+    assert.ok(err instanceof ResenvError)
+    assert.equal(err.code, 'DOPPLER_INVALID_REFERENCE')
+    return true
+  })
+  assert.equal(env.COMMAND, '$(must-not-run)')
+  assert.equal(vi.mocked(resolveDopplerSync).mock.calls.length, 0)
+})
+
+test('inferred cloud resolution failures never replace the input', () => {
+  vi.mocked(resolveDopplerSync).mockImplementation(() => { throw new ResenvError('DOPPLER_ACCESS_DENIED', 'Dummy access denied') })
+  const env = { TOKEN: 'doppler://dummy/dev/API_KEY' }
+  assert.throws(() => resolveEnv(env, { inPlace: true }), ResenvError)
+  assert.equal(env.TOKEN, 'doppler://dummy/dev/API_KEY')
+})
+
+test('cloud keys can decrypt original values while all cloud output remains literal', () => {
+  const { privateKey, ciphertext } = fixture()
+  for (const literal of ['doppler://dummy/dev/DO_NOT_FETCH', '$(must-not-run)', 'encrypted:not-ciphertext']) {
+    vi.mocked(resolveDopplerSync).mockReset().mockReturnValue({ DOTENV_PRIVATE_KEY: privateKey, LITERAL: literal })
+    const env = {
+      DOTENV_PRIVATE_KEY: 'doppler://dummy/dev/PRIVATE_KEY',
+      LITERAL: 'doppler://dummy/dev/LITERAL',
+      TOKEN: ciphertext
+    }
+    const result = resolveEnv(env, { commands: true })
+    assert.equal(result.TOKEN, 'dummy-value')
+    assert.equal(result.LITERAL, literal)
+    assert.equal(env.TOKEN, ciphertext)
+    assert.equal(vi.mocked(resolveDopplerSync).mock.calls.length, 1)
+  }
 })

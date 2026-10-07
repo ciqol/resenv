@@ -47,7 +47,7 @@ async function main (): Promise<void> {
   let env
   try {
     assertNoPreload()
-    env = resolveEnv(process.env, { doppler: true, commands })
+    env = resolveEnv(process.env, { commands })
   } catch (err) {
     process.stderr.write(`${formatError(err)}\n`)
     process.exitCode = 1

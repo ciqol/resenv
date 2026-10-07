@@ -7,7 +7,8 @@ restart the application to fetch changed secrets. This mode does not execute
 shell commands.
 The canonical `--require @ciqol/resenv/resolve` preload infers Doppler from
 `doppler://` values. The equivalent `--import` and `resenv run -- ...` do the
-same. The library accepts `{ doppler: true }`. `resolve-doppler` and
+same. The library also infers Doppler from values; call `resolveEnv()` without
+a provider option. `resolve-doppler` and
 `run --doppler` remain supported for compatibility.
 
 ## Local setup

@@ -14,13 +14,13 @@ export function resolvePreload (mode: PreloadMode): void {
   try {
     // A second mode could interpret data fetched by the first as executable input.
     if (activeMode && activeMode !== mode) {
-      throw new ResenvError('CONFLICTING_PRELOADS', 'Use one resenv preload per process. To combine Doppler and commands, use resenv run --commands or one library call with both options enabled.')
+      throw new ResenvError('CONFLICTING_PRELOADS', 'Use one resenv preload per process. To combine Doppler and commands, use resenv run --commands or one library call with commands enabled.')
     }
     if (activeMode) {
       return
     }
     activeMode = mode
-    resolveEnv(process.env, { inPlace: true, ...(mode === 'commands' ? { commands: true } : { doppler: true }) })
+    resolveEnv(process.env, { inPlace: true, commands: mode === 'commands' })
   } catch (err) {
     process.stderr.write(`${formatError(err)}\n`)
     process.exit(1)

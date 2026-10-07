@@ -154,10 +154,10 @@ importing modules that read configuration:
 ```js
 import { resolveEnv } from '@ciqol/resenv'
 
-const childEnv = resolveEnv(process.env, { doppler: true })
+const childEnv = resolveEnv()
 
 // Also replace values in process.env; the returned copy can be ignored.
-resolveEnv(process.env, { doppler: true, inPlace: true })
+resolveEnv(process.env, { inPlace: true })
 ```
 
 `resolveEnv(env = process.env, options = {})` always returns a new resolved
@@ -165,8 +165,15 @@ environment. `inPlace` defaults to `false`, leaving the input unchanged. With
 `inPlace: true`, it also replaces values in the input after every lookup succeeds;
 the return value is still an independent copy.
 
-The library currently requires `{ doppler: true }`; the `/resolve` preload and
-`run` command enable it automatically. CommonJS uses the same API through
+Providers are inferred from each original value, just as with `/resolve` and
+`run`. Doppler is the only supported cloud provider today. No options are
+required: without references, the result is an unchanged copy and no credentials
+are accessed. An environment can contain several references, including different
+Doppler projects/configs. Each value selects its own source; a command can supply
+a Doppler token, and Doppler can supply a decryption key. Commands still require
+`commands: true`. Returned secret values are never interpreted again.
+
+CommonJS uses the same API through
 `require('@ciqol/resenv')`. Both formats share the `ResenvError` class, whose
 `code` identifies the failure. CLI and preload failures exit with a safe message.
 
@@ -202,8 +209,8 @@ options containing credentials. resenv blocks its subprocess operations with
 
 - **Opt-in shell commands:** `/resolve-commands` resolves complete `$(command)`
   values through `/bin/sh`. `resenv run --commands -- ...` enables commands
-  alongside Doppler references. The command preload itself does not enable
-  Doppler. Use only trusted configuration; commands run with your permissions.
+  alongside inferred Doppler references, as does the command preload. Use only
+  trusted configuration; commands run with your permissions.
   Commands have closed stdin, a 30-second timeout and a 64 KiB combined output
   limit. Trailing LF characters are removed; fetched output stays literal.
   Embedded forms such as `prefix$(command)suffix` are unsupported.
@@ -221,7 +228,7 @@ or combining a preload with `resenv run` fails with `CONFLICTING_PRELOADS` to
 prevent reinterpreting fetched values. Do not configure a second resolver in
 the child process through `NODE_OPTIONS` or other launch hooks.
 For both modes together, use `resenv run --commands -- ...` or one library call
-with `{ doppler: true, commands: true }`.
+with `{ commands: true }`.
 
 ## Contributing
 

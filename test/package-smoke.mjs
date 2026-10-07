@@ -167,10 +167,12 @@ try {
     import '@ciqol/resenv/resolve';
     import '@ciqol/resenv/resolve-commands';
     import '@ciqol/resenv/resolve-doppler';
-    const options: ResolveOptions = { commands: true, doppler: true, commandTimeoutMs: 1000 };
+    const options: ResolveOptions = { commands: true, commandTimeoutMs: 1000 };
     const env: Environment = resolveEnv({ TOKEN: 'plain' }, options);
     const updated: Environment = resolveEnv(env, { inPlace: true });
     const message: string = formatError(new ResenvError('DUMMY', 'dummy'));
+    // @ts-expect-error provider selection is inferred from values
+    resolveEnv(env, { doppler: true });
     // @ts-expect-error command opt-in must be boolean
     resolveEnv(env, { commands: 'yes' });
     // @ts-expect-error in-place opt-in must be boolean

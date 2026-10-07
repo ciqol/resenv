@@ -21,7 +21,8 @@ preparation and settings decisions are recorded in `docs/releasing.md`.
   checks import compiled modules or exercise the packed artifact.
 - Edit `src/`, `bin/`, tests and docs; regenerate `dist/` with `npm run build`.
 - `@ciqol/resenv/resolve` is the canonical preload. Infer providers from values
-  already in `process.env`. Let Nx or the caller choose and load dotenv files.
+  already in the environment, including library calls without options. Let Nx or
+  the caller choose and load dotenv files.
 - Keep one public `resolveEnv()` function. Always return an independent resolved
   copy; replace input values only when `inPlace: true` is explicitly enabled.
   The Node preloads enable replacement; the CLI uses the returned copy.

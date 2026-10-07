@@ -48,7 +48,7 @@ Different automatic preload modes cannot be combined in one process. Otherwise
 the second mode could execute or decrypt literal data fetched by the first.
 Combining a preload with the CLI is rejected for the same reason. Do not add
 another resolver to the child through `NODE_OPTIONS` or other launch hooks.
-Use one `resenv run --commands` invocation or one library call with both options
+Use one `resenv run --commands` invocation or one library call with commands
 enabled to resolve cloud references and commands together. Repeated manual
 library calls are separate operations; only pass original configuration to them.
 

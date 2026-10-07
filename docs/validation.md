@@ -1,5 +1,22 @@
 # Validation
 
+## Inferred provider selection - 2026-10-08
+
+`resolveEnv()` now infers Doppler from original `doppler://` values without a
+provider option, matching the canonical preload and CLI. The `doppler` option
+is removed. Copy mode remains the default; `inPlace: true` commits replacements
+only after success. `commands: true` explicitly permits shell execution, including
+commands that supply a Doppler token in the same resolution pass.
+
+Lint, strict source/spec checks, the dual-format build, 73 Vitest unit tests and
+43 process tests passed on Node 24.19.0. The packed package passed 16 runtime
+probes and two typed consumers. Consumer compilation rejects the removed
+`doppler` option and non-boolean replacement/command options. Added checks cover
+library defaults in CommonJS and ESM, no-reference startup without credential
+access, invalid references before command execution, atomic cloud failures,
+cloud-provided decryption keys and literal cloud output with commands enabled.
+All provider requests use isolated stubs and dummy credentials.
+
 ## Unified resolver API - 2026-10-08
 
 The public API exposes one `resolveEnv(env = process.env, options = {})`

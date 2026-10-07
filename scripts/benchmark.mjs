@@ -27,7 +27,7 @@ for (let i = 0; i < 23; i++) {
 const noWork = []
 for (let i = 0; i < 5000; i++) {
   const start = performance.now()
-  resolveEnv(env, { doppler: true })
+  resolveEnv(env)
   noWork.push(performance.now() - start)
 }
 

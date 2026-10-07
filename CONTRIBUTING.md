@@ -35,6 +35,10 @@ compiled output and installed packages. Tests use generated keys and dummy comma
 Never use real secrets in fixtures, terminal output, screenshots, issues, or
 pull requests.
 
+Provider detection belongs to the original environment values, including library
+calls without options. Keep shell execution behind `commands: true`, preserve
+literal fetched output, and validate references before any command runs.
+
 ESLint applies rules that use type information to the TypeScript implementation and specs
 and checks the JavaScript build tooling.
 Use `npm run lint:fix` for available automatic fixes; preserve the repository's

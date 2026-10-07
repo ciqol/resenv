@@ -18,7 +18,7 @@ test('matching preloads resolve once and pass the selected mode', async () => {
   resolvePreload('doppler')
   expect(resolveEnv).toHaveBeenCalledTimes(1)
   expect(vi.mocked(resolveEnv).mock.calls[0]?.[0] === process.env).toBe(true)
-  expect(vi.mocked(resolveEnv).mock.calls[0]?.[1]).toEqual({ inPlace: true, doppler: true })
+  expect(vi.mocked(resolveEnv).mock.calls[0]?.[1]).toEqual({ inPlace: true, commands: false })
 })
 
 test('an active preload blocks the CLI from resolving values again', async () => {
