@@ -55,7 +55,7 @@ library calls are separate operations; only pass original configuration to them.
 Provider responses must be valid UTF-8 and JSON, and resolved strings must not
 contain lone Unicode surrogates or null bytes. In-place replacement preflights
 all changed properties; read-only properties, setters and Proxy targets are
-rejected before any values are committed. Use `resolveEnv()` to obtain a copy
+rejected before any values are committed. Use `resolve()` to obtain a copy
 when the input is not a writable environment record.
 
 The private prototype has not had an independent security audit. Validation

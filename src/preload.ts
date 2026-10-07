@@ -1,4 +1,4 @@
-import { ResenvError, resolveEnv, formatError } from './index.js'
+import { ResenvError, resolve, formatError } from './index.js'
 
 type PreloadMode = 'commands' | 'doppler'
 
@@ -20,7 +20,7 @@ export function resolvePreload (mode: PreloadMode): void {
       return
     }
     activeMode = mode
-    resolveEnv(process.env, { inPlace: true, commands: mode === 'commands' })
+    resolve(process.env, { replace: true, commands: mode === 'commands' })
   } catch (err) {
     process.stderr.write(`${formatError(err)}\n`)
     process.exit(1)

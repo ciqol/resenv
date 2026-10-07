@@ -1,5 +1,20 @@
 # Validation
 
+## Concise resolver API - 2026-10-08
+
+The public function is now `resolve(env = process.env, options = {})`.
+`replace: true` opts into updating the input; the default remains `false`, and
+successful calls always return an independent copy. The earlier `resolveEnv`
+name and `inPlace` option are removed from this unpublished candidate. Preload
+paths remain unchanged. Shell commands remain explicit opt-in trusted code;
+provider output is never evaluated recursively.
+
+Lint, strict source/spec type checks, the dual-format build, 73 unit tests,
+43 process tests, 16 installed-package runtime probes and two typed consumers
+passed on Node 24.19.0. Consumer tests reject the removed function and option,
+check the shared CommonJS/ESM export, and enforce boolean `replace` values.
+
+
 ## Inferred provider selection - 2026-10-08
 
 `resolveEnv()` now infers Doppler from original `doppler://` values without a

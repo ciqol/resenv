@@ -69,8 +69,8 @@ Consumer compilation checks both formats, including invalid inputs that must
 remain type errors.
 
 Public options use type aliases and readonly properties. `Environment` stays
-mutable for optional in-place replacement. `resolveEnv()` always returns a new
-`Environment`, with input replacement enabled only by `{ inPlace: true }`. It
+mutable for optional in-place replacement. `resolve()` always returns a new
+`Environment`, with input replacement enabled only by `{ replace: true }`. It
 does not preserve a generic input type: resolved strings cannot retain a
 literal reference type. This intentionally tightens the unpublished API.
 ESLint uses type information and enforces the selected style rules. The compiler

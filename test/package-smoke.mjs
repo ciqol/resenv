@@ -113,11 +113,11 @@ try {
   const probes = [
     ['--require', '@ciqol/resenv/resolve', '-e', check],
     ['--import', '@ciqol/resenv/resolve', '-e', check],
-    ['-e', `const result = require('@ciqol/resenv').resolveEnv(); if (result.TOKEN !== 'dummy-package-secret' || result === process.env || !process.env.TOKEN.startsWith('encrypted:')) throw new Error('Default resolution must return a copy without replacing the input')`],
-    ['--input-type=module', '-e', `import { resolveEnv } from '@ciqol/resenv'; const result = resolveEnv(); if (result.TOKEN !== 'dummy-package-secret' || result === process.env || !process.env.TOKEN.startsWith('encrypted:')) throw new Error('Default resolution must return a copy without replacing the input')`],
-    ['-e', `require('@ciqol/resenv').resolveEnv(process.env, { inPlace: true }); ${check}`],
-    ['-e', `global.document = { baseURI: 'https://example.invalid/' }; require('@ciqol/resenv').resolveEnv(process.env, { inPlace: true }); ${check}`],
-    ['--input-type=module', '-e', `import { resolveEnv } from '@ciqol/resenv'; resolveEnv(process.env, { inPlace: true }); ${check}`],
+    ['-e', `const result = require('@ciqol/resenv').resolve(); if (result.TOKEN !== 'dummy-package-secret' || result === process.env || !process.env.TOKEN.startsWith('encrypted:')) throw new Error('Default resolution must return a copy without replacing the input')`],
+    ['--input-type=module', '-e', `import { resolve } from '@ciqol/resenv'; const result = resolve(); if (result.TOKEN !== 'dummy-package-secret' || result === process.env || !process.env.TOKEN.startsWith('encrypted:')) throw new Error('Default resolution must return a copy without replacing the input')`],
+    ['-e', `require('@ciqol/resenv').resolve(process.env, { replace: true }); ${check}`],
+    ['-e', `global.document = { baseURI: 'https://example.invalid/' }; require('@ciqol/resenv').resolve(process.env, { replace: true }); ${check}`],
+    ['--input-type=module', '-e', `import { resolve } from '@ciqol/resenv'; resolve(process.env, { replace: true }); ${check}`],
     [join(packageRoot, manifest.bin.resenv), 'run', '--', process.execPath, '-e', check],
     ['--require', '@ciqol/resenv/resolve-commands', '-e', `${check}; ${checkCommand}`],
     ['--import', '@ciqol/resenv/resolve-commands', '-e', `${check}; ${checkCommand}`],
@@ -127,8 +127,10 @@ try {
       import { createRequire } from 'node:module';
       import * as esm from '@ciqol/resenv';
       const cjs = createRequire(import.meta.url)('@ciqol/resenv');
-      for (const name of ['ResenvError', 'resolveEnv', 'formatError']) assert.equal(esm[name], cjs[name]);
+      for (const name of ['ResenvError', 'resolve', 'formatError']) assert.equal(esm[name], cjs[name]);
+      assert.equal(Object.hasOwn(esm, 'resolveEnv'), false);
       assert.equal(Object.hasOwn(esm, 'resolveEnvInPlace'), false);
+      assert.equal(Object.hasOwn(cjs, 'resolveEnv'), false);
       assert.equal(Object.hasOwn(cjs, 'resolveEnvInPlace'), false);
       const error = new cjs.ResenvError('DUMMY', 'dummy');
       assert.ok(error instanceof esm.ResenvError);
@@ -162,26 +164,30 @@ try {
   }
 
   const consumer = `
-    import { ResenvError, resolveEnv, formatError } from '@ciqol/resenv';
+    import { ResenvError, resolve, formatError } from '@ciqol/resenv';
     import type { Environment, ResolveOptions } from '@ciqol/resenv';
     import '@ciqol/resenv/resolve';
     import '@ciqol/resenv/resolve-commands';
     import '@ciqol/resenv/resolve-doppler';
     const options: ResolveOptions = { commands: true, commandTimeoutMs: 1000 };
-    const env: Environment = resolveEnv({ TOKEN: 'plain' }, options);
-    const updated: Environment = resolveEnv(env, { inPlace: true });
+    const env: Environment = resolve({ TOKEN: 'plain' }, options);
+    const updated: Environment = resolve(env, { replace: true });
     const message: string = formatError(new ResenvError('DUMMY', 'dummy'));
+    // @ts-expect-error the old mutation option is removed
+    resolve(env, { inPlace: true });
+    // @ts-expect-error the old resolver name is removed
+    import { resolveEnv } from '@ciqol/resenv';
     // @ts-expect-error provider selection is inferred from values
-    resolveEnv(env, { doppler: true });
+    resolve(env, { doppler: true });
     // @ts-expect-error command opt-in must be boolean
-    resolveEnv(env, { commands: 'yes' });
+    resolve(env, { commands: 'yes' });
     // @ts-expect-error in-place opt-in must be boolean
-    resolveEnv(env, { inPlace: 'yes' });
+    resolve(env, { replace: 'yes' });
     // @ts-expect-error environment values must be strings or undefined
-    resolveEnv({ TOKEN: 42 });
+    resolve({ TOKEN: 42 });
     // @ts-expect-error resolver options are immutable
     options.commands = false;
-    const resolvedLiteral = resolveEnv({ TOKEN: 'doppler://dummy/dev/API_KEY' as const }, { inPlace: true });
+    const resolvedLiteral = resolve({ TOKEN: 'doppler://dummy/dev/API_KEY' as const }, { replace: true });
     // @ts-expect-error resolved values cannot retain the original reference's literal type
     const staleLiteral: 'doppler://dummy/dev/API_KEY' = resolvedLiteral.TOKEN;
   `

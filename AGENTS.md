@@ -23,8 +23,8 @@ preparation and settings decisions are recorded in `docs/releasing.md`.
 - `@ciqol/resenv/resolve` is the canonical preload. Infer providers from values
   already in the environment, including library calls without options. Let Nx or
   the caller choose and load dotenv files.
-- Keep one public `resolveEnv()` function. Always return an independent resolved
-  copy; replace input values only when `inPlace: true` is explicitly enabled.
+- Keep one public `resolve()` function. Always return an independent resolved
+  copy; replace input values only when `replace: true` is explicitly enabled.
   The Node preloads enable replacement; the CLI uses the returned copy.
 - Keep arbitrary shell commands explicitly enabled. Fetched and decrypted
   output stays literal, and failures must leave the caller's environment intact.

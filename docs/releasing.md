@@ -92,6 +92,43 @@ license requires rebuilding and rechecking it before approval.
 
 ## Versioning and publishing
 
+### Current status and tool choice - 2026-10-08
+
+Release automation is not configured yet. `release:check` only verifies a
+candidate; pushing `titan/beta` runs CI and does not publish or create a tag.
+
+The requested first stable version remains `0.1.0`. Semantic-release's
+[official FAQ](https://semantic-release.gitbook.io/semantic-release/support/faq)
+states that an initial `0.x` version is unsupported. Its standard first release
+is `1.0.0`, independent of the version written in package.json. Do not seed
+unpublished tags to make it appear that a release already happened.
+
+For the `0.1.0` line, release-please is the proposed alternative: it derives
+versions and changelogs from Conventional Commits, supports pre-major bump
+rules and a beta prerelease strategy, and proposes a release PR for review.
+See its [manifest configuration](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md).
+No tool dependency or release workflow has been added pending that choice.
+
+If semantic-release is chosen instead, explicitly approve changing the first
+line to `1.0.0-beta.1` / `1.0.0`. Configure `titan/beta` with an explicit
+`prerelease: 'beta'` and `channel: 'beta'`; the branch name includes a slash,
+so it must not be used as the prerelease identifier. Keep the generated
+package directory as the publishing root.
+
+The release sequence, once the tool and launch requirements are settled:
+
+1. Run a non-publishing preview of the commit-derived candidate version and notes.
+2. Generate the distribution manifest for that version, build once, and test
+   the exact archive on the compatibility matrix. Test the publishable manifest
+   before approval; do not change the archive after verification.
+3. Review the candidate, license, package contents, version and checksum.
+4. With publication approved and npm identity/trusted publishing configured,
+   publish that archive from a protected CI job under `beta`, then record the
+   corresponding release and tag. Stable promotion is a separate reviewed release.
+
+Until launch approval, both manifests remain private and every release preview
+must remain non-publishing. No local `npm publish` is part of this workflow.
+
 The first stable `0.1.0` version is explicitly requested, so the beta is prepared without a
 Git tag or registry operation. Do not create fake release tags for the prototype
 history. The reference client's semantic-release setup cannot be copied
@@ -165,8 +202,8 @@ hooks and automatic publishing are not requirements for this resolver.
   startup, preserving the caller's dotenv loading and precedence.
 - Support Node preloads through both `--require` and `--import`, a command
   wrapper, and a typed library API.
-- Expose one `resolveEnv()` API that always returns a copy. Input replacement
-  requires `{ inPlace: true }`; its default is `false`.
+- Expose one `resolve()` API that always returns a copy. Input replacement
+  requires `{ replace: true }`; its default is `false`.
 - Fetch individual values through HTTPS with explicit-token, OS-credential and
   existing-CLI authentication.
 - Keep fetched output literal; apply replacements only after all lookups succeed.

@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process'
 import { constants } from 'node:os'
 import { assertSafeDiagnostics } from '../src/assert-safe-diagnostics.js'
 import { assertNoPreload } from '../src/preload.js'
-import { resolveEnv, formatError } from '../src/index.js'
+import { resolve, formatError } from '../src/index.js'
 import { login } from '../src/doppler/auth.js'
 import { createSystem } from '../src/doppler/system.js'
 import { references } from '../src/doppler/references.js'
@@ -47,7 +47,7 @@ async function main (): Promise<void> {
   let env
   try {
     assertNoPreload()
-    env = resolveEnv(process.env, { commands })
+    env = resolve(process.env, { commands })
   } catch (err) {
     process.stderr.write(`${formatError(err)}\n`)
     process.exitCode = 1

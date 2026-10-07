@@ -78,7 +78,7 @@ test('partial API failure leaves caller untouched and blocks application startup
     SECOND: { status: 403, body: { messages: ['dummy-sensitive-body'] } }
   })
   const env = { FIRST: 'doppler://my-app/dev/FIRST', SECOND: 'doppler://my-app/dev/SECOND', DOPPLER_TOKEN: token }
-  const program = "const {resolveEnv}=require('@ciqol/resenv'); try { resolveEnv(process.env,{inPlace:true}); process.exit(9) } catch(e) { if(e.code!=='DOPPLER_ACCESS_DENIED'||!process.env.FIRST.startsWith('doppler://')) process.exit(8) }"
+  const program = "const {resolve}=require('@ciqol/resenv'); try { resolve(process.env,{replace:true}); process.exit(9) } catch(e) { if(e.code!=='DOPPLER_ACCESS_DENIED'||!process.env.FIRST.startsWith('doppler://')) process.exit(8) }"
   const result = run(['-e', program], directory, env)
   assert.equal(result.status, 0, result.stderr)
   for (const args of [
@@ -173,7 +173,7 @@ test('no-reference startup needs no credentials or worker and shell commands sta
 test('built library without references never starts the credential worker', t => {
   const { directory, pkg } = fixture(t, {})
   writeFileSync(join(pkg, 'doppler-worker.cjs'), "throw new Error('worker-must-not-start')")
-  const result = run(['-e', "const {resolveEnv}=require('@ciqol/resenv'); const result=resolveEnv(); if(result.TOKEN!==process.env.TOKEN||result===process.env) process.exit(9)"], directory, { TOKEN: '$(must-not-run)', CI: 'true' })
+  const result = run(['-e', "const {resolve}=require('@ciqol/resenv'); const result=resolve(); if(result.TOKEN!==process.env.TOKEN||result===process.env) process.exit(9)"], directory, { TOKEN: '$(must-not-run)', CI: 'true' })
   assert.equal(result.status, 0, result.stderr)
 })
 
@@ -206,10 +206,10 @@ test('noninteractive login and malformed credentials never open a browser or rea
 
 test('built CommonJS and ESM library calls infer cloud references without options', t => {
   const { directory } = fixture(t, { API_KEY: { body: { value: { computed: 'dummy-cloud' } } } })
-  const check = "const result=resolveEnv(); if(result.TOKEN!=='dummy-cloud'||result===process.env||process.env.TOKEN!=='doppler://dummy/dev/API_KEY') process.exit(9)"
+  const check = "const result=resolve(); if(result.TOKEN!=='dummy-cloud'||result===process.env||process.env.TOKEN!=='doppler://dummy/dev/API_KEY') process.exit(9)"
   for (const args of [
-    ['-e', "const {resolveEnv}=require('@ciqol/resenv'); " + check],
-    ['--input-type=module', '-e', "import {resolveEnv} from '@ciqol/resenv'; " + check]
+    ['-e', "const {resolve}=require('@ciqol/resenv'); " + check],
+    ['--input-type=module', '-e', "import {resolve} from '@ciqol/resenv'; " + check]
   ]) {
     const result = run(args, directory, { TOKEN: 'doppler://dummy/dev/API_KEY', DOPPLER_TOKEN: token })
     assert.equal(result.status, 0, result.stderr)
@@ -229,7 +229,7 @@ test('commands opt-in combines original shell and cloud references in one pass',
     ['--require', '@ciqol/resenv/resolve-commands', '-e', check],
     ['--import', '@ciqol/resenv/resolve-commands', '-e', check],
     [join(pkg, 'bin/resenv.cjs'), 'run', '--commands', '--', process.execPath, '-e', check],
-    ['-e', "const {resolveEnv}=require('@ciqol/resenv'); const result=resolveEnv(process.env,{commands:true}); if(result.TOKEN!=='$(must-not-run)'||result.LOCAL!=='dummy-local'||process.env.LOCAL!=='$(printf dummy-local)') process.exit(9)"]
+    ['-e', "const {resolve}=require('@ciqol/resenv'); const result=resolve(process.env,{commands:true}); if(result.TOKEN!=='$(must-not-run)'||result.LOCAL!=='dummy-local'||process.env.LOCAL!=='$(printf dummy-local)') process.exit(9)"]
   ]) {
     const result = run(args, directory, env)
     assert.equal(result.status, 0, result.stderr)

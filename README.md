@@ -152,17 +152,17 @@ Call the library after your loader has populated the environment, before
 importing modules that read configuration:
 
 ```js
-import { resolveEnv } from '@ciqol/resenv'
+import { resolve } from '@ciqol/resenv'
 
-const childEnv = resolveEnv()
+const childEnv = resolve()
 
 // Also replace values in process.env; the returned copy can be ignored.
-resolveEnv(process.env, { inPlace: true })
+resolve(process.env, { replace: true })
 ```
 
-`resolveEnv(env = process.env, options = {})` always returns a new resolved
-environment. `inPlace` defaults to `false`, leaving the input unchanged. With
-`inPlace: true`, it also replaces values in the input after every lookup succeeds;
+`resolve(env = process.env, options = {})` always returns a new resolved
+environment. `replace` defaults to `false`, leaving the input unchanged. With
+`replace: true`, it also replaces values in the input after every lookup succeeds;
 the return value is still an independent copy.
 
 Providers are inferred from each original value, just as with `/resolve` and
@@ -177,7 +177,7 @@ CommonJS uses the same API through
 `require('@ciqol/resenv')`. Both formats share the `ResenvError` class, whose
 `code` identifies the failure. CLI and preload failures exit with a safe message.
 
-Using `inPlace: true` requires `process.env` or writable data properties. A read-only
+Using `replace: true` requires `process.env` or writable data properties. A read-only
 property, setter or Proxy target fails before any replacement is committed.
 Keep the default copy mode for inputs that should remain unchanged. The Node
 preloads enable in-place replacement so application imports see resolved values.
@@ -210,7 +210,9 @@ options containing credentials. resenv blocks its subprocess operations with
 - **Opt-in shell commands:** `/resolve-commands` resolves complete `$(command)`
   values through `/bin/sh`. `resenv run --commands -- ...` enables commands
   alongside inferred Doppler references, as does the command preload. Use only
-  trusted configuration; commands run with your permissions.
+  trusted configuration; commands run with your permissions. A timeout limits
+  execution time, but cannot undo file changes, network requests or other effects.
+  Leave this option disabled when the environment can contain untrusted input.
   Commands have closed stdin, a 30-second timeout and a 64 KiB combined output
   limit. Trailing LF characters are removed; fetched output stays literal.
   Embedded forms such as `prefix$(command)suffix` are unsupported.

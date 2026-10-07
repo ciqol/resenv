@@ -7,8 +7,8 @@ const root = fileURLToPath(new URL('..', import.meta.url))
 const marker = 'dummy-credential-must-not-be-logged'
 const cases = [
   ['commands', ['--input-type=module', '-e', `
-    import { resolveEnv } from './dist/index.mjs';
-    resolveEnv({ TOKEN: '$(printf dummy)', SECRET: process.env.SECRET }, { commands: true });
+    import { resolve } from './dist/index.mjs';
+    resolve({ TOKEN: '$(printf dummy)', SECRET: process.env.SECRET }, { commands: true });
   `]],
   ['Doppler bridge', ['--require', './dist/resolve.cjs', '-e', "throw new Error('application-must-not-start')"]],
   ['CLI child', ['./dist/bin/resenv.cjs', 'run', '--', process.execPath, '-e', "throw new Error('application-must-not-start')"]],
@@ -38,9 +38,9 @@ for (const [name, args] of cases) {
 
 test('cached Node debug state cannot be bypassed by changing process.env', () => {
   const result = spawnSync(process.execPath, ['--input-type=module', '-e', `
-    import { resolveEnv } from './dist/index.mjs';
+    import { resolve } from './dist/index.mjs';
     delete process.env.NODE_DEBUG;
-    resolveEnv({ TOKEN: '$(printf dummy)', SECRET: process.env.SECRET }, { commands: true });
+    resolve({ TOKEN: '$(printf dummy)', SECRET: process.env.SECRET }, { commands: true });
   `], { cwd: root, env: { NODE_DEBUG: 'child_process', SECRET: marker }, encoding: 'utf8', timeout: 10000 })
   assert.equal(result.status, 1)
   assert.match(result.stderr, /UNSAFE_DEBUG_LOGGING/)

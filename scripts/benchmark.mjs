@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process'
 import { performance } from 'node:perf_hooks'
 import { setTimeout as delay } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
-import { resolveEnv } from '../dist/index.mjs'
+import { resolve } from '../dist/index.mjs'
 import { resolveReferences } from '../dist/doppler/resolve.cjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -27,7 +27,7 @@ for (let i = 0; i < 23; i++) {
 const noWork = []
 for (let i = 0; i < 5000; i++) {
   const start = performance.now()
-  resolveEnv(env)
+  resolve(env)
   noWork.push(performance.now() - start)
 }
 

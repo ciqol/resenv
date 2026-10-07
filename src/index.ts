@@ -86,10 +86,10 @@ function decryptValue (name: string, value: string, keys: readonly string[]): st
 }
 
 /** Always return a resolved copy; optionally commit replacements to the input. */
-function resolveEnv (env: Readonly<Environment> = process.env, options: ResolveOptions = {}): Environment {
-  const inPlace = options.inPlace === true
+function resolve (env: Readonly<Environment> = process.env, options: ResolveOptions = {}): Environment {
+  const replace = options.replace === true
   // Proxy traps can fail during a later write after earlier values were changed.
-  if (inPlace && types.isProxy(env)) {
+  if (replace && types.isProxy(env)) {
     throw new ResenvError('INVALID_ENV_TARGET', 'In-place resolution requires process.env or a record with writable data properties, not a Proxy.')
   }
   const snapshot = copyEnvironment(env)
@@ -101,7 +101,7 @@ function resolveEnv (env: Readonly<Environment> = process.env, options: ResolveO
   const dopplerCount = Object.values(snapshot).filter(value => typeof value === 'string' && value.startsWith('doppler://')).length
   const total = commandReferences + entries.length + dopplerCount
   if (total === 0) {
-    if (inPlace) replaceEnvironment(env, snapshot)
+    if (replace) replaceEnvironment(env, snapshot)
     debug('Nothing to handle.')
     return snapshot
   }
@@ -140,7 +140,7 @@ function resolveEnv (env: Readonly<Environment> = process.env, options: ResolveO
         }
       }
     }
-    if (inPlace) replaceEnvironment(env, resolved)
+    if (replace) replaceEnvironment(env, resolved)
     debug('Done: replaced %d secret value(s).', total)
     return resolved
   } catch (err) {
@@ -170,4 +170,4 @@ function formatError (error: unknown): string {
   return '[resenv] STARTUP_FAILED: Environment resolution failed.'
 }
 
-export { ResenvError, resolveEnv, formatError }
+export { ResenvError, resolve, formatError }

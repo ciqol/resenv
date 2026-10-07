@@ -161,8 +161,8 @@ Preserve all-or-nothing environment updates, strict failures, explicit command
 opt-in and literal handling of resolved values. Update the public API types and
 documentation together with behavior changes.
 
-Keep one public resolver, `resolveEnv()`. It always returns an independent
-resolved copy and replaces input values only with `{ inPlace: true }`. Preloads
+Keep one public resolver, `resolve()`. It always returns an independent
+resolved copy and replaces input values only with `{ replace: true }`. Preloads
 enable that option; the CLI passes the returned copy to its child process.
 
 Add regression tests for changed behavior and avoid real provider calls. Use
