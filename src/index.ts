@@ -85,8 +85,13 @@ function decryptValue (name: string, value: string, keys: readonly string[]): st
   throw new ResenvError('DECRYPTION_FAILED', `Could not decrypt ${variableName(name)} with the supplied private keys.`)
 }
 
-/** Resolve a copy of the environment; never read dotenv files. */
+/** Always return a resolved copy; optionally commit replacements to the input. */
 function resolveEnv (env: Readonly<Environment> = process.env, options: ResolveOptions = {}): Environment {
+  const inPlace = options.inPlace === true
+  // Proxy traps can fail during a later write after earlier values were changed.
+  if (inPlace && types.isProxy(env)) {
+    throw new ResenvError('INVALID_ENV_TARGET', 'In-place resolution requires process.env or a record with writable data properties, not a Proxy.')
+  }
   const snapshot = copyEnvironment(env)
   // Only original ciphertext is decrypted. Fetched secrets remain literal data.
   const entries = Object.entries(snapshot).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1].startsWith(PREFIX))
@@ -98,6 +103,7 @@ function resolveEnv (env: Readonly<Environment> = process.env, options: ResolveO
     : 0
   const total = commandReferences + entries.length + dopplerCount
   if (total === 0) {
+    if (inPlace) replaceEnvironment(env, snapshot)
     debug('Nothing to handle.')
     return snapshot
   }
@@ -136,6 +142,7 @@ function resolveEnv (env: Readonly<Environment> = process.env, options: ResolveO
         }
       }
     }
+    if (inPlace) replaceEnvironment(env, resolved)
     debug('Done: replaced %d secret value(s).', total)
     return resolved
   } catch (err) {
@@ -144,13 +151,7 @@ function resolveEnv (env: Readonly<Environment> = process.env, options: ResolveO
   }
 }
 
-/** Commit replacements only after all enabled resolution succeeds. */
-function resolveEnvInPlace (env: Environment = process.env, options: ResolveOptions = {}): Environment {
-  // Proxy traps can fail during a later write after earlier values were changed.
-  if (types.isProxy(env)) {
-    throw new ResenvError('INVALID_ENV_TARGET', 'In-place resolution requires process.env or a record with writable data properties, not a Proxy.')
-  }
-  const resolved = resolveEnv(env, options)
+function replaceEnvironment (env: Readonly<Environment>, resolved: Readonly<Environment>): void {
   const updates: [string, PropertyDescriptor][] = []
   for (const [name, value] of Object.entries(resolved)) {
     const descriptor = Object.getOwnPropertyDescriptor(env, name)
@@ -164,7 +165,6 @@ function resolveEnvInPlace (env: Environment = process.env, options: ResolveOpti
   for (const [name, descriptor] of updates) {
     Object.defineProperty(env, name, descriptor)
   }
-  return env
 }
 
 function formatError (error: unknown): string {
@@ -172,4 +172,4 @@ function formatError (error: unknown): string {
   return '[resenv] STARTUP_FAILED: Environment resolution failed.'
 }
 
-export { ResenvError, resolveEnv, resolveEnvInPlace, formatError }
+export { ResenvError, resolveEnv, formatError }

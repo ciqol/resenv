@@ -6,7 +6,7 @@ import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'n
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { PrivateKey, encrypt } from 'eciesjs'
-import { resolveEnv, resolveEnvInPlace, formatError } from '../dist/index.mjs'
+import { resolveEnv, formatError } from '../dist/index.mjs'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const options = { commands: true }
@@ -41,7 +41,7 @@ test('failures leave the caller unchanged and never expose command output', posi
     SECOND: expression("process.stdout.write('sensitive-stdout'); process.stderr.write('sensitive-stderr'); process.exit(2)")
   }
   const before = { ...env }
-  assert.throws(() => resolveEnvInPlace(env, options), error => {
+  assert.throws(() => resolveEnv(env, { ...options, inPlace: true }), error => {
     assert.equal(error.code, 'COMMAND_FAILED')
     const message = `${formatError(error)}\n${error.stack}`
     assert.ok(!message.includes('sensitive-stdout'))
@@ -85,7 +85,7 @@ test('unexpected process-group cleanup failures remain safe and leave the caller
   t.mock.method(process, 'kill', () => { throw Object.assign(new Error('dummy-sensitive-cleanup-detail'), { code: 'EPERM' }) })
   const env = { FIRST: '$(printf dummy-result)', SECOND: '$(exit 7)' }
   const before = { ...env }
-  assert.throws(() => resolveEnvInPlace(env, options), err => {
+  assert.throws(() => resolveEnv(env, { ...options, inPlace: true }), err => {
     assert.equal(err.code, 'COMMAND_CLEANUP_FAILED')
     assert.ok(!err.stack.includes('dummy-sensitive'))
     assert.equal(err.cause, undefined)

@@ -22,6 +22,9 @@ preparation and settings decisions are recorded in `docs/releasing.md`.
 - Edit `src/`, `bin/`, tests and docs; regenerate `dist/` with `npm run build`.
 - `@ciqol/resenv/resolve` is the canonical preload. Infer providers from values
   already in `process.env`. Let Nx or the caller choose and load dotenv files.
+- Keep one public `resolveEnv()` function. Always return an independent resolved
+  copy; replace input values only when `inPlace: true` is explicitly enabled.
+  The Node preloads enable replacement; the CLI uses the returned copy.
 - Keep arbitrary shell commands explicitly enabled. Fetched and decrypted
   output stays literal, and failures must leave the caller's environment intact.
 - Never print credentials, fetched values, commands or provider response bodies.

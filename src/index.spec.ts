@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import { PrivateKey, encrypt, ECIES_CONFIG } from 'eciesjs'
 import type { Environment } from './types.js'
-import { ResenvError, resolveEnv, resolveEnvInPlace, formatError } from './index.js'
+import { ResenvError, resolveEnv, formatError } from './index.js'
 
 function fixture (plaintext: string | Buffer = 'dummy-value') {
   const key = new PrivateKey()
@@ -30,6 +30,39 @@ test('plaintext-only environments need no keys and are copied unchanged', () => 
   assert.notEqual(resolveEnv(env), env)
 })
 
+test('default and explicit copy mode resolve a frozen input without replacing it', () => {
+  const { privateKey, ciphertext } = fixture()
+  const env = Object.freeze({ TOKEN: ciphertext, DOTENV_PRIVATE_KEY: privateKey })
+  for (const options of [{}, { inPlace: false }]) {
+    const result = resolveEnv(env, options)
+    assert.equal(result.TOKEN, 'dummy-value')
+    assert.equal(env.TOKEN, ciphertext)
+    assert.notEqual(result, env)
+  }
+})
+
+test('in-place mode replaces the input and returns an independent resolved copy', () => {
+  const { privateKey, ciphertext } = fixture()
+  const env = { TOKEN: ciphertext, DOTENV_PRIVATE_KEY: privateKey }
+  const result = resolveEnv(env, { inPlace: true })
+  assert.equal(env.TOKEN, 'dummy-value')
+  assert.deepEqual({ ...result }, env)
+  assert.notEqual(result, env)
+  result.TOKEN = 'dummy-copy-change'
+  assert.equal(env.TOKEN, 'dummy-value')
+  env.TOKEN = 'dummy-input-change'
+  assert.equal(result.TOKEN, 'dummy-copy-change')
+})
+
+test('in-place mode returns a new copy even when there are no references', () => {
+  const env = { VALUE: 'plain', EMPTY: '', UNSET: undefined }
+  const result = resolveEnv(env, { inPlace: true })
+  assert.deepEqual({ ...result }, env)
+  assert.notEqual(result, env)
+  result.VALUE = 'dummy-copy-change'
+  assert.equal(env.VALUE, 'plain')
+})
+
 test('named keys and comma-separated rotation keys resolve a mixed environment', () => {
   const a = fixture('first')
   const b = fixture('second')
@@ -41,10 +74,10 @@ test('named keys and comma-separated rotation keys resolve a mixed environment',
     DOTENV_PRIVATE_KEY_DEV: `${unused}, ${a.privateKey.toUpperCase()},${a.privateKey}`,
     DOTENV_PRIVATE_KEY_OTHER: b.privateKey
   }
-  assert.equal(resolveEnvInPlace(env), env)
+  assert.notEqual(resolveEnv(env, { inPlace: true }), env)
   assert.equal(env.FIRST, 'first')
   assert.equal(env.SECOND, 'second')
-  assert.equal(resolveEnvInPlace(env), env)
+  assert.notEqual(resolveEnv(env, { inPlace: true }), env)
 })
 
 test('missing, invalid and wrong keys fail with safe errors', () => {
@@ -71,7 +104,7 @@ test('malformed and tampered ciphertext abort before mutating any values', () =>
   for (const invalid of ['encrypted:', 'encrypted:abc', `${ciphertext}\n`, `encrypted:${tampered.toString('base64')}`]) {
     const env = { FIRST: ciphertext, SECOND: invalid, DOTENV_PRIVATE_KEY: privateKey }
     const original = { ...env }
-    assert.throws(() => resolveEnvInPlace(env), ResenvError)
+    assert.throws(() => resolveEnv(env, { inPlace: true }), ResenvError)
     assert.deepEqual(env, original)
   }
 })
@@ -98,7 +131,7 @@ test('special environment names do not modify object prototypes', () => {
   const { privateKey, ciphertext } = fixture()
   const env: Environment = { DOTENV_PRIVATE_KEY: privateKey }
   Object.defineProperty(env, '__proto__', { value: ciphertext, enumerable: true, writable: true, configurable: true })
-  resolveEnvInPlace(env)
+  resolveEnv(env, { inPlace: true })
   assert.equal(env.__proto__, 'dummy-value')
   assert.equal(Object.getPrototypeOf(env), Object.prototype)
 })
@@ -112,7 +145,7 @@ test('in-place resolution rejects a read-only property before changing any value
   const { privateKey, ciphertext } = fixture()
   const env: Environment = { FIRST: ciphertext, DOTENV_PRIVATE_KEY: privateKey }
   Object.defineProperty(env, 'SECOND', { value: ciphertext, enumerable: true })
-  assert.throws(() => resolveEnvInPlace(env), { code: 'INVALID_ENV_TARGET' })
+  assert.throws(() => resolveEnv(env, { inPlace: true }), { code: 'INVALID_ENV_TARGET' })
   assert.equal(env.FIRST, ciphertext)
   assert.equal(env.SECOND, ciphertext)
 })
@@ -120,15 +153,15 @@ test('in-place resolution rejects a read-only property before changing any value
 test('in-place resolution preserves writable property flags and rejects setters and proxies', () => {
   const { privateKey, ciphertext } = fixture()
   const env = Object.seal({ TOKEN: ciphertext, DOTENV_PRIVATE_KEY: privateKey })
-  resolveEnvInPlace(env)
+  resolveEnv(env, { inPlace: true })
   assert.equal(env.TOKEN, 'dummy-value')
   assert.equal(Object.getOwnPropertyDescriptor(env, 'TOKEN')?.configurable, false)
   const accessor = { FIRST: ciphertext, DOTENV_PRIVATE_KEY: privateKey }
   Object.defineProperty(accessor, 'SECOND', { get: () => ciphertext, set: () => assert.fail('setter must not run'), enumerable: true })
-  assert.throws(() => resolveEnvInPlace(accessor), { code: 'INVALID_ENV_TARGET' })
+  assert.throws(() => resolveEnv(accessor, { inPlace: true }), { code: 'INVALID_ENV_TARGET' })
   assert.equal(accessor.FIRST, ciphertext)
   const proxy = new Proxy({ TOKEN: ciphertext }, { defineProperty: () => assert.fail('Proxy trap must not run') })
-  assert.throws(() => resolveEnvInPlace(proxy), { code: 'INVALID_ENV_TARGET' })
+  assert.throws(() => resolveEnv(proxy, { inPlace: true }), { code: 'INVALID_ENV_TARGET' })
 })
 
 test('commands require explicit opt-in and ignore an environment toggle', () => {

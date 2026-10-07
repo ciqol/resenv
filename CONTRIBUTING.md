@@ -157,6 +157,10 @@ Preserve all-or-nothing environment updates, strict failures, explicit command
 opt-in and literal handling of resolved values. Update the public API types and
 documentation together with behavior changes.
 
+Keep one public resolver, `resolveEnv()`. It always returns an independent
+resolved copy and replaces input values only with `{ inPlace: true }`. Preloads
+enable that option; the CLI passes the returned copy to its child process.
+
 Add regression tests for changed behavior and avoid real provider calls. Use
 Conventional Commit subjects, for example `fix(resolver): preserve empty values`.
 Dependency changes require an updated [review record](docs/dependencies.md).

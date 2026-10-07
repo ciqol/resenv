@@ -152,20 +152,28 @@ Call the library after your loader has populated the environment, before
 importing modules that read configuration:
 
 ```js
-import { resolveEnv, resolveEnvInPlace } from '@ciqol/resenv'
+import { resolveEnv } from '@ciqol/resenv'
 
-const childEnv = resolveEnv(process.env, { doppler: true }) // returns a copy
-resolveEnvInPlace(process.env, { doppler: true }) // replaces values in place
+const childEnv = resolveEnv(process.env, { doppler: true })
+
+// Also replace values in process.env; the returned copy can be ignored.
+resolveEnv(process.env, { doppler: true, inPlace: true })
 ```
+
+`resolveEnv(env = process.env, options = {})` always returns a new resolved
+environment. `inPlace` defaults to `false`, leaving the input unchanged. With
+`inPlace: true`, it also replaces values in the input after every lookup succeeds;
+the return value is still an independent copy.
 
 The library currently requires `{ doppler: true }`; the `/resolve` preload and
 `run` command enable it automatically. CommonJS uses the same API through
 `require('@ciqol/resenv')`. Both formats share the `ResenvError` class, whose
 `code` identifies the failure. CLI and preload failures exit with a safe message.
 
-In-place updates require `process.env` or writable data properties. A read-only
+Using `inPlace: true` requires `process.env` or writable data properties. A read-only
 property, setter or Proxy target fails before any replacement is committed.
-Use `resolveEnv()` when a resolved copy is more suitable.
+Keep the default copy mode for inputs that should remain unchanged. The Node
+preloads enable in-place replacement so application imports see resolved values.
 
 ## Debug startup
 

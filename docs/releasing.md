@@ -165,6 +165,8 @@ hooks and automatic publishing are not requirements for this resolver.
   startup, preserving the caller's dotenv loading and precedence.
 - Support Node preloads through both `--require` and `--import`, a command
   wrapper, and a typed library API.
+- Expose one `resolveEnv()` API that always returns a copy. Input replacement
+  requires `{ inPlace: true }`; its default is `false`.
 - Fetch individual values through HTTPS with explicit-token, OS-credential and
   existing-CLI authentication.
 - Keep fetched output literal; apply replacements only after all lookups succeed.

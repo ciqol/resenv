@@ -1,6 +1,8 @@
 export type Environment = Record<string, string | undefined>
 
 export type ResolveOptions = {
+  /** Also replace values in the input environment. Default false; always return a copy. */
+  readonly inPlace?: boolean
   /** Resolve doppler://project/config/SECRET_NAME through HTTPS. Default false. */
   readonly doppler?: boolean
   /** Execute whole-value $(command) expressions using /bin/sh. Default false. */

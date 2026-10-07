@@ -1,5 +1,23 @@
 # Validation
 
+## Unified resolver API - 2026-10-08
+
+The public API exposes one `resolveEnv(env = process.env, options = {})`
+function. It always returns an independent resolved copy. `inPlace` defaults
+to `false`; setting it to `true` also commits replacements to the input after
+all resolution and target checks succeed. The earlier `resolveEnvInPlace`
+export is removed from this unpublished candidate. Preloads explicitly enable
+replacement; the CLI uses the returned copy for its child process.
+
+`npm run verify` passed on Node 24.19.0: lint, strict implementation/spec
+type checks, dual-format build, 68 Vitest unit tests, 40 process tests,
+16 installed runtime probes and two typed consumers. Added checks cover frozen
+inputs in copy mode, independent results in replacement mode, no-reference
+copies, default `process.env` behavior and the removed export in both module
+formats. Invalid `inPlace` types fail consumer compilation. Existing tests
+still cover atomic failures, property descriptors, setters, proxies and
+startup resolution before application imports.
+
 ## User and contributor documentation - 2026-10-07
 
 The README now leads with package installation and application use. Checkout

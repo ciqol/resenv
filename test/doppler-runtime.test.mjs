@@ -78,7 +78,7 @@ test('partial API failure leaves caller untouched and blocks application startup
     SECOND: { status: 403, body: { messages: ['dummy-sensitive-body'] } }
   })
   const env = { FIRST: 'doppler://my-app/dev/FIRST', SECOND: 'doppler://my-app/dev/SECOND', DOPPLER_TOKEN: token }
-  const program = "const {resolveEnvInPlace}=require('@ciqol/resenv'); try { resolveEnvInPlace(process.env,{doppler:true}); process.exit(9) } catch(e) { if(e.code!=='DOPPLER_ACCESS_DENIED'||!process.env.FIRST.startsWith('doppler://')) process.exit(8) }"
+  const program = "const {resolveEnv}=require('@ciqol/resenv'); try { resolveEnv(process.env,{doppler:true,inPlace:true}); process.exit(9) } catch(e) { if(e.code!=='DOPPLER_ACCESS_DENIED'||!process.env.FIRST.startsWith('doppler://')) process.exit(8) }"
   const result = run(['-e', program], directory, env)
   assert.equal(result.status, 0, result.stderr)
   for (const args of [
