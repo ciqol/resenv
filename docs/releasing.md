@@ -75,8 +75,8 @@ all Linux/macOS jobs test that same archive. Its `resenv-package` artifact is
 retained for seven days. No release job is enabled yet.
 
 The user authorized the beta release on October 8. The repository remains
-private, and the separate license choice remains pending. The latest full
-`release:check` passed: 73 unit tests, 43 process tests, 16 installed-package
+private. The source is MIT licensed, copyright 2026 ciqol contributors. The
+latest full `release:check` passed: 73 unit tests, 43 process tests, 16 installed-package
 runtime checks, two typed consumers, and the pack dry run. The current project
 audit reported zero known vulnerabilities. The checked archive was the private
 prototype, not a publication-ready `1.0.0-beta.1` candidate.
@@ -153,8 +153,8 @@ These settings follow [npm's trusted-publishing documentation](https://docs.npmj
 ## Launch requirements
 
 - Complete dependency intake and observe a hosted semantic-release dry run.
-- Settle the license/copyright holder; both manifests remain UNLICENSED pending
-  that choice. MIT with titan-ron was proposed previously.
+- Preserve the MIT license and ciqol contributors copyright in the final archive.
+  The license was selected on October 8, 2026.
 - Review security/performance findings, the final tracked tree and Git history.
 - Decide whether to retain the original ciphertext decryption path.
 - Verify a fresh native Doppler browser login end to end. Existing-login API
@@ -225,8 +225,8 @@ hooks and automatic publishing are not requirements for this resolver.
 - Keep fetched output literal; apply replacements only after all lookups succeed.
 - Provide opt-in diagnostics that identify variable names without printing values.
 
-Finalize the notes after release-tool intake, the license and decryption-scope decisions. The native
-login compatibility and platform limits must remain visible in the first release.
+Finalize the notes after release-tool intake and the decryption-scope decision.
+The native login compatibility and platform limits must remain visible in the first release.
 This is an experimental prerelease. Native login relies on the browser protocol
 observed in Doppler's official MCP client, and a fresh login is not yet verified
 end to end. Linux credential-store integration has mock coverage; Windows native

@@ -2,8 +2,8 @@
 
 Private Node.js package: `@ciqol/resenv`. Keep the GitHub repository private,
 both package manifests `private: true`, and the package unpublished until the
-user explicitly approves release. The license remains `UNLICENSED` pending a
-separate license choice.
+user explicitly approves release. The source is MIT licensed, with copyright
+held by ciqol contributors.
 
 The user selected semantic-release for `titan/beta`, with `beta` as the
 prerelease identifier and npm channel. Its planned initial line is
@@ -14,7 +14,7 @@ is available. Earlier versions were unpublished
 prototypes; preserve their archives and validation history. Hold PR creation,
 public visibility, tags and publishing until explicitly requested. The user
 requested the beta release on October 8; tags and beta publication are now
-authorized once the remaining license, dependency and registry requirements
+authorized once the remaining dependency and registry requirements
 are met. Keep repository visibility private and PR creation on hold. The release
 preparation and settings decisions are recorded in `docs/releasing.md`.
 

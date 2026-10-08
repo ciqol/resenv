@@ -44,7 +44,8 @@ history and logs when visibility becomes public; see
 
 - Ignore local `.idea/` settings without deleting the developer's files.
 - Keep installation and contributor text independent of repository visibility.
-- State the unresolved license clearly; do not claim an open-source release.
+- Include the MIT license and ciqol contributors copyright, selected on October 8.
+  Registry publication remains disabled.
 - Mark historical validation/dependency entries so old APIs and version plans
   are not mistaken for current usage instructions.
 - Remove unnecessary references to other project names from current docs.
@@ -57,8 +58,9 @@ history and logs when visibility becomes public; see
 
 ## Remaining decisions and settings
 
-1. **License:** both manifests are `UNLICENSED`, and no `LICENSE` exists. Select
-   the license and copyright holder before presenting the project as open source.
+1. **License resolved:** MIT was selected on October 8, 2026, with copyright
+   held by ciqol contributors. The root and generated manifests declare MIT;
+   the [license](../LICENSE) is included in the package archive.
 2. **Branches:** only `titan/beta` can remain while npm publication is disabled.
    A local semantic-release dry run with only that prerelease branch returned
    `ERELEASEBRANCHES`. The current engine requires a real stable release branch
@@ -88,7 +90,7 @@ commits. Re-check the remote heads before deletion and stop if any changed.
 If retaining the stable branch for semantic-release, preserve
 `titan/prepare-first-release` and revise the plan instead of deleting it.
 
-After license and branch decisions, obtain explicit approval for the default
+After the branch decision, obtain explicit approval for the default
 branch, listed deletions, public visibility, and private vulnerability reporting.
 The CI push filter and release docs are prepared for this layout. Apply
 only approved scopes and verify branches, default, visibility, reporting and

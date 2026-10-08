@@ -4,6 +4,20 @@ This is a chronological validation log. Older entries describe earlier APIs,
 names, versions and installation policies. Use the README for the current
 `resolve()` / `replace` API and the release guide for the current release plan.
 
+## MIT license - 2026-10-08
+
+Added the MIT license with copyright 2026 ciqol contributors. The root manifest,
+lockfile root entry and generated distribution manifest declare MIT. Current
+usage, contribution, build and release docs reflect the selection; earlier
+entries below retain their historical license status.
+
+The Node 24.19.0 build and packed-consumer checks passed: 16 runtime probes and
+two typed consumers covering CommonJS and ESM. An additional archive check
+verified that `package/LICENSE` matches the source license byte for byte and
+that the packed manifest remains private. The lockfile comparison confirmed
+that dependency entries and versions are unchanged. No visibility change, tag,
+release, PR or npm publication was made.
+
 ## CI-only publication clarification - 2026-10-08
 
 The user confirmed that npm publication must run through GitHub Actions with

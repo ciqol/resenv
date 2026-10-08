@@ -90,7 +90,8 @@ real dry run before enabling them. CODEOWNERS remains responsible for review;
 Dependabot can maintain admitted versions. Removing the release configuration
 and dev tooling would restore the existing manual candidate checks if the tool
 must later be replaced. The requested beta publication is authorized, but still
-needs the separate license choice, dependency admission and registry setup.
+needs dependency admission and registry setup. The project license was selected
+as MIT on October 8, 2026, with copyright held by ciqol contributors.
 
 
 ## Installation policy - 2026-10-07

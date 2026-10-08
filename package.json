@@ -3,7 +3,7 @@
   "version": "0.1.0-beta.1",
   "private": true,
   "description": "Replace environment references with their resolved values at application startup",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "publishConfig": {
     "access": "public",
     "tag": "beta",

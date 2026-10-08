@@ -88,8 +88,8 @@ remains necessary to detect use of APIs absent from the oldest supported Node.
 The build removes stale output first. It derives `dist/package.json` from the
 root manifest, rebases entry paths, and omits development dependencies, scripts,
 overrides and a package-wide `type` field. Explicit `.mjs` and `.cjs` extensions
-select the output format. README, contributor/security guides and docs are
-copied; `LICENSE` will be copied once the license choice is settled.
+select the output format. README, the MIT `LICENSE`, contributor/security guides
+and docs are copied into the distribution and included in the archive.
 
 Both manifests retain `private: true`. This intentionally overrides the normal
 publishable-manifest convention while the repository remains an unpublished

@@ -241,5 +241,4 @@ and submitting fixes, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-A license has not been selected yet. The package is currently `UNLICENSED`;
-it is not an open-source release until a license is added.
+[MIT](LICENSE). Copyright (c) 2026 ciqol contributors.
