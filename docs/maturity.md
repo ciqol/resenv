@@ -1,94 +1,61 @@
 # Maturity evaluation
 
-Installation-policy update on 2026-10-07: `.npmrc`, setup commands, package
-checks and CI no longer disable lifecycle scripts. The `npm-ignore-scripts`
-finding below describes the earlier snapshot and is resolved in the current
-workflow. The historical score has not been recalculated.
+Evaluated on October 8, 2026 with the Tashtit maturity 0.3.1 catalog, using
+static working-tree evidence only. This measures the catalog's repository
+hygiene rules; it does not certify security or readiness to publish. Tests
+and hosted checks are recorded separately in [validation](validation.md).
 
-Evaluated on 2026-10-06 with the Tashtit maturity 0.3.1 catalog. Findings use
-static working-tree evidence only; test runs and hosted checks are recorded
-separately in [validation](validation.md). This score covers the catalog's
-hygiene rules, not security certification or readiness to publish.
+## Maturity: 91% (11/120 weight failing)
 
-## Maturity: 88% (15/120 weight failing)
-
-Discovery includes both the root npm project and its generated `dist/package.json`,
-as the catalog requires every package manifest outside `node_modules`. Relevant
-rules are counted once per npm project, and once per repository for hygiene/CI.
+The maintained source tree scores 100% (0/97 weight failing). The full catalog
+also discovers the generated `dist/package.json`, so its findings are retained.
 
 | Scope | Failing weight | Relevant weight |
 | --- | ---: | ---: |
-| Root npm project | 4 | 41 |
+| Root npm project | 0 | 41 |
 | Generated distribution | 11 | 23 |
 | Repository hygiene | 0 | 24 |
 | GitHub Actions | 0 | 32 |
-| Total | 15 | 120 |
+| Total | 11 | 120 |
 
-The maintained source tree alone scores 96% (4/97 weight failing). The full
-score retains the generated-package findings rather than silently excluding
-them. No Node Dockerfile exists, so Docker rules are not relevant.
+## Findings
 
-### Findings (highest priority first)
+- **High: generated package has no sibling lockfile** (`lockfile-missing`, 8).
+  Evidence: `dist/package.json:2`; no `dist/package-lock.json` exists. A maintained
+  npm project needs a lockfile. This directory is generated from the root's v3
+  lockfile and consumers maintain their own locks; it is not another workspace.
+  Reference: [npm lockfiles](https://docs.npmjs.com/cli/configuring-npm/package-lock-json).
+- **Medium: generated package has no sibling runtime-version file**
+  (`setup-nvmrc`, 3). Evidence: `dist/package.json:2`; no `dist/.nvmrc` exists.
+  Development projects should pin a runtime. The generated package declares
+  `engines.node: >=20` and does not need contributor setup files. The root
+  `.nvmrc` pins Node 24.19.0. Reference: [nvm version files](https://github.com/nvm-sh/nvm#nvmrc).
 
-- **[High] Generated package has no sibling lockfile** (`lockfile-missing`, 8)
-  - Evidence: `dist/package.json:2`; no `dist/package-lock.json` exists.
-  - Suggestion: a separately maintained npm project needs a lockfile. Here
-    `dist` is generated from the root's committed v3 lockfile and installed by
-    consumers with their own locks. It is intentionally not a second workspace.
-  - Reference: [npm lockfiles](https://docs.npmjs.com/cli/configuring-npm/package-lock-json).
-- **[Medium] CI disables dependency lifecycle scripts** (`npm-ignore-scripts`, 4)
-  - Evidence: `.github/workflows/ci.yml:31` and `.github/workflows/ci.yml:76`.
-  - Suggestion: document the policy or remove the flag if a reviewed dependency
-    requires hooks. The policy is now documented in CONTRIBUTING and the
-    workflow: required build steps run explicitly, and no install hook is needed.
-    The catalog's literal flag detector still counts this finding.
-  - Reference: [npm ci](https://docs.npmjs.com/cli/commands/npm-ci).
-- **[Medium] Generated package has no sibling runtime-version file**
-  (`setup-nvmrc`, 3)
-  - Evidence: `dist/package.json:2`; no `dist/.nvmrc` exists.
-  - Suggestion: use a version file for development projects. This distribution
-    declares the supported runtime range and does not need development setup
-    files. The maintained source uses the root `.nvmrc` at Node 24.19.0.
-  - Reference: [nvm version files](https://github.com/nvm-sh/nvm#nvmrc).
+## Passed checks
 
-### Passed checks
+- Root: one v3 npm lockfile, no competing yarn lockfile, `.npmrc`, `.nvmrc`, and
+  registry dependencies with exact direct versions. CI uses `npm ci` and
+  normal lifecycle behavior; it does not pass `--ignore-scripts`.
+- Repository: valid CODEOWNERS syntax, README, CONTRIBUTING and `.editorconfig`.
+- CI: a parseable workflow, explicit scoped token permissions, bounded job
+  timeouts, no `pull_request_target`, and pinned remote actions. The GitHub-owned
+  upload action's exact `v7.0.1` tag is permitted by the catalog.
 
-- The source has one v3 npm lockfile, `.npmrc`, `.nvmrc`, registry dependencies
-  with exact direct versions, and clean CI installs through `npm ci`.
-- CODEOWNERS contains a valid owner token; README, CONTRIBUTING and
-  `.editorconfig` exist.
-- CI exists with explicit scoped permissions, bounded job timeouts and no
-  blanket token grants. There is no `pull_request_target` checkout.
-- All remote actions have full commit pins except the GitHub-owned upload
-  action's exact `v7.0.1` release tag, which the catalog explicitly permits.
+The earlier 88% score included a lifecycle-script finding that is now resolved.
+No dependency installation, build, test, or remote request was used to derive
+this static score.
 
-### Not evaluated
+## Not evaluated by this catalog
 
-- Docker rules: no candidate Dockerfiles.
-- Live repository protections and owner access: outside this static catalog.
-- Workflow behavior, provider login and runtime compatibility: outside the
-  static evaluation; see the separately observed validation results.
+- Docker rules: no candidate Dockerfile exists.
+- Repository protections, private vulnerability reporting and maintainer access.
+- License suitability, secret history, provider login, and runtime behavior.
 
-### Fixable on request
+See [public readiness](public-readiness.md) for the separate exposure audit and
+[validation](validation.md) for observed checks.
 
-No applicable automatic fix is appropriate. The only missing `.nvmrc` belongs
-to generated output with a wide runtime range, so the catalog does not authorize
-deriving a version for it. The remaining findings are documented report-only
-items. No generated development files or install hooks were added to improve a
-score.
+## Fixable findings
 
-## GitHub Actions standards review
-
-The workflow retains stable lowercase `build`/`test` job identifiers, actual
-default-branch pushes, pull-request validation and manual dispatch. Superseded
-pull-request runs are cancelled; trusted runs may finish. Each job has only
-`contents: read`, checkout credentials are not persisted, and no job publishes
-or receives provider credentials. The build checks the TypeScript implementation,
-then packs one archive for the compatibility matrix. Missing artifacts and
-digest mismatches fail validation. No GitHub expression is interpolated into a
-shell script. Repository access and release settings are unchanged.
-
-Separate runtime evidence: the
-[manual-dispatch CI run](https://github.com/ciqol/resenv/actions/runs/37472468215)
-passed at `e0d6a8f`. This observation does not affect the static score. A
-pull-request event has not been exercised while PR creation remains on hold.
+No automatic fix is appropriate. The generated package's broad runtime range
+does not identify a development version to pin, and adding another lockfile
+would misrepresent it as a maintained workspace.

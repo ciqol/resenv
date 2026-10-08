@@ -71,8 +71,10 @@ CI builds one archive and all matrix jobs test that same archive through
 `npm run test:package -- <archive.tgz>`.
 Source unit specs run before the CI build; matrix jobs run only higher-level
 tests against that archive and never recompile the source.
-Use `npm run release:check` for the non-publishing preparation check. Keep
-the CI push filter aligned with GitHub's actual default branch and `titan/beta`.
+Use `npm run release:check` for the non-publishing preparation check. The CI push
+filter is prepared for the requested beta-only layout; the remote default-branch
+change remains pending. After that transition, keep it aligned with the actual
+default branch and any approved release branches.
 Beta publication must use the `beta` npm dist-tag; never promote it to `latest`.
 
 README documents how application users install and use resenv. Contributor setup,
@@ -82,6 +84,7 @@ globally disabling scripts in setup, package checks or CI.
 
 ## Local consumers
 
-Cachely is a separate repository. Keep local links and secret references out of
-its committed manifests, lockfile and CI. Do not publish or push Cachely changes
-as part of resenv work unless the user explicitly requests that.
+Consumer applications live in separate repositories. Keep local links and secret
+references out of their committed manifests, lockfiles and CI. Do not publish or
+push consumer changes as part of resenv work unless the user explicitly requests
+that.

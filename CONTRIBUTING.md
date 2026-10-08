@@ -6,8 +6,9 @@ changing resenv itself and verifying those changes.
 Semantic-release is selected for beta releases from `titan/beta`, with a planned
 initial `1.0.0-beta.1` / `1.0.0` line. Its dependency intake is blocked; see
 [release preparation](docs/releasing.md). The current `0.1.0-beta.1` manifest
-remains a private prototype version. Repository access remains private, and both package
-manifests disable registry publication.
+remains a prototype version. Both package manifests disable registry publication.
+Public source visibility and npm publication are separate decisions. The license
+has not been selected yet.
 
 ## Local development
 

@@ -1,5 +1,9 @@
 # Validation
 
+This is a chronological validation log. Older entries describe earlier APIs,
+names, versions and installation policies. Use the README for the current
+`resolve()` / `replace` API and the release guide for the current release plan.
+
 ## CI-only publication clarification - 2026-10-08
 
 The user confirmed that npm publication must run through GitHub Actions with
@@ -216,7 +220,7 @@ on implicit ambient types. Declarations come from the source implementation.
 
 Nx 23.2.1 again passed target loading, local/shell precedence, isolation and
 strict failure tests using dummy values and a temporary workspace. The existing
-Cachely installation was used read-only. No real credentials were accessed.
+existing installation was used read-only. No real credentials were accessed.
 
 The benchmark recorded 84.262 ms for eight unique mocked requests with 16
 references and 40 ms simulated request latency, with peak concurrency four.
@@ -258,7 +262,7 @@ strict typed consumers on Node 24. Lint and declaration checks passed.
 Nx 23.2.1 passed command and Doppler resolution, target loading, local/shell
 precedence, target isolation and strict startup failures. The test used dummy
 credentials and a temporary workspace with the existing Nx installation
-read-only. No Cachely files or live provider credentials were used.
+read-only. No consumer files or live provider credentials were used.
 
 The review reproduced and fixed native subprocess debug leakage, repeated
 automatic resolution, malformed provider Unicode and partial in-place updates.

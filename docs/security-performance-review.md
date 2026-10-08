@@ -116,7 +116,7 @@ The new development dependencies and their provenance limits are recorded in
 - Nx 23.2.1 passed target dotenv loading, local/shell precedence, target
   isolation and strict failures for command and Doppler modes. Tests used a
   temporary workspace, dummy credentials and an existing Nx installation
-  read-only; Cachely files were not changed.
+  read-only; consumer files were not changed.
 - npm reported zero known vulnerabilities, 103 verified registry signatures
   and 37 verified attestations in the installed development tree. Advisory and
   signature checks do not rule out unknown vulnerabilities.

@@ -21,7 +21,7 @@ restart the application to fetch updated values. No filename is passed to
 resenv, and dotenv files are never rewritten.
 
 Requires Node.js 20 or later. This is an experimental beta, currently distributed
-as a private package archive; it has not been published to npm.
+as a package archive; it has not been published to npm.
 
 ## Install
 
@@ -238,3 +238,8 @@ with `{ commands: true }`.
 
 For checkout setup, building, testing, trying local changes in another project
 and submitting fixes, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+A license has not been selected yet. The package is currently `UNLICENSED`;
+it is not an open-source release until a license is added.

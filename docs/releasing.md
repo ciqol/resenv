@@ -42,6 +42,21 @@ no tag; it is not an authentication-free check.
 See [semantic-release configuration](https://semantic-release.gitbook.io/semantic-release/usage/configuration)
 and [prerelease behavior](https://semantic-release.gitbook.io/semantic-release/recipes/release-workflow/pre-releases).
 
+### A repository containing only the beta branch
+
+The user requested a public repository with only `titan/beta` for now. Source
+visibility does not require npm publication. That branch layout can be used
+while publishing remains disabled, but the current semantic-release draft will
+not support publishing from it: a local dry run with only the prerelease branch
+returned `ERELEASEBRANCHES`. A real stable release branch must exist before the
+first automated npm beta release, or the release-tool choice must be revisited.
+Do not add fake release tags, silently switch tools, or enable the publishing
+job to bypass this requirement. See
+[semantic-release branch requirements](https://semantic-release.org/foundation/workflow-configuration/#release-branches).
+
+The public-exposure audit and branch cleanup plan are in
+[public readiness](public-readiness.md).
+
 ## Candidate checks and delivery
 
 The repository and both manifests remain private; there are no release tags,
@@ -156,8 +171,8 @@ These settings follow [npm's trusted-publishing documentation](https://docs.npmj
 
 ## Repository setup to approve at launch
 
-Compared on 2026-10-06 with `ciqol/sonarqube-api-client`. These are proposed
-settings, not changes made to GitHub:
+These are proposed settings from the October 6 repository review, not changes
+made to GitHub:
 
 | Setting | resenv now | Proposed |
 | --- | --- | --- |

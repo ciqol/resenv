@@ -3,6 +3,7 @@ node_modules/
 .env
 .env.*
 .DS_Store
+.idea/
 coverage/
 .vitest/
 dist/

@@ -1,5 +1,9 @@
 # Dependency review
 
+Entries record decisions at the stated dates. Older version plans and install
+policies are historical; the release guide and CONTRIBUTING describe the current
+workflow. Release-tool intake below is not dependency admission.
+
 ## Semantic-release intake, not installed - 2026-10-08
 
 The user selected semantic-release for beta releases. The existing toolchain

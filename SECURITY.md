@@ -58,15 +58,17 @@ all changed properties; read-only properties, setters and Proxy targets are
 rejected before any values are committed. Use `resolve()` to obtain a copy
 when the input is not a writable environment record.
 
-The private prototype has not had an independent security audit. Validation
+This experimental package has not had an independent security audit. Validation
 evidence and platform limits are recorded in [docs/validation.md](docs/validation.md).
 
 ## Reporting a vulnerability
 
 Do not open a public issue containing a vulnerability, credentials or sensitive
-output. While the repository is private, contact the repository owner through
-an existing private channel. Before public release, maintainers must enable
-GitHub private vulnerability reporting and verify that it is available.
+output. Open the repository's Security tab and use "Report a vulnerability"
+when available. If that option is unavailable, contact the maintainer through
+an existing private channel. Before the public transition is complete,
+maintainers must enable GitHub private vulnerability reporting and verify that
+it is available.
 
 Include affected versions, platform, impact and a minimal reproduction using
 dummy data. Never include production tokens, private keys or environment dumps.

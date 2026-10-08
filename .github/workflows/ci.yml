@@ -2,8 +2,8 @@ name: CI
 
 on:
   push:
-    # Validate the current default branch and the prerelease branch.
-    branches: ['titan/prepare-first-release', 'titan/beta']
+    # Prepare the requested beta-only layout; publication remains disabled.
+    branches: ['titan/beta']
   pull_request:
   workflow_dispatch:
 
