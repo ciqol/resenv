@@ -3,8 +3,10 @@
 The [README](README.md) covers using resenv in an application. This guide covers
 changing resenv itself and verifying those changes.
 
-The first beta candidate is `0.1.0-beta.1` on `titan/beta`; the first stable
-version will be `0.1.0`. Repository access remains private, and both package
+Semantic-release is selected for beta releases from `titan/beta`, with a planned
+initial `1.0.0-beta.1` / `1.0.0` line. Its dependency intake is blocked; see
+[release preparation](docs/releasing.md). The current `0.1.0-beta.1` manifest
+remains a private prototype version. Repository access remains private, and both package
 manifests disable registry publication.
 
 ## Local development

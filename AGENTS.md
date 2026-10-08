@@ -5,8 +5,12 @@ both package manifests `private: true`, and the package unpublished until the
 user explicitly approves release. The license remains `UNLICENSED` pending a
 separate license choice.
 
-The first prerelease candidate is 0.1.0-beta.1 on `titan/beta`; the requested
-first stable public version remains 0.1.0. Earlier versions were unpublished
+The user selected semantic-release for `titan/beta`, with `beta` as the
+prerelease identifier and npm channel. Its planned initial line is
+1.0.0-beta.1 / 1.0.0, replacing the earlier 0.1.0 plan. Release tooling intake
+is blocked by an unpatched high-severity dependency advisory. The current
+0.1.0-beta.1 manifest remains a private prototype until tool-derived versioning
+is available. Earlier versions were unpublished
 prototypes; preserve their archives and validation history. Hold PR creation,
 public visibility, tags and publishing until explicitly requested. The release
 preparation and settings decisions are recorded in `docs/releasing.md`.

@@ -1,5 +1,19 @@
 # Validation
 
+## Default preload command isolation and beta configuration - 2026-10-08
+
+The canonical and compatibility cloud preloads are now each checked through
+both `--require` and `--import` with a whole-value command that would create a
+file if executed. All four must preserve the exact expression and leave the
+file absent, even with RESENV_COMMANDS=true. A throwing credential worker
+confirms that plain command text triggers no provider work.
+
+The semantic-release beta configuration is a draft with dryRun enabled.
+No tooling dependency was admitted, no GitHub workflow or publication was
+enabled, and a semantic-release dry run is not claimed. The isolated temporary
+intake audit identified an unpatched high-severity dependency; see dependencies.md.
+
+
 ## Concise resolver API - 2026-10-08
 
 The public function is now `resolve(env = process.env, options = {})`.

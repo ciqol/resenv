@@ -208,7 +208,9 @@ options containing credentials. resenv blocks its subprocess operations with
 ## Commands and encrypted values
 
 - **Opt-in shell commands:** `/resolve-commands` resolves complete `$(command)`
-  values through `/bin/sh`. `resenv run --commands -- ...` enables commands
+  values through `/bin/sh`. The canonical `/resolve` preload leaves these values
+  literal for both `--require` and `--import`, including when `RESENV_COMMANDS`
+  is set in the environment. `resenv run --commands -- ...` enables commands
   alongside inferred Doppler references, as does the command preload. Use only
   trusted configuration; commands run with your permissions. A timeout limits
   execution time, but cannot undo file changes, network requests or other effects.

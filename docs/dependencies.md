@@ -1,5 +1,58 @@
 # Dependency review
 
+## Semantic-release intake, not installed - 2026-10-08
+
+The user selected semantic-release for beta releases. The existing toolchain
+has no commit-derived release engine; adding one is justified for versions,
+release notes and branch/channel handling. Release-please was considered for
+0.x support, and a custom engine was rejected as unnecessary maintenance.
+Semantic-release's normal initial line is 1.0.0-beta.1 / 1.0.0. The checked-in
+configuration is a preview draft; no release dependencies or workflow are enabled.
+
+Registry intake inspected these exact published artifacts:
+
+| Package | Version | Release date | Downloads in the last month | Maintainers |
+| --- | --- | --- | --- | --- |
+| semantic-release | 25.0.9 | 2026-08-05 | 12,515,497 | 3 |
+| @semantic-release/commit-analyzer | 13.0.1 | 2025-01-03 | 12,542,138 | 3 |
+| @semantic-release/release-notes-generator | 14.1.1 | 2026-05-08 | 12,802,125 | 3 |
+
+All three artifacts include MIT license text, match their canonical source
+repositories in the [semantic-release organization](https://github.com/semantic-release),
+contain no install lifecycle scripts, and expose registry integrity, signatures
+and provenance attestations. The release engine requires Node ^22.14.0 or
+>=24.10.0; the repository's Node 24.19.0 qualifies. Artifact-to-source signature
+verification was not completed because dependency admission stopped at audit.
+MFA and historical ownership continuity were not independently verified.
+The analyzer is an older stable component still required by the current engine;
+that alone does not establish its continued maintenance or security.
+
+A separate temporary lock-only project resolved 447 package entries, with no
+`hasInstallScript` entries. Its audit reported 10 high and two moderate findings,
+including propagated parent-package findings. The tree also needs complete
+license review; one bundled qrcode-terminal entry lacks license metadata.
+No install scripts or release tooling code were executed during this intake.
+
+The blocking dependency is `braces@3.0.3`, through `micromatch`, with the
+[high-severity stack-exhaustion advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+The registry's latest braces release is 3.0.3 and the advisory lists no patched
+version. Other findings include brace-expansion, http-cache-semantics, undici,
+ip-address and postcss-selector-parser. They do not remove the braces blocker.
+A normal install of this set would fail the repository's required high-severity
+audit. No audit exception, blanket override, unsupported downgrade or lockfile
+change was applied.
+
+After an acceptable upstream fix or an explicitly reviewed alternative,
+re-run intake and pin exact direct versions plus the lockfile. Keep these tools
+in development dependencies, preserve the five-package runtime closure, and
+verify registry signatures/provenance, licenses, install hooks, audits and a
+real dry run before enabling them. CODEOWNERS remains responsible for review;
+Dependabot can maintain admitted versions. Removing the release configuration
+and dev tooling would restore the existing manual candidate checks if the tool
+must later be replaced. Publication still needs separate approval and registry
+setup; this intake does not authorize either.
+
+
 ## Installation policy - 2026-10-07
 
 At the user's request, standard setup, CI and clean-consumer checks use normal

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { spawnSync } from 'node:child_process'
-import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs'
+import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -160,13 +160,20 @@ test('a preload combined with the CLI cannot resolve fetched values again', t =>
   assert.equal(result.stdout, '')
 })
 
-test('no-reference startup needs no credentials or worker and shell commands stay literal', t => {
+test('default CJS and ESM preloads leave shell expressions literal without credentials or side effects', t => {
   const { directory, pkg } = fixture(t, {})
   writeFileSync(join(pkg, 'doppler-worker.cjs'), "throw new Error('worker-must-not-start')")
-  for (const [entry, value] of [['resolve', '$(must-not-run)'], ['resolve-doppler', 'plain']]) {
-    const result = run(['--require', `@ciqol/resenv/${entry}`, '-e', 'process.stdout.write(process.env.TOKEN)'], directory, { TOKEN: value, CI: 'true' })
-    assert.equal(result.status, 0, result.stderr)
-    assert.equal(result.stdout, value)
+  const marker = join(directory, 'command-must-not-create-this')
+  const value = `$(printf dummy > '${marker}')`
+  for (const preload of ['--require', '--import']) {
+    for (const entry of ['resolve', 'resolve-doppler']) {
+      const result = run([preload, `@ciqol/resenv/${entry}`, '-e', 'process.stdout.write(process.env.TOKEN)'], directory, {
+        TOKEN: value, RESENV_COMMANDS: 'true', CI: 'true'
+      })
+      assert.equal(result.status, 0, result.stderr)
+      assert.equal(result.stdout, value)
+      assert.equal(existsSync(marker), false)
+    }
   }
 })
 
