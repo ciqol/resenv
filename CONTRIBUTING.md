@@ -182,3 +182,9 @@ local development instructions here; detailed internals belong in `docs/`.
 Security reports follow [SECURITY.md](SECURITY.md). Publication and repository
 visibility changes require a separate maintainer decision; see the
 [release checklist](docs/releasing.md).
+
+npm releases run only through GitHub Actions with npm trusted publishing (OIDC).
+The maintainer configures the npm side. Local development and release checks
+do not require `npm login`; do not publish from a developer machine or add npm
+publishing tokens. CI must publish the exact candidate archive that its tests
+verified.

@@ -66,13 +66,19 @@ runtime checks, two typed consumers, and the pack dry run. The current project
 audit reported zero known vulnerabilities. The checked archive was the private
 prototype, not a publication-ready `1.0.0-beta.1` candidate.
 
-The registry still reports `ENEEDAUTH` for this machine, and the repository has
-no Actions secrets configured. An unauthenticated package lookup returned 404;
-this does not establish namespace availability or ciqol publishing rights.
-Complete npm browser login and confirm the account's rights before choosing the
-first-publication authentication path. Do not place credentials in source or
-documentation. The repository's private visibility also means npm provenance
-will not be generated; [npm documents this limitation](https://docs.npmjs.com/trusted-publishers/#automatic-provenance-generation).
+The user confirmed that npm publication must happen only through GitHub Actions,
+using npm trusted publishing (OIDC), and will configure the npm side. Local
+`npm login`, a local publishing account, and an npm publishing token are not
+release prerequisites. No npm token secret is needed for this design.
+The earlier unauthenticated package lookup returned 404; this does not establish
+namespace availability or ciqol publishing rights.
+
+Trusted publishing authenticates the CI workflow. Provenance attestations are
+a separate feature: npm does not generate them from private repositories, even
+for public packages. Keep this repository private until the user explicitly
+changes that decision. When the repository and package are public, npm can
+generate provenance automatically for an OIDC publish; see
+[npm's provenance requirements](https://docs.npmjs.com/trusted-publishers/#automatic-provenance-generation).
 
 After intake and the remaining launch requirements, complete delivery in this order:
 
@@ -92,6 +98,43 @@ It cannot be assumed to publish a previously tested tarball unchanged; inspect
 and verify the artifact handoff when enabling publishing.
 See [the upstream implementation](https://github.com/semantic-release/npm/blob/master/lib/publish.js).
 
+## npm-side setup
+
+The publishing job is planned inside the existing `.github/workflows/ci.yml`,
+after the jobs that verify the final candidate archive. The job is not enabled
+yet. Use these fields when the workflow and package are ready:
+
+| npm trusted-publisher field | Value |
+| --- | --- |
+| Provider | GitHub Actions |
+| Organization or user | `ciqol` |
+| Repository | `resenv` |
+| Workflow filename | `ci.yml` |
+| Environment | The exact approved release-environment name, once configured |
+| Allowed action | Direct publication with `npm publish` |
+
+Enter just `ci.yml`, without `.github/workflows/`. The environment field must
+match the publishing job if the trust is bound to an environment. The GitHub
+release environment and its protection settings are not configured yet; their
+creation requires a separate reviewed settings change. Do not invent an
+environment name in the npm configuration.
+
+Create the final trust configuration when the workflow is ready to publish.
+npm expires a new configuration if it has not completed a successful publish
+within two days. Saving it alone does not verify that it works. The maintainer
+handles any initial npm package or organization setup; do not bootstrap the
+package with a local publish.
+
+The final publishing job must use the repository's Node version, a compatible
+npm CLI (at least 11.5.1), and `id-token: write`. Keep build and test jobs
+read-only. Restrict publication to `titan/beta` on a trusted event, require the
+candidate build and matrix tests, serialize publication, and download the same
+verified archive without rebuilding. Publish it with the `beta` dist-tag. Do
+not run a directory-based plugin that repacks a different artifact. Observe a
+successful OIDC release before claiming the setup works.
+
+These settings follow [npm's trusted-publishing documentation](https://docs.npmjs.com/trusted-publishers/).
+
 ## Launch requirements
 
 - Complete dependency intake and observe a hosted semantic-release dry run.
@@ -102,11 +145,11 @@ See [the upstream implementation](https://github.com/semantic-release/npm/blob/m
 - Verify a fresh native Doppler browser login end to end. Existing-login API
   reads were checked; Linux credential storage has mock coverage and Windows
   native login/storage is not implemented.
-- Confirm npm identity, ciqol publishing rights and initial package setup.
-  Prior npm identity was unavailable; registry lookup is not proof of ownership.
-- Configure and verify trusted publishing and the protected release environment.
-  Provenance for a public package requires a public source repository; verify
-  the current npm requirements before activation.
+- Have the maintainer configure npm package ownership and trusted publishing;
+  verify access from the GitHub Actions publishing job. Local npm login is not
+  required.
+- Configure and verify the protected release environment. Repository visibility
+  remains private; provenance attestations require a later public-source decision.
 - Beta tags/releases and registry publication were requested on October 8.
   Public repository visibility and PR creation remain unapproved. Keep the
   repository private and do not publish until the other requirements are met.

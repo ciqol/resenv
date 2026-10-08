@@ -1,5 +1,19 @@
 # Validation
 
+## CI-only publication clarification - 2026-10-08
+
+The user confirmed that npm publication must run through GitHub Actions with
+npm-side trusted publishing configured by the maintainer. Local npm login and
+the earlier `ENEEDAUTH` result are not release blockers for that design. Agent
+instructions, contributor guidance and the release checklist now record this
+contract. The intended publisher is `ciqol/resenv`'s `ci.yml` workflow.
+
+This documentation change does not enable a publishing job, admit release
+dependencies, configure npm or GitHub protection settings, or publish a package.
+The license, release-tooling review and CI release implementation remain
+unfinished. npm provenance is distinct from OIDC authentication and requires
+public source; repository visibility remains private.
+
 ## Beta release preflight - 2026-10-08
 
 After the user requested the beta release, `npm run release:check` passed on

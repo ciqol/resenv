@@ -18,6 +18,12 @@ authorized once the remaining license, dependency and registry requirements
 are met. Keep repository visibility private and PR creation on hold. The release
 preparation and settings decisions are recorded in `docs/releasing.md`.
 
+Publish npm releases only through GitHub Actions using npm trusted publishing
+(OIDC). The user manages the npm-side configuration. Do not publish from a
+developer machine, request local npm login, or introduce npm publishing tokens.
+Local npm authentication is not a release prerequisite. Keep version selection
+automated with semantic-release and publish the exact archive verified by CI.
+
 ## Implementation
 
 - Author the library and CLI in strict TypeScript. Rollup's TypeScript plugin
