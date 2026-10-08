@@ -23,14 +23,19 @@ archives remain immutable.
 - Conventional Commit analysis, release notes, `v${version}` tags and `dryRun: true`.
 - No npm/GitHub publishing plugins or automatic release workflow.
 
-This is a configuration draft. It has not been exercised with semantic-release.
+This remains a configuration draft for the hosted release path.
 Adding the reviewed latest tooling would introduce an unpatched high-severity
 braces advisory and fail the existing audit gate. Dependency admission and a
-real dry run remain blocked; see the [intake evidence](dependencies.md#semantic-release-intake-not-installed---2026-10-08).
+hosted dry run remain blocked; see the [intake evidence](dependencies.md#semantic-release-intake-not-installed---2026-10-08).
 No package manifest or lockfile dependency was changed, and no audit was weakened.
 
-Once admitted, a dry run must confirm `1.0.0-beta.1` / `beta` from the existing
-unreleased history and report the release notes. Later beta releases must
+An isolated dry run against a temporary local Git remote confirmed
+`1.0.0-beta.1` / `beta` at `a461ce49903d620ced4c18ce1a90157b46591fc6` on
+October 8. It used no publishing plugins or registry/GitHub credentials and
+created no tags. Notes were generated separately from that same analysis.
+This confirms the version calculation; hosted credentials and the actual
+publication workflow still need verification after dependency admission.
+Later beta releases must
 increment from actual release tags. Confirm stable promotion and the no-release
 case as well. A GitHub dry run checks push permission even though it creates
 no tag; it is not an authentication-free check.
@@ -54,7 +59,22 @@ clean-consumer package checks. CI currently builds one prototype archive and
 all Linux/macOS jobs test that same archive. Its `resenv-package` artifact is
 retained for seven days. No release job is enabled yet.
 
-After intake and launch approval, complete the delivery path in this order:
+The user authorized the beta release on October 8. The repository remains
+private, and the separate license choice remains pending. The latest full
+`release:check` passed: 73 unit tests, 43 process tests, 16 installed-package
+runtime checks, two typed consumers, and the pack dry run. The current project
+audit reported zero known vulnerabilities. The checked archive was the private
+prototype, not a publication-ready `1.0.0-beta.1` candidate.
+
+The registry still reports `ENEEDAUTH` for this machine, and the repository has
+no Actions secrets configured. An unauthenticated package lookup returned 404;
+this does not establish namespace availability or ciqol publishing rights.
+Complete npm browser login and confirm the account's rights before choosing the
+first-publication authentication path. Do not place credentials in source or
+documentation. The repository's private visibility also means npm provenance
+will not be generated; [npm documents this limitation](https://docs.npmjs.com/trusted-publishers/#automatic-provenance-generation).
+
+After intake and the remaining launch requirements, complete delivery in this order:
 
 1. Derive the candidate version and notes with semantic-release on the approved ref.
 2. Generate the final distribution manifest, including its version, license and
@@ -74,7 +94,7 @@ See [the upstream implementation](https://github.com/semantic-release/npm/blob/m
 
 ## Launch requirements
 
-- Complete dependency intake and observe a real semantic-release dry run.
+- Complete dependency intake and observe a hosted semantic-release dry run.
 - Settle the license/copyright holder; both manifests remain UNLICENSED pending
   that choice. MIT with titan-ron was proposed previously.
 - Review security/performance findings, the final tracked tree and Git history.
@@ -87,8 +107,9 @@ See [the upstream implementation](https://github.com/semantic-release/npm/blob/m
 - Configure and verify trusted publishing and the protected release environment.
   Provenance for a public package requires a public source repository; verify
   the current npm requirements before activation.
-- Obtain explicit approval for public visibility, actual tags/releases and
-  registry publication. Preserve the private/unpublished state until then.
+- Beta tags/releases and registry publication were requested on October 8.
+  Public repository visibility and PR creation remain unapproved. Keep the
+  repository private and do not publish until the other requirements are met.
 
 ## Repository setup to approve at launch
 

@@ -1,5 +1,29 @@
 # Validation
 
+## Beta release preflight - 2026-10-08
+
+After the user requested the beta release, `npm run release:check` passed on
+Node 24.19.0: lint, strict source/spec type checks, the dual-format build,
+73 unit tests, 43 process tests, 16 installed-package runtime probes, two typed
+consumers and `npm pack ./dist --dry-run`. `npm audit --audit-level=high`
+reported zero vulnerabilities in the existing project tree. The latest hosted
+CI at source commit `a461ce49903d620ced4c18ce1a90157b46591fc6` also passed.
+
+A temporary release-tool installation verified 447 registry signatures and
+121 attestations, with no install lifecycle hooks found. An isolated local
+Git clone and local bare remote, without publishing plugins or credentials,
+then produced a real semantic-release dry-run result of `1.0.0-beta.1` on
+channel `beta` for that source commit. No tag was created. Release notes were
+generated separately from the analyzed commits. This supersedes the earlier
+entry's statement that no dry run had been performed, while leaving hosted
+authentication, stable promotion and actual publication unverified.
+
+No dependency was admitted into the project, and the audit gate is unchanged.
+The release-tool tree still has an unpatched high-severity braces advisory and
+other findings. npm authentication and the separate license choice are also
+pending. The full check exercised the private prototype archive, not a final
+publication candidate. No release, tag or registry publication was created.
+
 ## Default preload command isolation and beta configuration - 2026-10-08
 
 The canonical and compatibility cloud preloads are now each checked through

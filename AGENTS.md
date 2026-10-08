@@ -12,7 +12,10 @@ is blocked by an unpatched high-severity dependency advisory. The current
 0.1.0-beta.1 manifest remains a private prototype until tool-derived versioning
 is available. Earlier versions were unpublished
 prototypes; preserve their archives and validation history. Hold PR creation,
-public visibility, tags and publishing until explicitly requested. The release
+public visibility, tags and publishing until explicitly requested. The user
+requested the beta release on October 8; tags and beta publication are now
+authorized once the remaining license, dependency and registry requirements
+are met. Keep repository visibility private and PR creation on hold. The release
 preparation and settings decisions are recorded in `docs/releasing.md`.
 
 ## Implementation

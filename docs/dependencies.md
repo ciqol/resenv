@@ -21,8 +21,8 @@ All three artifacts include MIT license text, match their canonical source
 repositories in the [semantic-release organization](https://github.com/semantic-release),
 contain no install lifecycle scripts, and expose registry integrity, signatures
 and provenance attestations. The release engine requires Node ^22.14.0 or
->=24.10.0; the repository's Node 24.19.0 qualifies. Artifact-to-source signature
-verification was not completed because dependency admission stopped at audit.
+>=24.10.0; the repository's Node 24.19.0 qualifies. The initial lock-only review
+stopped at audit; the isolated follow-up verification is recorded below.
 MFA and historical ownership continuity were not independently verified.
 The analyzer is an older stable component still required by the current engine;
 that alone does not establish its continued maintenance or security.
@@ -31,7 +31,8 @@ A separate temporary lock-only project resolved 447 package entries, with no
 `hasInstallScript` entries. Its audit reported 10 high and two moderate findings,
 including propagated parent-package findings. The tree also needs complete
 license review; one bundled qrcode-terminal entry lacks license metadata.
-No install scripts or release tooling code were executed during this intake.
+No install scripts or release tooling code were executed during the initial
+lock-only intake.
 
 The blocking dependency is `braces@3.0.3`, through `micromatch`, with the
 [high-severity stack-exhaustion advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
@@ -42,6 +43,41 @@ A normal install of this set would fail the repository's required high-severity
 audit. No audit exception, blanket override, unsupported downgrade or lockfile
 change was applied.
 
+### Follow-up verification for the requested beta
+
+The user authorized a beta release on October 8. The tooling was installed only
+in a temporary intake directory, using the inspected lockfile and normal npm
+lifecycle behavior. No install lifecycle hooks were found in the installed tree.
+`npm audit signatures` verified 447 registry signatures and 121 attestations.
+The bundled qrcode-terminal artifact, whose metadata omitted a license, includes
+Apache-2.0 license text. Complete transitive license review and dependency
+admission remain unfinished; these checks do not approve the vulnerable tree.
+
+A separate temporary clone of the repository history used a local bare Git
+remote, `dryRun: true`, no publishing plugins, and an environment without
+registry or GitHub credentials. The real semantic-release engine and commit
+analyzer calculated `1.0.0-beta.1`, channel `beta`, from the 22 commits through
+`a461ce49903d620ced4c18ce1a90157b46591fc6`. The release-notes generator was then
+called separately with the canonical repository URL. No tag was created, even
+in the temporary remote. This verifies version calculation, not hosted release
+authentication, stable promotion, or publication.
+
+The braces advisory affects recursive parsing of deeply nested **patterns**.
+In the inspected upstream branch expansion, the pattern is `branch.name` from
+release configuration; remote branch names are subjects. In commit analysis,
+patterns come from release rules, while commit fields are subjects. The current
+draft uses fixed literal branch names and the analyzer's default rules. This
+suggests narrower exposure than accepting arbitrary user-supplied patterns,
+but it is not a complete reachability audit of the transitive tree. Other
+advisories remain as well. No exception has been approved or applied, and the
+repository's required high-severity audit is unchanged. The beta prerelease of
+semantic-release also retains micromatch, so switching to it does not remove
+this blocker.
+
+Sources: [branch expansion](https://github.com/semantic-release/semantic-release/blob/v25.0.9/lib/branches/expand.js),
+[commit matching](https://github.com/semantic-release/commit-analyzer/blob/v13.0.1/lib/analyze-commit.js),
+[default rules](https://github.com/semantic-release/commit-analyzer/blob/v13.0.1/lib/default-release-rules.js).
+
 After an acceptable upstream fix or an explicitly reviewed alternative,
 re-run intake and pin exact direct versions plus the lockfile. Keep these tools
 in development dependencies, preserve the five-package runtime closure, and
@@ -49,8 +85,8 @@ verify registry signatures/provenance, licenses, install hooks, audits and a
 real dry run before enabling them. CODEOWNERS remains responsible for review;
 Dependabot can maintain admitted versions. Removing the release configuration
 and dev tooling would restore the existing manual candidate checks if the tool
-must later be replaced. Publication still needs separate approval and registry
-setup; this intake does not authorize either.
+must later be replaced. The requested beta publication is authorized, but still
+needs the separate license choice, dependency admission and registry setup.
 
 
 ## Installation policy - 2026-10-07
