@@ -51,8 +51,9 @@ history and logs when visibility becomes public; see
 - Remove unnecessary references to other project names from current docs.
   Historical commits remain unchanged.
 - Direct security questions from the issue chooser to the security policy.
-- Prepare CI pushes for the requested sole `titan/beta` branch. PR checks and
-  manual dispatch remain; publishing stays disabled.
+- Prepare `beta` as the sole normal release branch on npm's `beta` channel. CI
+  also checks the current `titan/beta` preparation branch until branch cleanup.
+  PR checks and manual dispatch remain; publishing stays disabled.
 - Recalculate maturity: 91% including generated output, 100% for the maintained
   source tree. These scores do not establish release readiness.
 
@@ -61,11 +62,10 @@ history and logs when visibility becomes public; see
 1. **License resolved:** MIT was selected on October 8, 2026, with copyright
    held by ciqol contributors. The root and generated manifests declare MIT;
    the [license](../LICENSE) is included in the package archive.
-2. **Branches:** only `titan/beta` can remain while npm publication is disabled.
-   A local semantic-release dry run with only that prerelease branch returned
-   `ERELEASEBRANCHES`. The current engine requires a real stable release branch
-   before the first npm beta, or a reviewed change of release tooling. See
-   [release preparation](releasing.md).
+2. **Branches:** the selected sole normal release branch is `beta`, with npm
+   channel `beta`. A local dry run with only that branch calculated `1.0.0`;
+   another stable branch is unnecessary. Default-branch selection and deletion
+   of the older branches remain pending. See [release preparation](releasing.md).
 3. **Private reporting:** the endpoint returned HTTP 404 while the repository
    is private. Enable and verify it after the approved visibility transition,
    and verify the reporting option described in SECURITY.md. It is not yet available.
@@ -80,15 +80,16 @@ team changes, merge-policy changes, rulesets, or a pull request.
 
 | Branch | Observed head | Action for the beta-only layout |
 | --- | --- | --- |
-| `titan/beta` | `cb6ebe92c3182051a034dd29e192d51a182b5d22` | Keep, including cleanup; make default |
+| `beta` | Same reviewed source head as the preparation branch | Keep; make default |
+| `titan/beta` | Current preparation branch | Delete after verifying its head is retained by `beta` |
 | `titan/bootstrap-envref` | `b25da7cfe730bfaca0a470d9a31a303cef7d33ad` | Delete branch pointer |
 | `titan/rename-resenv` | `60e70a4e43b39fc9a87379990e4ed44de50726cb` | Delete branch pointer |
 | `titan/prepare-first-release` | `0c313483d7123b8b4afd360b4e8daae58abc4241` | Delete after changing the default |
 
-All three older heads are ancestors of `titan/beta`; none contains unique
-commits. Re-check the remote heads before deletion and stop if any changed.
-If retaining the stable branch for semantic-release, preserve
-`titan/prepare-first-release` and revise the plan instead of deleting it.
+At the original audit, all three older heads were ancestors of `titan/beta`;
+none contained unique commits. Before deletion, re-check every remote head and
+verify all four older branches are ancestors of the retained `beta` head. Stop
+if any contains newer or unique work.
 
 After the branch decision, obtain explicit approval for the default
 branch, listed deletions, public visibility, and private vulnerability reporting.

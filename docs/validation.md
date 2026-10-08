@@ -4,6 +4,35 @@ This is a chronological validation log. Older entries describe earlier APIs,
 names, versions and installation policies. Use the README for the current
 `resolve()` / `replace` API and the release guide for the current release plan.
 
+## Normal release branch beta - 2026-10-08
+
+Changed the semantic-release draft to one normal release branch,
+`{ name: 'beta', channel: 'beta' }`, without a `prerelease` property. CI checks
+`beta` and the current `titan/beta` preparation branch. This supersedes the
+earlier version plan: the initial candidate is `1.0.0` on npm's `beta` channel,
+rather than a `1.0.0-beta.1` prerelease.
+
+An isolated local remote held only `beta` at source commit
+`a182ec0c04034f84c01b2f770631970256dd30d1`. The real semantic-release engine,
+using the checked-in branch configuration and the existing temporary intake
+installation, calculated version `1.0.0`, tag `v1.0.0`, channel `beta` from
+26 commits. It used only the analyzer plugin, with dry-run enabled and no
+registry/GitHub credentials. Assertions confirmed unchanged remote refs and
+no tags. The initial fixture attempt had a dangling remote HEAD after removing
+its older branches; setting the fixture's HEAD to `beta` corrected the fixture.
+
+Compared the reference repository at `100f323544ec0a517eeabd978c60fe5eb7170ca6`;
+the release guide records the reusable contracts and required adaptations.
+A refreshed audit of the isolated release-tool tree still reported 10 high and
+two moderate findings. No dependency was admitted and no publishing job was
+enabled. Visibility, default-branch selection and older-branch deletion remain
+separate settings changes.
+
+Lint, the dual-format build, 16 packed runtime checks and two typed consumers
+passed on Node 24.19.0. Static workflow parsing verified the branch triggers,
+unchanged read-only job permissions and timeouts; local documentation links
+resolved. No package or lockfile dependency changed.
+
 ## MIT license - 2026-10-08
 
 Added the MIT license with copyright 2026 ciqol contributors. The root manifest,

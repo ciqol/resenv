@@ -93,6 +93,17 @@ must later be replaced. The requested beta publication is authorized, but still
 needs dependency admission and registry setup. The project license was selected
 as MIT on October 8, 2026, with copyright held by ciqol contributors.
 
+### Reference comparison and audit refresh - 2026-10-08
+
+The reference `ciqol/sonarqube-api-client` uses the same semantic-release engine
+and analyzer family, plus npm and GitHub plugins. Reusing its configuration
+does not establish admission of that tree. A fresh registry audit of the existing
+isolated intake lockfile still reported 10 high and two moderate findings,
+including `braces@3.0.3` through micromatch. No release dependency was added,
+no dependency version changed and the audit gate remains enforced. The selected
+normal release branch is now `beta`, with npm channel `beta`; this branch change
+does not change the dependency findings. See [the reference comparison](releasing.md#reference-sonarqube-api-client).
+
 
 ## Installation policy - 2026-10-07
 

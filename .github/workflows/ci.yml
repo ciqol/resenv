@@ -2,8 +2,9 @@ name: CI
 
 on:
   push:
-    # Prepare the requested beta-only layout; publication remains disabled.
-    branches: ['titan/beta']
+    # beta is the release branch; titan/beta carries its preparation changes.
+    # Publication remains disabled while release-tool intake is blocked.
+    branches: ['beta', 'titan/beta']
   pull_request:
   workflow_dispatch:
 

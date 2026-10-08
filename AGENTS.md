@@ -5,10 +5,12 @@ both package manifests `private: true`, and the package unpublished until the
 user explicitly approves release. The source is MIT licensed, with copyright
 held by ciqol contributors.
 
-The user selected semantic-release for `titan/beta`, with `beta` as the
-prerelease identifier and npm channel. Its planned initial line is
-1.0.0-beta.1 / 1.0.0, replacing the earlier 0.1.0 plan. Release tooling intake
-is blocked by an unpatched high-severity dependency advisory. The current
+The user selected `beta` as the sole normal release branch for semantic-release,
+with `beta` as the npm channel. Its planned initial version is `1.0.0`, installed
+with `@ciqol/resenv@beta`. The branch is not configured with `prerelease`;
+versions therefore have no `-beta.N` suffix. This replaces the earlier
+`1.0.0-beta.1` and 0.1.0 plans. Release tooling intake is blocked by an unpatched
+high-severity dependency advisory. The current
 0.1.0-beta.1 manifest remains a private prototype until tool-derived versioning
 is available. Earlier versions were unpublished
 prototypes; preserve their archives and validation history. Hold PR creation,
@@ -72,9 +74,9 @@ CI builds one archive and all matrix jobs test that same archive through
 Source unit specs run before the CI build; matrix jobs run only higher-level
 tests against that archive and never recompile the source.
 Use `npm run release:check` for the non-publishing preparation check. The CI push
-filter is prepared for the requested beta-only layout; the remote default-branch
-change remains pending. After that transition, keep it aligned with the actual
-default branch and any approved release branches.
+filter includes `beta` and the current `titan/beta` preparation branch; the
+remote default-branch change and older-branch cleanup remain pending. After that
+transition, keep it aligned with the actual default branch and approved release branches.
 Beta publication must use the `beta` npm dist-tag; never promote it to `latest`.
 
 README documents how application users install and use resenv. Contributor setup,

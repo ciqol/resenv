@@ -3,9 +3,10 @@
 The [README](README.md) covers using resenv in an application. This guide covers
 changing resenv itself and verifying those changes.
 
-Semantic-release is selected for beta releases from `titan/beta`, with a planned
-initial `1.0.0-beta.1` / `1.0.0` line. Its dependency intake is blocked; see
-[release preparation](docs/releasing.md). The current `0.1.0-beta.1` manifest
+Semantic-release is selected for releases from the normal release branch `beta`,
+with a planned initial version `1.0.0` on npm's `beta` channel. The npm channel
+does not add a `-beta.N` suffix to the version. Its dependency intake is blocked;
+see [release preparation](docs/releasing.md). The current `0.1.0-beta.1` manifest
 remains a prototype version. Both package manifests disable registry publication.
 Public source visibility and npm publication are separate decisions. The source
 uses the [MIT license](LICENSE), copyright 2026 ciqol contributors.
