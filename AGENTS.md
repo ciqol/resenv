@@ -13,6 +13,7 @@ login. The user manages npm-side ownership and authentication. The OIDC path
 requires an existing package and a matching trusted publisher; do not assume it
 bootstraps an unpublished package. No npm publishing tokens are configured.
 The `release` environment requires explicit approval before initial creation.
+Keep `RELEASE_ENABLED` unset until its protections and npm setup are verified.
 Never create tags before successful publication of the tested archive.
 
 Release planning uses bounded, expiring development advisory exceptions with

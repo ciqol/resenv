@@ -107,7 +107,8 @@ jobs:
   release:
     name: Publish tested beta archive
     needs: [build, test]
-    if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/beta' && needs.build.outputs.publish == 'true'
+    # Enable only after the protected environment and npm authentication exist.
+    if: vars.RELEASE_ENABLED == 'true' && github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/beta' && needs.build.outputs.publish == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     environment: release
@@ -136,5 +137,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RELEASE_APPROVED: ${{ inputs.publish }}
+          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
           PLAN_SHA256: ${{ needs.build.outputs.plan_sha256 }}
           ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}

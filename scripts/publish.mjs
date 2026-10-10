@@ -14,6 +14,7 @@ export function validatePublisher (env, expires, now = Date.now()) {
   assert.equal(env.GITHUB_REF, 'refs/heads/beta')
   assert.equal(env.GITHUB_WORKFLOW_REF, 'ciqol/resenv/.github/workflows/ci.yml@refs/heads/beta')
   assert.equal(env.RELEASE_APPROVED, 'true')
+  assert.equal(env.RELEASE_ENABLED, 'true')
   assert.match(env.GITHUB_SHA ?? '', /^[a-f0-9]{40}$/)
   for (const key of ['GITHUB_TOKEN', 'ACTIONS_ID_TOKEN_REQUEST_URL', 'ACTIONS_ID_TOKEN_REQUEST_TOKEN']) assert.ok(env[key], `Missing ${key}`)
   for (const key of ['PLAN_SHA256', 'ARCHIVE_SHA256']) assert.match(env[key] ?? '', /^[a-f0-9]{64}$/)

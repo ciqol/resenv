@@ -50,6 +50,12 @@ until these settings are applied and read back. No secrets belong in it for OIDC
 
 ## Run a release
 
+Publication currently stays disabled: `RELEASE_ENABLED` is unset. This prevents
+GitHub from automatically creating an unprotected environment if someone checks
+the publication box too early. After the approved environment settings are
+verified and npm authentication is ready, the maintainer can set the repository
+Actions variable `RELEASE_ENABLED` to `true`. It is not a secret or credential.
+
 Open [CI](https://github.com/ciqol/resenv/actions/workflows/ci.yml), select
 **Run workflow**, choose `beta`, and enable **Publish the tested release candidate**.
 Approve the `release` environment when the build and consumer checks pass.
