@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { verifyArtifact } from './release-artifact.mjs'
 
-export function validatePublisher (env) {
+export function validatePublisher (env, expires, now = Date.now()) {
+  assert.ok(now < Date.parse(expires), 'Publishing platform security review has expired')
   assert.equal(env.GITHUB_ACTIONS, 'true')
   assert.equal(env.GITHUB_EVENT_NAME, 'workflow_dispatch')
   assert.equal(env.GITHUB_REPOSITORY, 'ciqol/resenv')
@@ -57,7 +58,8 @@ export async function publishRelease ({ plan, archive }, effects) {
 
 async function main () {
   assert.equal(process.argv.length, 3, 'Usage: node scripts/publish.mjs <candidate-directory>')
-  validatePublisher(process.env)
+  const policy = JSON.parse(readFileSync(new URL('../docs/security-exceptions.json', import.meta.url), 'utf8'))
+  validatePublisher(process.env, policy.expires)
   const candidate = verifyArtifact(resolve(process.argv[2]), { head: process.env.GITHUB_SHA, planHash: process.env.PLAN_SHA256, archiveHash: process.env.ARCHIVE_SHA256 })
   const temporary = mkdtempSync(join(tmpdir(), 'resenv-publish-'))
   try {
@@ -85,8 +87,8 @@ async function main () {
       npm (archive) {
         const version = spawnSync('npm', ['--version'], { env: npmEnv, encoding: 'utf8', timeout: 10000 })
         assert.equal(version.status, 0)
-        const [major, minor] = version.stdout.trim().split('.').map(Number)
-        assert.ok(major > 11 || (major === 11 && minor >= 5), 'npm 11.5.1+ is required for trusted publishing')
+        assert.equal(process.version, 'v24.19.0', 'Re-review the publishing platform before changing Node.js')
+        assert.equal(version.stdout.trim(), '11.17.0', 'Re-review the publishing platform before changing npm')
         const result = spawnSync('npm', ['publish', archive, '--access', 'public', '--tag', 'beta', '--provenance'], { cwd: temporary, env: npmEnv, encoding: 'utf8', timeout: 180000, maxBuffer: 4 * 1024 * 1024 })
         assert.equal(result.error, undefined)
         // npm may authenticate only during publish. Do not use whoami as an OIDC probe.

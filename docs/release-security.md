@@ -115,4 +115,6 @@ configuration from the child environment. No package-query, login, shell,
 selector or arbitrary URL input is accepted. OIDC is supplied by GitHub for the
 specific repository, workflow and protected environment. Registry and signing
 services remain trusted inputs. This bounds exposure; it is not an upstream
-fix. Review the platform CLI again before November 9 alongside this policy.
+fix. The publisher checks the policy expiry again when it runs, including on a
+failed-job retry, and rejects platform version drift. Review the platform CLI
+again before November 9 alongside this policy.
