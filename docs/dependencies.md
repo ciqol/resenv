@@ -1,5 +1,13 @@
 # Dependency review
 
+## Release tools admitted with bounded controls - 2026-10-10
+
+The current release pipeline and launch state are documented in [releasing](releasing.md).
+The release-tool review and expiring advisory policy are in [release security](release-security.md).
+Earlier dated entries below remain historical evidence and are superseded where
+the current release guide describes a different state.
+
+
 Entries record decisions at the stated dates. Older version plans and install
 policies are historical; the release guide and CONTRIBUTING describe the current
 workflow. Release-tool intake below is not dependency admission.

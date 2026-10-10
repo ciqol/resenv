@@ -1,5 +1,19 @@
 # Public repository readiness
 
+## Approved transition - 2026-10-10
+
+The current release pipeline and launch state are documented in [releasing](releasing.md).
+The release-tool review and expiring advisory policy are in [release security](release-security.md).
+Earlier dated entries below remain historical evidence and are superseded where
+the current release guide describes a different state.
+
+The user approved public visibility, default branch `beta`, and deletion of
+the four older ancestor branch references. A fresh settings snapshot, complete
+Git bundle and verified restore are retained outside the repository. Recheck
+remote heads and ancestry immediately before deletion. Other governance changes
+and PR creation remain outside this transition.
+
+
 Reviewed on October 8, 2026 at `cb6ebe92c3182051a034dd29e192d51a182b5d22`, before
 the accompanying documentation cleanup. Repository: `ciqol/resenv`. Maintainer
 and authenticated GitHub account: `titan-ron`.

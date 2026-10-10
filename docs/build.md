@@ -91,8 +91,10 @@ overrides and a package-wide `type` field. Explicit `.mjs` and `.cjs` extensions
 select the output format. README, the MIT `LICENSE`, contributor/security guides
 and docs are copied into the distribution and included in the archive.
 
-Both manifests retain `private: true`. This intentionally overrides the normal
-publishable-manifest convention while the repository remains an unpublished
+Ordinary local builds retain `private: true`. The CI build accepts a validated
+release plan and sets its computed version, removing `private` before the final
+archive is packed and tested. The development root stays private. Earlier
+builds kept both manifests private while the package was an unpublished
 prototype. There is no publishing workflow.
 
 `npm run pack:local` packs the generated directory. `npm run test:package`

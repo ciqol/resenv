@@ -7,9 +7,12 @@ import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PrivateKey, encrypt } from 'eciesjs'
 import ts from 'typescript'
+import { verifyArtifact } from '../scripts/release-artifact.mjs'
 
-assert.ok(process.argv.length <= 3, 'Usage: npm run test:package -- [package.tgz]')
+assert.ok(process.argv.length <= 4, 'Usage: npm run test:package -- [package.tgz [release.json]]')
 const suppliedArchive = process.argv[2] ? resolve(process.argv[2]) : undefined
+const plan = process.argv[3] ? verifyArtifact(dirname(resolve(process.argv[3])), { head: process.env.GITHUB_SHA }).plan : undefined
+if (plan) assert.equal(suppliedArchive, resolve(dirname(process.argv[3]), plan.archive), 'Test the archive described by this release plan')
 const root = fileURLToPath(new URL('..', import.meta.url))
 const env = { PATH: `${dirname(process.execPath)}:${process.env.PATH}` }
 const source = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
@@ -37,7 +40,7 @@ try {
     : ['pack', './dist', '--json', '--pack-destination', directory]
   const packed = JSON.parse(run('npm', [...npmOptions, ...packArgs], root).stdout)[0]
   assert.equal(packed.name, source.name)
-  assert.equal(packed.version, source.version)
+  assert.equal(packed.version, plan?.version ?? source.version)
   assert.ok(!packed.files.some(file => /\.spec\./.test(file.path)), 'Unit specs must not be packed')
   for (const path of ['index.cjs', 'index.mjs', 'index.d.cts', 'index.d.mts', 'resolve-commands.cjs', 'resolve-commands.mjs', 'resolve-doppler.cjs', 'resolve-doppler.mjs', 'doppler-worker.cjs', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/dependencies.md', 'docs/validation.md', 'docs/releasing.md', 'docs/doppler.md']) {
     assert.ok(packed.files.some(file => file.path === path), `Missing package file: ${path}`)
@@ -78,10 +81,10 @@ try {
   run('npm', [...npmOptions, 'ci'], directory)
   const packageRoot = join(directory, 'node_modules/@ciqol/resenv')
   const manifest = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'))
-  assert.equal(manifest.private, true)
+  assert.equal(manifest.private, plan?.publish ? undefined : true)
   assert.deepEqual(manifest.publishConfig, source.publishConfig)
   assert.equal(manifest.name, source.name)
-  assert.equal(manifest.version, source.version)
+  assert.equal(manifest.version, plan?.version ?? source.version)
   assert.equal(manifest.license, source.license)
   assert.deepEqual(manifest.dependencies, source.dependencies)
   for (const field of ['scripts', 'devDependencies', 'type', 'overrides']) assert.equal(manifest[field], undefined)
@@ -89,7 +92,7 @@ try {
   assert.equal(existsSync(join(directory, 'node_modules/typescript')), false)
   assert.equal(existsSync(join(directory, 'node_modules/eslint')), false)
   assert.equal(existsSync(join(directory, 'node_modules/typescript-eslint')), false)
-  for (const dependency of ['@rollup/plugin-typescript', '@types/node', 'tslib', 'vitest', '@vitest/coverage-v8', 'vite']) {
+  for (const dependency of ['@rollup/plugin-typescript', '@types/node', 'tslib', 'vitest', '@vitest/coverage-v8', 'vite', 'semantic-release', '@semantic-release/commit-analyzer', '@semantic-release/release-notes-generator']) {
     assert.equal(existsSync(join(directory, 'node_modules', dependency)), false)
   }
   for (const file of packed.files.filter(file => /\.(cjs|mjs)$/.test(file.path))) {

@@ -1,0 +1,139 @@
+{
+  "expires": "2026-11-09T00:00:00.000Z",
+  "owner": "titan-ron",
+  "scope": "Release planning only; runtime audit has no exceptions.",
+  "exceptions": [
+    {
+      "advisory": "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr",
+      "package": "brace-expansion",
+      "versions": [
+        "5.0.9"
+      ],
+      "nodes": [
+        "node_modules/npm/node_modules/brace-expansion"
+      ],
+      "reason": "Bundled inside npm for the unselected @semantic-release/npm plugin. The planner blocks loading that plugin, the GitHub plugin and bundled npm; the publisher does not install release dependencies."
+    },
+    {
+      "advisory": "https://github.com/advisories/GHSA-qhr7-859c-m2p7",
+      "package": "brace-expansion",
+      "versions": [
+        "5.0.9"
+      ],
+      "nodes": [
+        "node_modules/npm/node_modules/brace-expansion"
+      ],
+      "reason": "Bundled inside npm for the unselected @semantic-release/npm plugin. The planner blocks loading that plugin, the GitHub plugin and bundled npm; the publisher does not install release dependencies."
+    },
+    {
+      "advisory": "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p",
+      "package": "brace-expansion",
+      "versions": [
+        "5.0.9"
+      ],
+      "nodes": [
+        "node_modules/npm/node_modules/brace-expansion"
+      ],
+      "reason": "Bundled inside npm for the unselected @semantic-release/npm plugin. The planner blocks loading that plugin, the GitHub plugin and bundled npm; the publisher does not install release dependencies."
+    },
+    {
+      "advisory": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+      "package": "braces",
+      "versions": [
+        "3.0.3"
+      ],
+      "nodes": [
+        "node_modules/braces"
+      ],
+      "reason": "The planner blocks every braces callable and only uses micromatch matching, which delegates to picomatch."
+    },
+    {
+      "advisory": "https://github.com/advisories/GHSA-ch52-4w7c-c8xp",
+      "package": "http-cache-semantics",
+      "versions": [
+        "4.2.0"
+      ],
+      "nodes": [
+        "node_modules/npm/node_modules/http-cache-semantics"
+      ],
+      "reason": "Bundled inside npm for the unselected @semantic-release/npm plugin. The planner blocks loading that plugin, the GitHub plugin and bundled npm; the publisher does not install release dependencies."
+    },
+    {
+      "advisory": "https://github.com/advisories/GHSA-rpw4-54j3-4h4q",
+      "package": "ip-address",
+      "versions": [
+        "10.5.0"
+      ],
+      "nodes": [
+        "node_modules/npm/node_modules/ip-address"
+      ],
+      "reason": "Bundled inside npm for the unselected @semantic-release/npm plugin. The planner blocks loading that plugin, the GitHub plugin and bundled npm; the publisher does not install release dependencies."
+    },
+    {
+      "advisory": "https://github.com/advisories/GHSA-2vr4-cq9g-pvrc",
+      "package": "ip-address",
+      "versions": [
+        "10.5.0"
+      ],
+      "nodes": [
+        "node_modules/npm/node_modules/ip-address"
+      ],
+      "reason": "Bundled inside npm for the unselected @semantic-release/npm plugin. The planner blocks loading that plugin, the GitHub plugin and bundled npm; the publisher does not install release dependencies."
+    },
+    {
+      "advisory": "https://github.com/advisories/GHSA-j6r3-76f7-8jcv",
+      "package": "ip-address",
+      "versions": [
+        "10.5.0"
+      ],
+      "nodes": [
+        "node_modules/npm/node_modules/ip-address"
+      ],
+      "reason": "Bundled inside npm for the unselected @semantic-release/npm plugin. The planner blocks loading that plugin, the GitHub plugin and bundled npm; the publisher does not install release dependencies."
+    },
+    {
+      "advisory": "https://github.com/advisories/GHSA-h3mg-xc3c-68pw",
+      "package": "ip-address",
+      "versions": [
+        "10.5.0"
+      ],
+      "nodes": [
+        "node_modules/npm/node_modules/ip-address"
+      ],
+      "reason": "Bundled inside npm for the unselected @semantic-release/npm plugin. The planner blocks loading that plugin, the GitHub plugin and bundled npm; the publisher does not install release dependencies."
+    },
+    {
+      "advisory": "https://github.com/advisories/GHSA-rj75-hqrm-r3gf",
+      "package": "postcss-selector-parser",
+      "versions": [
+        "7.1.4"
+      ],
+      "nodes": [
+        "node_modules/npm/node_modules/postcss-selector-parser"
+      ],
+      "reason": "Bundled inside npm for the unselected @semantic-release/npm plugin. The planner blocks loading that plugin, the GitHub plugin and bundled npm; the publisher does not install release dependencies."
+    },
+    {
+      "advisory": "https://github.com/advisories/GHSA-3wwx-pv8p-q78v",
+      "package": "undici",
+      "versions": [
+        "6.28.0"
+      ],
+      "nodes": [
+        "node_modules/npm/node_modules/undici"
+      ],
+      "reason": "Bundled inside npm for the unselected @semantic-release/npm plugin. The planner blocks loading that plugin, the GitHub plugin and bundled npm; the publisher does not install release dependencies."
+    },
+    {
+      "advisory": "https://github.com/advisories/GHSA-rfgv-xxqx-mfg5",
+      "package": "undici",
+      "versions": [
+        "6.28.0"
+      ],
+      "nodes": [
+        "node_modules/npm/node_modules/undici"
+      ],
+      "reason": "Bundled inside npm for the unselected @semantic-release/npm plugin. The planner blocks loading that plugin, the GitHub plugin and bundled npm; the publisher does not install release dependencies."
+    }
+  ]
+}

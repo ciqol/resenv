@@ -1,4 +1,4 @@
-// Preview only while publication and dependency intake remain on hold.
+// This engine plans releases only. CI publishes the tested archive separately.
 export default {
   branches: [{ name: 'beta', channel: 'beta' }],
   tagFormat: 'v${version}',

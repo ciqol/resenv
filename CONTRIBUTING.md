@@ -3,13 +3,12 @@
 The [README](README.md) covers using resenv in an application. This guide covers
 changing resenv itself and verifying those changes.
 
-Semantic-release is selected for releases from the normal release branch `beta`,
-with a planned initial version `1.0.0` on npm's `beta` channel. The npm channel
-does not add a `-beta.N` suffix to the version. Its dependency intake is blocked;
-see [release preparation](docs/releasing.md). The current `0.1.0-beta.1` manifest
-remains a prototype version. Both package manifests disable registry publication.
-Public source visibility and npm publication are separate decisions. The source
-uses the [MIT license](LICENSE), copyright 2026 ciqol contributors.
+Releases use semantic-release on the normal branch `beta`, with npm channel
+`beta`. The first computed version is `1.0.0`; the channel does not add a
+`-beta.N` suffix. The root and ordinary local builds remain private prototypes.
+CI generates the publishable manifest before packing and testing it. See
+[releasing](docs/releasing.md) and the bounded [release-tool review](docs/release-security.md).
+The source uses the [MIT license](LICENSE), copyright ciqol contributors.
 
 ## Local development
 
@@ -33,7 +32,8 @@ node dist/bin/resenv.cjs --help
 
 Author library and CLI code as `.ts`; Rollup's TypeScript plugin produces both
 module formats and declarations from that implementation. Colocate Vitest unit
-specs as `*.spec.ts` beside each tested module and import its source. Keep
+specs as `*.spec.ts` beside each tested module and import its source. Build and
+release scripts have colocated `*.spec.mjs` Vitest specs. Keep
 process, package and integration checks in `test/` as `.mjs`; they exercise
 compiled output and installed packages. Tests use generated keys and dummy commands.
 Never use real secrets in fixtures, terminal output, screenshots, issues, or
@@ -79,15 +79,16 @@ exercises both module formats, CLI and preloads, shared error identity, single
 preload execution and `.cts`/`.mts` consumer types.
 
 Pass an existing archive to test the same build CI uses:
-`npm run test:package -- /absolute/path/to/package.tgz`. The supplied package's
+`npm run test:package -- /absolute/path/to/package.tgz`. For a final CI candidate,
+also pass its `release.json` as the second argument. The supplied package's
 name, version, executable mode and manifest are checked before runtime probes.
 `npm run verify` runs lint, typecheck, build and tests; `npm run release:check`
 also previews the package contents. Neither publishes or creates a tag.
 
 Rebuild after source, declarations, metadata or documentation changes. The build
 cleans `dist/` first and generates its manifest from the root package. See
-[docs/build.md](docs/build.md). Keep both package manifests private until a
-separate release decision; never edit the generated manifest by hand.
+[docs/build.md](docs/build.md). Ordinary local builds remain private. Only a validated CI release plan removes
+that guard from the distribution manifest; never edit it by hand.
 
 ## Try changes in an application
 

@@ -1,5 +1,28 @@
 # Validation
 
+## Release pipeline candidate - 2026-10-10
+
+The normal `beta` branch planner computed `1.0.0` without tags or publication.
+The final distribution manifest was generated at that version before packing;
+the root remained private. Strict types, lint, 98 colocated Vitest tests,
+43 process tests, installed-package runtime checks and typed consumers passed.
+Registry verification passed for 606 signatures and 186 attestations.
+
+The runtime audit is clean. The development tree has 10 high and two moderate
+affected-package findings, covering 12 active advisory IDs. These are admitted
+only with the exact paths, versions, callable guards and November 9 expiry in
+[the release security review](release-security.md). Tests reject unknown
+findings, runtime occurrences, drift, expired policy and malformed audit data.
+
+The native publisher tests cover archive substitution, source mismatch, event
+and workflow restrictions, npm failure before tag creation, registry integrity
+collision, tag collision, recovery and removal of inherited credentials/config.
+No publication was performed by these local tests. The npm package lookup is
+still 404; npm requires an existing package to configure OIDC trust. See
+[the current release guide](releasing.md) for launch and recovery steps.
+Earlier dated entries below describe their historical state.
+
+
 This is a chronological validation log. Older entries describe earlier APIs,
 names, versions and installation policies. Use the README for the current
 `resolve()` / `replace` API and the release guide for the current release plan.

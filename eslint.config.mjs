@@ -12,7 +12,7 @@ export default [
       sourceType: 'module',
       globals: Object.fromEntries([
         'process', 'console', 'Buffer', 'URL', 'URLSearchParams', 'TextDecoder',
-        'AbortSignal', 'setTimeout', 'clearTimeout'
+        'AbortSignal', 'setTimeout', 'clearTimeout', 'fetch'
       ].map(name => [name, 'readonly']))
     },
     rules: {

@@ -1,5 +1,13 @@
 # Security and performance review
 
+## Release preparation update - 2026-10-10
+
+The current release pipeline and launch state are documented in [releasing](releasing.md).
+The release-tool review and expiring advisory policy are in [release security](release-security.md).
+Earlier dated entries below remain historical evidence and are superseded where
+the current release guide describes a different state.
+
+
 Reviewed on 2026-10-06 against the private 0.1.0 candidate, starting at
 `b50fa9b`. This is a source review with targeted reproductions, regression tests
 and measurements. It is not an independent audit or a security certification.

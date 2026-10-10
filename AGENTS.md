@@ -1,30 +1,24 @@
 # resenv
 
-Private Node.js package: `@ciqol/resenv`. Keep the GitHub repository private,
-both package manifests `private: true`, and the package unpublished until the
-user explicitly approves release. The source is MIT licensed, with copyright
-held by ciqol contributors.
+Node.js package: `@ciqol/resenv`, MIT licensed, copyright ciqol contributors.
+The user approved public source and the transition to `beta` as the sole remote
+and default branch. PR creation remains on hold. Keep the development root and
+ordinary local builds private. CI generates the release version before packing,
+with semantic-release on the normal branch `beta` and npm channel `beta`.
+The first computed version is `1.0.0`, without a `-beta.N` suffix.
 
-The user selected `beta` as the sole normal release branch for semantic-release,
-with `beta` as the npm channel. Its planned initial version is `1.0.0`, installed
-with `@ciqol/resenv@beta`. The branch is not configured with `prerelease`;
-versions therefore have no `-beta.N` suffix. This replaces the earlier
-`1.0.0-beta.1` and 0.1.0 plans. Release tooling intake is blocked by an unpatched
-high-severity dependency advisory. The current
-0.1.0-beta.1 manifest remains a private prototype until tool-derived versioning
-is available. Earlier versions were unpublished
-prototypes; preserve their archives and validation history. Hold PR creation,
-public visibility, tags and publishing until explicitly requested. The user
-requested the beta release on October 8; tags and beta publication are now
-authorized once the remaining dependency and registry requirements
-are met. Keep repository visibility private and PR creation on hold. The release
-preparation and settings decisions are recorded in `docs/releasing.md`.
+Publish only through the manually dispatched GitHub Actions workflow, after all
+candidate checks. Never publish from a developer machine or request local npm
+login. The user manages npm-side ownership and authentication. The OIDC path
+requires an existing package and a matching trusted publisher; do not assume it
+bootstraps an unpublished package. No npm publishing tokens are configured.
+The `release` environment requires explicit approval before initial creation.
+Never create tags before successful publication of the tested archive.
 
-Publish npm releases only through GitHub Actions using npm trusted publishing
-(OIDC). The user manages the npm-side configuration. Do not publish from a
-developer machine, request local npm login, or introduce npm publishing tokens.
-Local npm authentication is not a release prerequisite. Keep version selection
-automated with semantic-release and publish the exact archive verified by CI.
+Release planning uses bounded, expiring development advisory exceptions with
+executable guards. Read `docs/release-security.md` before changing release tools.
+Do not broaden the exceptions, bypass their expiry or pass release-tool modules
+to the privileged publisher. The platform npm CLI review is recorded separately.
 
 ## Implementation
 
@@ -73,10 +67,9 @@ CI builds one archive and all matrix jobs test that same archive through
 `npm run test:package -- <archive.tgz>`.
 Source unit specs run before the CI build; matrix jobs run only higher-level
 tests against that archive and never recompile the source.
-Use `npm run release:check` for the non-publishing preparation check. The CI push
-filter includes `beta` and the current `titan/beta` preparation branch; the
-remote default-branch change and older-branch cleanup remain pending. After that
-transition, keep it aligned with the actual default branch and approved release branches.
+Use `npm run release:check` for non-publishing local verification. Hosted
+checks plan a version and test the final archive; publication is a separate
+manual workflow input. CI's push filter is `beta`.
 Beta publication must use the `beta` npm dist-tag; never promote it to `latest`.
 
 README documents how application users install and use resenv. Contributor setup,

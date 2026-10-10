@@ -2,11 +2,15 @@ name: CI
 
 on:
   push:
-    # beta is the release branch; titan/beta carries its preparation changes.
-    # Publication remains disabled while release-tool intake is blocked.
-    branches: ['beta', 'titan/beta']
+    branches: ['beta']
   pull_request:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish the tested release candidate through npm OIDC'
+        type: boolean
+        default: false
+        required: true
 
 permissions: {}
 
@@ -20,16 +24,22 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+    outputs:
+      publish: ${{ steps.candidate.outputs.publish }}
+      version: ${{ steps.candidate.outputs.version }}
+      plan_sha256: ${{ steps.candidate.outputs.plan_sha256 }}
+      archive_sha256: ${{ steps.candidate.outputs.archive_sha256 }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version-file: '.nvmrc'
           package-manager-cache: false
       - run: npm ci --no-audit --no-fund
-      - run: npm audit --audit-level=high
+      - run: npm run audit
       - run: npm audit signatures
       - name: Lint implementation and build tooling
         run: npm run lint
@@ -37,14 +47,19 @@ jobs:
         run: npm run typecheck
       - name: Run colocated unit specs
         run: npm run test:coverage
-      - name: Build ESM, CommonJS and declarations
-        run: npm run build
-      - run: npm run pack:local
+      - name: Plan the version and notes without publishing
+        run: node scripts/release-plan.mjs candidate
+      - name: Build the final version once
+        run: npm run build -- --release-plan candidate/release.json
+      - run: npm pack ./dist --pack-destination candidate
+      - name: Verify and record the candidate hashes
+        id: candidate
+        run: node scripts/record-artifact.mjs candidate
       # GitHub-owned action: the exact release-tag exception is intentional.
       - uses: actions/upload-artifact@v7.0.1
         with:
           name: 'resenv-package'
-          path: 'ciqol-resenv-*.tgz'
+          path: 'candidate/*'
           if-no-files-found: 'error'
           retention-days: 7
           include-hidden-files: false
@@ -82,9 +97,44 @@ jobs:
           path: 'artifacts'
           digest-mismatch: 'error'
       - name: Verify the packed package
-        run: npm run test:package -- artifacts/*.tgz
+        run: npm run test:package -- artifacts/*.tgz artifacts/release.json
       - name: Load the same build for the process tests
         run: |
           mkdir dist
           tar -xzf artifacts/*.tgz -C dist --strip-components=1
       - run: npm run test:integration
+
+  release:
+    name: Publish tested beta archive
+    needs: [build, test]
+    if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/beta' && needs.build.outputs.publish == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: release
+    concurrency:
+      group: resenv-npm-release
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: resenv-package
+          path: artifacts
+          digest-mismatch: error
+      # No dependency installation, build, repack or package execution here.
+      - name: Publish the verified archive and record its tag
+        run: node scripts/publish.mjs artifacts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_APPROVED: ${{ inputs.publish }}
+          PLAN_SHA256: ${{ needs.build.outputs.plan_sha256 }}
+          ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}
