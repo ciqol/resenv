@@ -16,8 +16,10 @@ Never publish from a developer machine or request local npm
 login. The user manages npm-side ownership and authentication. The OIDC path
 requires an existing package and a matching trusted publisher; do not assume it
 bootstraps an unpublished package. No npm publishing tokens are configured.
-The `release` environment requires explicit approval before initial creation.
-Keep `RELEASE_ENABLED` unset until its protections and npm setup are verified.
+Keep the `release` environment restricted to the `beta` branch, without required
+GitHub reviewers. CI submits a staged package; npm approval is the publication
+gate. Environment creation or protection changes require explicit authorization.
+Keep `RELEASE_ENABLED` unset until its branch policy and npm setup are verified.
 Never create tags before successful publication of the tested archive.
 The user authorized removal of npm versions 1.0.0 and 0.0.0-stage only after
 the CI beta is published and verified; never unpublish the entire package.

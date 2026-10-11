@@ -67,18 +67,20 @@ Node 24.19.0/npm 11.17.0 platform includes staged publishing. New trusted
 publisher configurations must be validated by a successful CI operation before
 the deadline shown in npm settings.
 
-The GitHub environment `release` requires separate maintainer approval before
-initial creation. Configure only the `beta` branch and a required `titan-ron`
-reviewer. After reading back these protections and verifying npm setup, set
-Actions variable `RELEASE_ENABLED=true`. Leave it unset until then to prevent
-a dispatch from creating an unprotected environment automatically.
+The GitHub environment `release` accepts only the `beta` branch and has no
+required GitHub reviewers. CI submits staged packages; the maintainer approves
+publication in npm. After reading back the branch policy and verifying npm
+setup, set Actions variable `RELEASE_ENABLED=true`. Leave it unset until then
+to prevent a dispatch from creating an unrestricted environment automatically.
+Environment creation or protection changes require explicit authorization.
 
 ## Run the first beta
 
 Open [CI](https://github.com/ciqol/resenv/actions/workflows/ci.yml), choose
-**Run workflow**, select `beta`, and enable the staging input. Approve the
-GitHub environment when build and consumer checks pass. The release job summary
-and `resenv-stage` artifact contain the stage identifier and tested integrity.
+**Run workflow**, select `beta`, and enable the staging input. When build and
+consumer checks pass, the release job stages the archive without another GitHub
+approval. Its summary and the `resenv-stage` artifact contain the stage
+identifier and tested integrity.
 
 Review the staged package in npm, then approve it with the stage identifier:
 
