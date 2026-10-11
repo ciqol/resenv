@@ -1,6 +1,8 @@
 # resenv
 
 Node.js package: `@ciqol/resenv`, MIT licensed, copyright ciqol contributors.
+Start each session with [the maintainer handoff](docs/maintainer-handoff.md),
+then inspect Git, GitHub and npm for current state; this chat is not required.
 The user approved public source and the transition to `beta` as the sole remote
 and default branch. PR creation remains on hold. Keep the development root and
 ordinary local builds private. CI generates the release version before packing,
@@ -21,8 +23,9 @@ GitHub reviewers. CI submits a staged package; npm approval is the publication
 gate. Environment creation or protection changes require explicit authorization.
 Keep `RELEASE_ENABLED` unset until its branch policy and npm setup are verified.
 Never create tags before successful publication of the tested archive.
-The user authorized removal of npm versions 1.0.0 and 0.0.0-stage only after
-the CI beta is published and verified; never unpublish the entire package.
+Remove obsolete npm versions only with explicit user authorization. Retain
+`0.0.0-stage` until a functional beta is public and verified; never unpublish
+the entire package. The maintainer has already removed the accidental `1.0.0`.
 
 Release planning uses bounded, expiring development advisory exceptions with
 executable guards. Read `docs/release-security.md` before changing release tools.
@@ -92,3 +95,27 @@ Consumer applications live in separate repositories. Keep local links and secret
 references out of their committed manifests, lockfiles and CI. Do not publish or
 push consumer changes as part of resenv work unless the user explicitly requests
 that.
+
+## Git and account boundaries
+
+- Resolve repository ownership from the push remote. This repository belongs to
+  `ciqol`; use GitHub account `titan-ron`, never a Copilot identity.
+- Before GitHub access, unset `GH_TOKEN` and `GITHUB_TOKEN`, switch with
+  `gh auth switch --hostname github.com --user titan-ron`, and configure only
+  `git config --local credential.https://github.com.helper '!gh auth git-credential'`.
+  Keep both token variables unset for subsequent Git/GitHub commands.
+- Never write global Git configuration. Before committing, verify that
+  `git config --get --show-origin user.name` and the matching `user.email`
+  resolve from repository-local configuration and match `titan-ron`. If either
+  is missing, global, or inconsistent, ask instead of setting an identity.
+- Commit on a `titan/*` branch, never `beta`, `main`, `master`, or the default
+  branch. Use Conventional Commits and preserve signing. Add no co-author
+  trailers or attribution footers.
+- Keep `beta` as the sole remote branch. Once a pending release is recorded or
+  explicitly rejected for replacement, completed commits from the local task
+  branch may fast-forward `beta` when the user has authorized delivery.
+  Do not force-push the default branch.
+- PR creation is on hold. Do not merge, enable auto-merge, change visibility,
+  collaborators, permissions or protections without explicit authorization.
+- Keep credentials, dotenv files, local consumer links and employer-specific
+  names or URLs out of commits, issues and release notes.

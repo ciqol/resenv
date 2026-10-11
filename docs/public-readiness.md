@@ -1,5 +1,18 @@
 # Public repository readiness
 
+## Follow-up review — 2026-10-12
+
+The repository is now public, with `beta` as the sole remote and default branch.
+CI has staged the first `0.1.0-beta.1` candidate; npm approval and release
+recording are still pending. The accidental public `1.0.0` has been removed,
+and the `0.0.0-stage` placeholder remains. Recheck live state before release work.
+
+Private vulnerability reporting returned `enabled: false` during this review.
+The security policy's reporting prerequisite remains outstanding until that
+setting is enabled and verified. See [the session handoff](maintainer-handoff.md)
+and [validation](validation.md) for current behavior and observed checks.
+The dated transition plan below is historical evidence.
+
 ## Approved transition - 2026-10-10
 
 The current release pipeline and launch state are documented in [releasing](releasing.md).

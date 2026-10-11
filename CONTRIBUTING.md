@@ -1,5 +1,8 @@
 # Contributing
 
+Starting a new session? Read the [maintainer handoff](docs/maintainer-handoff.md)
+and [repository instructions](https://github.com/ciqol/resenv/blob/beta/AGENTS.md) before editing or releasing.
+
 The [README](README.md) covers using resenv in an application. This guide covers
 changing resenv itself and verifying those changes.
 

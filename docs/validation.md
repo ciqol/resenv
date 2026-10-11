@@ -1,5 +1,29 @@
 # Validation
 
+## October 12, 2026 — delivery and session handoff review
+
+Reviewed the resolver, command opt-in, provider and credential boundaries,
+dual-module package, documentation and CI staging/recovery paths. No new
+runtime blocker was identified. Native browser login remains unverified end
+to end; this review does not establish an independent security audit.
+
+Local checks passed typed lint, source/spec type checks, Rollup, 94 Vitest
+tests, 40 process tests, 16 installed-package runtime checks and two typed
+consumers. The initial package check could not write to the local npm cache;
+the build and package check passed with a separate writable temporary cache.
+Runtime audit: zero findings. The development audit matched the 12 reviewed
+advisory IDs with the existing November 9 expiry. Registry verification passed
+for 605 signatures and 185 attestations.
+
+The maintained source still meets the static maturity checklist. Generated
+package findings remain as explained in [maturity](maturity.md). Session and
+release recovery instructions now live in [the handoff](maintainer-handoff.md).
+
+At review time, GitHub private vulnerability reporting was disabled. The
+earlier CI candidate was still staged and had not been approved on npm. The
+maintainer had removed the accidental public `1.0.0`; `0.0.0-stage` remained.
+Check live provider state before treating any of these observations as current.
+
 ## October 12, 2026 — first CI beta preparation
 
 Removed dotenvx decryption, `eciesjs` and its four transitive dependencies.

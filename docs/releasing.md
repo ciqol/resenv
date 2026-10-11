@@ -118,11 +118,12 @@ matches its candidate. A conflicting archive, changed beta head or conflicting
 Git tag stops recovery. Keep the beta branch at the reviewed commit until the
 release is recorded. If its artifact expires, review recovery separately.
 
-The maintainer authorized removing `1.0.0` and the `0.0.0-stage` placeholder
-only after `0.1.0-beta.1` is publicly available and verified. Remove those exact
-versions individually, then check remaining versions and tags. Never unpublish
-the whole package. npm's unpublish policy still applies; deleted versions cannot
-be reused. See [npm's policy](https://docs.npmjs.com/policies/unpublish/).
+The maintainer removed the accidental `1.0.0` publication. Retain the
+`0.0.0-stage` placeholder until `0.1.0-beta.1` is publicly available and verified.
+With explicit authorization, remove that exact placeholder version and check
+remaining versions and tags. Never unpublish the whole package. npm's unpublish
+policy still applies; deleted versions cannot be reused.
+See [npm's policy](https://docs.npmjs.com/policies/unpublish/).
 
 ## Security and platform limits
 
