@@ -115,13 +115,13 @@ test('wrapper forwards SIGTERM and preserves the child termination signal', { sk
 
 test('NODE_DEBUG reports each result and a summary without exposing sensitive data', { skip: process.platform === 'win32' }, t => {
   const context = fixture(t)
-  context.env.NODE_DEBUG = 'resenv'
+  context.env.NODE_DEBUG = 'ciqol:resenv'
   context.env.TOKEN = "$(printf 'dummy-token-secret')"
   context.env.COMMAND_VALUE = "$(printf 'dummy-command-secret')"
   const result = run([cli, 'run', '--commands', '--', process.execPath, '-e', ''], context)
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.stdout, '')
-  assert.deepEqual(result.stderr.replace(/^RESENV \d+: /gm, '').trim().split('\n'), [
+  assert.deepEqual(result.stderr.replace(/^CIQOL:RESENV \d+: /gm, '').trim().split('\n'), [
     'Replaced secret value for "TOKEN".', 'Replaced secret value for "COMMAND_VALUE".', 'Done: replaced 2 secret value(s).'
   ])
   for (const sensitive of [context.plaintext, context.env.TOKEN, context.env.COMMAND_VALUE, 'dummy-command-secret']) {
@@ -131,14 +131,14 @@ test('NODE_DEBUG reports each result and a summary without exposing sensitive da
 
 test('NODE_DEBUG reports command failure while suppressing command text and output', { skip: process.platform === 'win32' }, t => {
   const context = fixture(t)
-  context.env.NODE_DEBUG = 'resenv'
+  context.env.NODE_DEBUG = 'ciqol:resenv'
   context.env.TOKEN = 'plain'
   const name = 'COMMAND\nVALUE'
   context.env[name] = "$(printf 'private-stdout'; printf 'private-stderr' >&2; exit 7)"
   const result = run([cli, 'run', '--commands', '--', process.execPath, '-e', "process.stdout.write('must-not-start')"], context)
   assert.equal(result.status, 1)
   assert.equal(result.stdout, '')
-  const messages = result.stderr.split('\n').filter(line => line.startsWith('RESENV ')).map(line => line.replace(/^RESENV \d+: /, ''))
+  const messages = result.stderr.split('\n').filter(line => line.startsWith('CIQOL:RESENV ')).map(line => line.replace(/^CIQOL:RESENV \d+: /, ''))
   assert.deepEqual(messages, [
     `Failed to replace secret value for ${JSON.stringify(name)}.`, 'Done: failed (COMMAND_FAILED); environment unchanged.'
   ])
@@ -150,12 +150,12 @@ test('NODE_DEBUG reports command failure while suppressing command text and outp
 
 test('NODE_DEBUG prints only nothing to handle when no enabled references exist', t => {
   const context = fixture(t)
-  context.env = { NODE_DEBUG: 'resenv', VALUE: '$(must-not-run)' }
+  context.env = { NODE_DEBUG: 'ciqol:resenv', VALUE: '$(must-not-run)' }
   const result = run(['--require', preload, '-e', ''], context)
   assert.equal(result.status, 0)
-  assert.match(result.stderr, /^RESENV \d+: Nothing to handle\.\n$/)
+  assert.match(result.stderr, /^CIQOL:RESENV \d+: Nothing to handle\.\n$/)
   delete context.env.VALUE
   const empty = run(['--require', preload, '-e', ''], context)
   assert.equal(empty.status, 0)
-  assert.match(empty.stderr, /^RESENV \d+: Nothing to handle\.\n$/)
+  assert.match(empty.stderr, /^CIQOL:RESENV \d+: Nothing to handle\.\n$/)
 })

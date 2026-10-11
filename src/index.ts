@@ -8,7 +8,7 @@ import type { Environment, ResolveOptions } from './types.js'
 
 export type { Environment, ResolveOptions } from './types.js'
 
-const debug = debuglog('resenv')
+const debug = debuglog('ciqol:resenv')
 /** Always return a resolved copy; optionally commit replacements to the input. */
 function resolve (env: Readonly<Environment> = process.env, options: ResolveOptions = {}): Environment {
   const replace = options.replace === true

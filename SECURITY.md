@@ -35,7 +35,7 @@ is not included in resenv diagnostics.
 Node's `child_process` debug category prints spawn options, including stdin
 and environment values. resenv refuses its own subprocess and credential-helper
 operations when that category is enabled, including through `NODE_DEBUG=*`.
-Use `NODE_DEBUG=resenv` for diagnostics that omit values. This guard does not
+Use `NODE_DEBUG=ciqol:resenv` for diagnostics that omit values. This guard does not
 control application logs, other instrumentation, or a debugger attached to the
 process.
 

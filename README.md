@@ -1,4 +1,4 @@
-# resenv
+# @ciqol/resenv
 
 **Replace references already in `process.env` with their resolved values at
 application startup.** Your existing loader, such as Nx, chooses the dotenv
@@ -185,16 +185,16 @@ preloads enable in-place replacement so application imports see resolved values.
 ## Debug startup
 
 ```sh
-NODE_DEBUG=resenv node --require @ciqol/resenv/resolve app.mjs
+NODE_DEBUG=ciqol:resenv node --require @ciqol/resenv/resolve app.mjs
 ```
 
-For the Nx target above, use `NODE_DEBUG=resenv nx serve app`. Set `NODE_DEBUG`
+For the Nx target above, use `NODE_DEBUG=ciqol:resenv nx serve app`. Set `NODE_DEBUG`
 when launching Node, before dotenv loading. Diagnostics use `node:util`'s
 `debuglog` and are off by default:
 
 ```text
-RESENV 12345: Replaced secret value for "API_TOKEN".
-RESENV 12345: Done: replaced 1 secret value(s).
+CIQOL:RESENV 12345: Replaced secret value for "API_TOKEN".
+CIQOL:RESENV 12345: Done: replaced 1 secret value(s).
 ```
 
 With no matching references, the only message is `Nothing to handle.` Failures
@@ -203,7 +203,7 @@ text and provider responses; no log files are created.
 
 `NODE_DEBUG=child_process` (including `NODE_DEBUG=*`) makes Node print spawn
 options containing credentials. resenv blocks its subprocess operations with
-`UNSAFE_DEBUG_LOGGING` in that mode. Use `NODE_DEBUG=resenv` instead.
+`UNSAFE_DEBUG_LOGGING` in that mode. Use `NODE_DEBUG=ciqol:resenv` instead.
 
 ## Optional commands
 

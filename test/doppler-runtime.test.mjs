@@ -51,7 +51,7 @@ test('built Doppler preloads and CLI resolve before imports without executing se
   writeFileSync(join(directory, '.env.serve'), 'TOKEN=must-not-read-this-file\n')
   writeFileSync(join(directory, 'value.mjs'), 'export const value = process.env.TOKEN\n')
   writeFileSync(join(directory, 'app.mjs'), "import { value } from './value.mjs'; process.stdout.write(JSON.stringify(value))")
-  const env = { TOKEN: 'doppler://my-app/dev/API_KEY', DOPPLER_TOKEN: token, NODE_DEBUG: 'resenv' }
+  const env = { TOKEN: 'doppler://my-app/dev/API_KEY', DOPPLER_TOKEN: token, NODE_DEBUG: 'ciqol:resenv' }
   for (const args of [
     ['--require', '@ciqol/resenv/resolve', 'app.mjs'],
     ['--import', '@ciqol/resenv/resolve', 'app.mjs'],
@@ -64,7 +64,7 @@ test('built Doppler preloads and CLI resolve before imports without executing se
     const result = run(args, directory, env)
     assert.equal(result.status, 0, result.stderr)
     assert.equal(JSON.parse(result.stdout), value)
-    const logs = result.stderr.replace(/^RESENV \d+: /gm, '').trim().split('\n')
+    const logs = result.stderr.replace(/^CIQOL:RESENV \d+: /gm, '').trim().split('\n')
     assert.deepEqual(logs, ['Replaced secret value for "TOKEN".', 'Done: replaced 1 secret value(s).'])
     for (const secret of [value, token, env.TOKEN]) assert.ok(!result.stderr.includes(secret))
   }

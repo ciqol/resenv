@@ -39,7 +39,7 @@ Credential-revocation failures retain a safe message without raw provider
 details. Regression tests cover these cases with dummy values.
 
 The debug guard uses Node's actual `debuglog().enabled` state. Clearing
-`NODE_DEBUG` after Node initializes it is insufficient. Use `NODE_DEBUG=resenv`
+`NODE_DEBUG` after Node initializes it is insufficient. Use `NODE_DEBUG=ciqol:resenv`
 for variable names and outcome messages without values. See Node's
 [debuglog documentation](https://nodejs.org/api/util.html#utildebuglogsection-callback).
 
