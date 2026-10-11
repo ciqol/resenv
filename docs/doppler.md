@@ -113,8 +113,7 @@ tokens from Doppler's CLI Tokens page.
 - Requires the computed value. Restricted, missing, null and invalid values
   fail startup; resenv never substitutes a raw value as a fallback.
 - Keeps fetched output literal, including strings that start with `encrypted:`
-  or contain `$()`. A reference may supply `DOTENV_PRIVATE_KEY` for original
-  ciphertext in the same environment.
+  or contain `$()`. Neither fetched nor original ciphertext is decrypted.
 - Resolves everything before applying changes. A failure leaves the caller's
   environment untouched. Existing command mode remains separately opt-in.
 - Uses a fixed HTTPS origin, disables redirects, and has a ten-second timeout

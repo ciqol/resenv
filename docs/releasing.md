@@ -1,70 +1,99 @@
 # Releases
 
-## Contract
+## Versions
 
-`beta` is the sole normal release branch and npm distribution channel.
-Semantic-release calculates versions and notes from Conventional Commits and
-actual release tags. The first computed version is `1.0.0`, tag `v1.0.0`;
-there is no `-beta.N` suffix. GitHub releases are marked prerelease and are not
-made latest, because this remains an experimental distribution channel.
-Install published releases with `npm install @ciqol/resenv@beta`.
+`beta` is the sole remote and default branch. Releases start at `0.1.0-beta.1`
+and use the npm `beta` tag. A beta tag is not promoted to `latest`.
 
-The development root stays private at its prototype version. Ordinary local
-builds also stay private. Only a validated release plan selects the distribution
-version and removes `private` before packing. Never edit generated manifests or
-choose release versions by hand. Preserve previously shared local archives.
+The planner uses semantic-release's official commit-analysis and release-notes
+plugins. Conventional Commits decide whether changes need a release. Each
+releasable update increments the counter from the latest reachable
+`v0.1.0-beta.N` tag; docs-only changes do not release. Breaking changes during
+this experimental line also increment the beta counter. Selecting a stable
+line or another base version is a separate release-policy change.
 
-## Pipeline
+The full semantic-release engine requires a normal release branch and defaults
+to a first version of 1.0.0. Using its official plugins directly preserves the
+requested sole-beta-branch setup without inventing a stable branch or a release
+that never happened. The base line is declared in `release.config.mjs`.
 
-The [CI workflow](../.github/workflows/ci.yml) has three stages:
+The development manifest and ordinary local builds stay private. Only a valid
+release plan sets the distribution version and removes `private` before packing.
+Never edit a generated manifest or overwrite a previously shared archive.
 
-1. **Read-only build:** normal npm installation, runtime audit, bounded development
-   audit, signature verification, lint, strict types and colocated Vitest specs.
-   Guarded semantic-release runs against a temporary local Git mirror with no
-   registry credential or GitHub write permission. It computes the version and
-   notes without creating a tag. Rollup builds the final manifest, then npm packs
-   it once. The build records SHA-256 and npm SHA-512 integrity for the archive,
-   plus a separate hash of its release metadata.
-2. **Read-only consumers:** Linux Node 20, 22 and the pinned Node 24, plus macOS
-   Node 24, install and exercise that same archive. Tests cover CJS and ESM,
-   preloads, CLI, types, shared module identity and startup failure boundaries.
-   Process tests also load the archive, without rebuilding source.
-3. **Protected publication:** a manual `workflow_dispatch` with `publish: true`
-   from `beta`, after every build and matrix check succeeds. The `release` job
-   downloads the candidate and compares its hashes with the build job outputs.
-   It checks the repository, workflow, source commit and current branch head.
-   It installs no project dependencies, executes no package code, and publishes
-   the exact archive using npm OIDC. Only after the registry confirms the expected
-   integrity does it create the computed Git tag and GitHub release.
+## CI pipeline
 
-Publication is serialized and never cancelled by a newer release. Pushes,
-pull requests and manual runs with `publish: false` cannot publish. If semantic-release
-finds no releasable change, the candidate remains private and publication skips.
-Artifacts are retained for seven days. Root workflow permissions are empty;
-only the release job receives `contents: write` and `id-token: write`.
+The [CI workflow](../.github/workflows/ci.yml) builds one archive:
 
-The protected environment is named `release`, with a branch policy allowing
-only `beta` and a required `titan-ron` reviewer. Initial environment creation
-requires the maintainer's separate approval. The publisher should remain unused
-until these settings are applied and read back. No secrets belong in it for OIDC.
+1. **Build:** normal npm installation, runtime/development audits, registry
+   signatures, lint, strict types and colocated Vitest specs. The read-only
+   planner generates the beta version and notes from Git history. Rollup builds
+   it once; npm packs it and records SHA-256 and SHA-512 integrity.
+2. **Consumers:** Linux Node 20, 22 and the pinned Node 24, plus macOS Node 24,
+   install and test the same archive. Checks cover ESM, CJS, types, preloads,
+   CLI, literal secret output and failure boundaries. Nothing is rebuilt.
+3. **Release:** a manual dispatch from `beta` with `publish: true`, after every
+   check passes. The protected job verifies hashes, workflow identity and the
+   current branch head. It installs no project dependencies and runs no package
+   code. `npm stage publish` submits the exact archive through OIDC with
+   provenance and the explicit `beta` tag. The job validates and saves npm's
+   staging receipt; no Git tag or GitHub release is created yet.
+4. **Approval and recording:** the maintainer reviews and approves the staged
+   package in npm using interactive 2FA. Wait for npm to make it available,
+   then rerun the original release job. It verifies the published integrity
+   against the original tested archive before creating its Git tag and GitHub
+   prerelease. It does not stage or publish the package again.
 
-## Run a release
+Pushes, PRs and dispatches with `publish: false` cannot stage a package. Release
+jobs are serialized and not cancelled. Artifacts last seven days. A fresh
+workflow run is not a substitute for rerunning the original release job when
+recovering an already staged/published candidate.
 
-Publication currently stays disabled: `RELEASE_ENABLED` is unset. This prevents
-GitHub from automatically creating an unprotected environment if someone checks
-the publication box too early. After the approved environment settings are
-verified and npm authentication is ready, the maintainer can set the repository
-Actions variable `RELEASE_ENABLED` to `true`. It is not a secret or credential.
+## Required setup
 
-Open [CI](https://github.com/ciqol/resenv/actions/workflows/ci.yml), select
-**Run workflow**, choose `beta`, and enable **Publish the tested release candidate**.
-Approve the `release` environment when the build and consumer checks pass.
-Afterward verify the npm version, `beta` dist-tag, integrity and provenance,
-and the matching source tag and GitHub release. Never promote to `latest` as
-part of this workflow.
+The existing npm trusted publisher must match:
 
-For a hosted rehearsal, leave the publication checkbox off. For ordinary local
-verification, use:
+| Field | Value |
+| --- | --- |
+| Provider | GitHub Actions |
+| Organization | `ciqol` |
+| Repository | `resenv` |
+| Workflow filename | `ci.yml` |
+| Environment | `release` |
+| Permission | `npm stage publish` |
+
+No permanent npm token or direct-publish permission is needed. The pinned
+Node 24.19.0/npm 11.17.0 platform includes staged publishing. New trusted
+publisher configurations must be validated by a successful CI operation before
+the deadline shown in npm settings.
+
+The GitHub environment `release` requires separate maintainer approval before
+initial creation. Configure only the `beta` branch and a required `titan-ron`
+reviewer. After reading back these protections and verifying npm setup, set
+Actions variable `RELEASE_ENABLED=true`. Leave it unset until then to prevent
+a dispatch from creating an unprotected environment automatically.
+
+## Run the first beta
+
+Open [CI](https://github.com/ciqol/resenv/actions/workflows/ci.yml), choose
+**Run workflow**, select `beta`, and enable the staging input. Approve the
+GitHub environment when build and consumer checks pass. The release job summary
+and `resenv-stage` artifact contain the stage identifier and tested integrity.
+
+Review the staged package in npm, then approve it with the stage identifier:
+
+```sh
+npm stage view <stage-id> --json
+npm stage approve <stage-id>
+```
+
+These are maintainer review/approval commands; the archive is built and staged
+by GitHub Actions. OIDC cannot perform the approval step. Wait for npm scanning
+and public availability, then rerun the original release job to record the tag.
+Verify the npm version, `beta` tag, archive integrity, provenance and GitHub
+prerelease. Never infer success from a staging receipt alone.
+
+For a hosted rehearsal, leave the staging input off. Local verification is:
 
 ```sh
 npm ci
@@ -72,95 +101,40 @@ npm run audit
 npm run release:check
 ```
 
-Neither command publishes. A local mirror dry run can also produce a candidate
-plan with `node scripts/release-plan.mjs /absolute/path/to/new-candidate-directory`.
-The planner does not create tags or contact a secret provider.
+None of these commands publishes. The planner can generate a non-publishing
+plan with `node scripts/release-plan.mjs /absolute/path/to/candidate-directory`.
 
-## npm authentication and first-package limitation
+## Recovery and old versions
 
-The maintainer manages npm ownership and authentication. Never publish from a
-developer machine, request local npm login as a release prerequisite, or add a
-permanent npm publishing token. The implemented publication path uses OIDC only.
+A failed stage operation creates no Git tag or GitHub release. Check npm before
+retrying an ambiguous outcome: a staged version reserves its version number.
+Do not attempt to stage it again while awaiting approval. Approve or reject the
+existing stage through npm. Rejection requires a reviewed replacement candidate.
 
-For an **existing** package, configure this trusted publisher in npm:
+The original release job accepts an existing public version only if integrity
+matches its candidate. A conflicting archive, changed beta head or conflicting
+Git tag stops recovery. Keep the beta branch at the reviewed commit until the
+release is recorded. If its artifact expires, review recovery separately.
 
-| Field | Value |
-| --- | --- |
-| Provider | GitHub Actions |
-| Organization or user | `ciqol` |
-| Repository | `resenv` |
-| Workflow filename | `ci.yml` |
-| Environment | `release` |
-| Permission | Direct publication (`npm publish`) |
+The maintainer authorized removing `1.0.0` and the `0.0.0-stage` placeholder
+only after `0.1.0-beta.1` is publicly available and verified. Remove those exact
+versions individually, then check remaining versions and tags. Never unpublish
+the whole package. npm's unpublish policy still applies; deleted versions cannot
+be reused. See [npm's policy](https://docs.npmjs.com/policies/unpublish/).
 
-The workflow filename is just `ci.yml`. Use npm 11.5.1+ and Node 22.14+ for OIDC;
-the publisher uses the repository's pinned Node 24 runtime. Saving a trust
-configuration does not verify it, and a new trust expires after two days without
-a successful publication. `npm whoami` is not an OIDC publishing check.
+## Security and platform limits
 
-**npm requires a package to already exist before configuring its trusted publisher.**
-The unauthenticated `@ciqol/resenv` lookup returned 404 on October 10, 2026.
-An OIDC-only first publication is therefore not established. Do not tell a
-maintainer to configure a nonexistent package's settings or silently introduce
-a token fallback. A one-time CI bootstrap with an explicitly approved,
-short-lived credential is a separate decision; it is not implemented here.
-
-Staged publishing supports new packages and creates a public `0.0.0-stage`
-placeholder, but initial staging also requires package publishing access. It
-does not demonstrate a credential-free OIDC bootstrap. Preserve the requirement
-that any publication or staging occur through CI unless the maintainer changes it.
-
-Sources: [trusted publishing](https://docs.npmjs.com/trusted-publishers/),
-[trust prerequisites](https://docs.npmjs.com/cli/v11/commands/npm-trust/#prerequisites),
-[staged publishing](https://docs.npmjs.com/staged-publishing/).
-
-## Failure recovery
-
-If npm publication fails, no tag or GitHub release is created. Correct the npm
-trust or access issue, then rerun the failed release job while its original
-artifact remains available. This keeps the tested bytes, version and hashes.
-
-If npm succeeds but GitHub recording fails, rerun the failed job. The publisher
-accepts an existing npm version only if its integrity exactly matches this
-candidate; it then completes the tag/release without republishing. An existing
-tag must target the same commit. A different npm archive or tag stops recovery.
-
-Do not rerun the entire workflow to recover a partially published release:
-version planning may change once a tag exists. Do not delete real release tags,
-overwrite versions, unpublish, or move `latest` to repair a failed job. If the
-artifact has expired or `beta` has advanced, review recovery from the recorded
-version, source commit and registry integrity separately.
-
-## Dependency security and platform limits
-
-The runtime audit has no exceptions. Release planning admits exact development
-tools with a bounded, executable advisory review expiring November 9, 2026.
-New findings, affected runtime paths, version drift and expiry fail CI. This
-release-tool tree is not vulnerability-free. See [release security](release-security.md),
-including the separate assessment of npm's bundled publishing dependencies.
-Never install the semantic-release tree in the privileged publisher.
+The runtime package has no npm dependencies or advisory exceptions. The
+release-tool tree has bounded, executable advisory exceptions expiring November
+9, 2026; it is not vulnerability-free. The privileged job does not install that
+tree. See [release security](release-security.md).
 
 Doppler is the only built-in cloud provider. Fresh native browser login has not
-been verified end to end; its compatibility relies on the protocol observed in
-the official MCP client. Linux credential storage has mock coverage. Windows
-native login/storage is not implemented. Explicit tokens and existing CLI
-credentials remain supported. Ciphertext compatibility and explicitly enabled
-commands remain existing optional behavior. These limits belong in the beta
-release and [security documentation](../SECURITY.md).
+been verified end to end, Linux credential storage has mock coverage, and
+Windows native login/storage is not implemented. Explicit tokens and existing
+CLI credentials remain supported. Commands require explicit opt-in. Dotenvx
+ciphertext is left unchanged. See [Security](../SECURITY.md).
 
-## Reference and evidence
-
-The setup was compared with
-[sonarqube-api-client at 100f323](https://github.com/ciqol/sonarqube-api-client/tree/100f323544ec0a517eeabd978c60fe5eb7170ca6).
-It retains automated Conventional Commit versioning, generated distribution
-manifests, dual-module consumer checks and GitHub Actions OIDC. It adapts the
-artifact handoff: resenv publishes the previously tested archive rather than
-rebuilding and letting a directory-based release plugin repack it. PR jobs
-receive neither publication credentials nor write permissions.
-
-Local final-version validation on October 10 passed strict types, lint, 98 unit
-tests, 43 process tests, installed CJS/ESM runtime checks and typed consumers.
-The merged installation verified 606 registry signatures and 186 attestations.
-The runtime audit reported zero findings. Hosted validation and actual OIDC
-publication must be observed separately; local tests do not establish them.
-The [validation log](validation.md) retains earlier prototype and branch decisions.
+Sources: [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/),
+[staged publishing](https://docs.npmjs.com/cli/v11/commands/npm-stage/),
+[semantic-release branching](https://semantic-release.org/foundation/workflow-configuration/).

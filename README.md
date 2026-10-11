@@ -170,7 +170,7 @@ Providers are inferred from each original value, just as with `/resolve` and
 required: without references, the result is an unchanged copy and no credentials
 are accessed. An environment can contain several references, including different
 Doppler projects/configs. Each value selects its own source; a command can supply
-a Doppler token, and Doppler can supply a decryption key. Commands still require
+a Doppler token. Commands still require
 `commands: true`. Returned secret values are never interpreted again.
 
 CommonJS uses the same API through
@@ -205,7 +205,7 @@ text and provider responses; no log files are created.
 options containing credentials. resenv blocks its subprocess operations with
 `UNSAFE_DEBUG_LOGGING` in that mode. Use `NODE_DEBUG=resenv` instead.
 
-## Commands and encrypted values
+## Optional commands
 
 - **Opt-in shell commands:** `/resolve-commands` resolves complete `$(command)`
   values through `/bin/sh`. The canonical `/resolve` preload leaves these values
@@ -218,11 +218,10 @@ options containing credentials. resenv blocks its subprocess operations with
   Commands have closed stdin, a 30-second timeout and a 64 KiB combined output
   limit. Trailing LF characters are removed; fetched output stays literal.
   Embedded forms such as `prefix$(command)suffix` are unsupported.
-- **Dotenvx decryption:** original `encrypted:` values still trigger decryption
-  in the resolver, including `/resolve`. They need a matching
-  `DOTENV_PRIVATE_KEY` or `DOTENV_PRIVATE_KEY_<name>` in the environment;
-  missing or invalid keys stop startup. Doppler references do not need
-  a dotenvx private key.
+
+Values beginning with `encrypted:` are left unchanged. resenv resolves cloud
+references; dotenvx decryption is outside its scope. The package has no runtime
+npm dependencies.
 
 `/resolve-doppler` is an equivalent name for `/resolve`; `run --doppler` remains
 accepted. New integrations should use the canonical entry points above.

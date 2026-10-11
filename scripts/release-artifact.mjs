@@ -15,7 +15,7 @@ export function validatePlan (plan, head) {
   assert.equal(typeof plan.publish, 'boolean')
   assert.match(plan.gitHead, /^[a-f0-9]{40}$/)
   if (head) assert.equal(plan.gitHead, head, 'Candidate belongs to another commit')
-  assert.match(plan.version, plan.publish ? /^\d+\.\d+\.\d+$/ : /^\d+\.\d+\.\d+(?:-beta\.\d+)?$/)
+  assert.match(plan.version, plan.publish ? /^0\.1\.0-beta\.[1-9]\d*$/ : /^\d+\.\d+\.\d+(?:-beta\.\d+)?$/)
   assert.equal(plan.gitTag, plan.publish ? `v${plan.version}` : null)
   assert.equal(typeof plan.notes, 'string')
   assert.ok(plan.notes.length < 100000, 'Release notes exceed the supported size')

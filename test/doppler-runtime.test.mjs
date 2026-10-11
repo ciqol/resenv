@@ -5,7 +5,6 @@ import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync, existsSync } 
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { PrivateKey, encrypt } from 'eciesjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const token = 'dp.ct.dummy0123456789'
@@ -92,27 +91,6 @@ test('partial API failure leaves caller untouched and blocks application startup
     for (const value of ['dummy-sensitive-body', 'must-not-start', token]) assert.ok(!failed.stderr.includes(value))
     assert.equal(failed.stdout, '')
   }
-})
-
-test('cloud secrets can provide a decryption key while fetched output remains literal', t => {
-  const key = new PrivateKey()
-  const { directory, pkg } = fixture(t, {
-    PRIVATE_KEY: { body: { value: { computed: key.toHex() } } },
-    LITERAL: { body: { value: { computed: 'encrypted:not-ciphertext' } } }
-  })
-  // Reuse only the already reviewed runtime dependency tree in this fixture.
-  const env = {
-    DOPPLER_TOKEN: token,
-    DOTENV_PRIVATE_KEY: 'doppler://my-app/dev/PRIVATE_KEY',
-    LITERAL: 'doppler://my-app/dev/LITERAL',
-    TOKEN: `encrypted:${Buffer.from(encrypt(key.publicKey.toHex(), Buffer.from('dummy-decrypted'))).toString('base64')}`
-  }
-  // Copy runtime dependencies only; this consumer has no build dependencies.
-  for (const name of ['eciesjs', '@ecies', '@noble']) {
-    cpSync(join(root, 'node_modules', name), join(pkg, 'node_modules', name), { recursive: true })
-  }
-  const result = run(['--require', '@ciqol/resenv/resolve-doppler', '-e', "if(process.env.TOKEN!=='dummy-decrypted'||process.env.LITERAL!=='encrypted:not-ciphertext') process.exit(9)"], directory, env)
-  assert.equal(result.status, 0, result.stderr)
 })
 
 test('canonical and compatibility preloads do not resolve fetched references twice', t => {

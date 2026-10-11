@@ -1,5 +1,9 @@
 # Security and performance review
 
+Historical review: the October 12 beta removes dotenvx decryption and its entire
+runtime dependency tree. Earlier cryptography and ciphertext findings below
+apply to the prototype. Current behavior is in [Security](../SECURITY.md).
+
 ## Release preparation update - 2026-10-10
 
 The current release pipeline and launch state are documented in [releasing](releasing.md).

@@ -44,20 +44,21 @@ Propagated parent findings do not create additional blanket exemptions.
 `npm audit --omit=dev --audit-level=high` also runs without exceptions.
 
 The planner receives no GitHub write token, npm credential or OIDC permission.
-It runs a dry run against a temporary local mirror, which supplies the engine's
-Git write-permission check without permitting external writes. The selected
-plugins are fixed in code. The publisher does not install dependencies or import
-release tools. It verifies candidate hashes and source identity, publishes the
-tested archive through npm OIDC, and records the computed tag/release through
-GitHub's API. No custom version-analysis engine is introduced.
+It reads Git history and actual beta tags locally. The official commit-analysis
+and release-notes plugins are fixed in code; the full semantic-release engine
+is not invoked while beta is the sole branch. An explicit 0.1.0 beta line and
+monotonic counter replace its default 1.0.0 initial version. The publisher does
+not install dependencies or import release tools. It verifies candidate hashes
+and source identity, then stages the tested archive through npm OIDC. Maintainer approval through npm publishes it.
+A rerun verifies registry integrity before recording the computed tag/release
+through GitHub's API. Conventional Commit classification remains upstream.
 
 ## Verification
 
 An isolated test blocked direct braces calls and imports of the unselected npm
 and GitHub plugins. Normal and adversarial commit analysis passed with 10,000
-nested brace pairs in subjects and bodies. A full semantic-release dry run
-passed under the same guards and calculated `1.0.0` on channel `beta`, without
-creating tags. The normal release path must keep these assertions in its tests.
+nested brace pairs in subjects and bodies. The planner tests cover
+`0.1.0-beta.1`, unchanged history, and subsequent beta counters using real history in a disposable clone without changing source refs.
 
 An isolated attempt to override npm's bundled vulnerable components did not
 replace their distributed copies. No ineffective override was admitted.
@@ -108,7 +109,8 @@ advisories. npm 12.2.0 was inspected and still distributes affected versions;
 upgrading to it would not remove this risk. The development-only policy does
 not imply that the platform CLI is vulnerability-free.
 
-The publication path accepts only the validated archive, with no lifecycle
+The staging path uses npm 11.17.0's existing `stage publish` subcommand and
+accepts only the validated archive, with no lifecycle
 scripts in its manifest. It uses a fresh home, configuration and cache, fixes
 the registry to HTTPS npmjs.org, and strips proxy, token and arbitrary npm
 configuration from the child environment. No package-query, login, shell,
@@ -118,3 +120,15 @@ services remain trusted inputs. This bounds exposure; it is not an upstream
 fix. The publisher checks the policy expiry again when it runs, including on a
 failed-job retry, and rejects platform version drift. Review the platform CLI
 again before November 9 alongside this policy.
+
+## October 12 staging review
+
+The pinned npm platform includes `lib/commands/stage/publish.js`, which extends
+its reviewed publish command and sets `stage: true`. The same fixed tarball,
+registry, OIDC identity and provenance options apply. Approval/rejection remain
+interactive npm operations, outside CI. The publisher validates npm's JSON
+receipt against the candidate's name, version and SHA-512 integrity and records
+only its stage identifier and hashes. It creates no tag while the archive is
+staged or pending registry availability. After approval, rerun the same release
+job: its existing-version path verifies integrity and records the release.
+No dependency version, advisory exception or expiry was broadened.

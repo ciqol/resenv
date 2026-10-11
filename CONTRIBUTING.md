@@ -3,10 +3,12 @@
 The [README](README.md) covers using resenv in an application. This guide covers
 changing resenv itself and verifying those changes.
 
-Releases use semantic-release on the normal branch `beta`, with npm channel
-`beta`. The first computed version is `1.0.0`; the channel does not add a
-`-beta.N` suffix. The root and ordinary local builds remain private prototypes.
-CI generates the publishable manifest before packing and testing it. See
+Releases start at `0.1.0-beta.1` on the sole branch `beta`, using npm channel
+`beta`. Semantic-release's official commit-analysis and release-notes plugins
+select releasable changes and generate notes; actual beta tags supply the next
+prerelease counter. The root and ordinary local builds remain private prototypes.
+CI generates the publishable manifest before packing and testing it, then stages
+the exact archive through npm OIDC for maintainer approval. See
 [releasing](docs/releasing.md) and the bounded [release-tool review](docs/release-security.md).
 The source uses the [MIT license](LICENSE), copyright ciqol contributors.
 
@@ -35,7 +37,7 @@ module formats and declarations from that implementation. Colocate Vitest unit
 specs as `*.spec.ts` beside each tested module and import its source. Build and
 release scripts have colocated `*.spec.mjs` Vitest specs. Keep
 process, package and integration checks in `test/` as `.mjs`; they exercise
-compiled output and installed packages. Tests use generated keys and dummy commands.
+compiled output and installed packages. Tests use dummy credentials and commands.
 Never use real secrets in fixtures, terminal output, screenshots, issues, or
 pull requests.
 
@@ -148,15 +150,6 @@ npm run test:nx -- /absolute/path/to/workspace/node_modules
 This creates a temporary Nx workspace and checks target-file loading,
 precedence and secret resolution with dummy values. It does not use the
 source workspace's dotenv files, credentials or remote cache.
-
-To check ciphertext compatibility, separately install and review the upstream
-package, then run:
-
-```sh
-node test/interop.mjs /absolute/path/to/node_modules/@dotenvx/primitives
-```
-
-These integration inputs are not runtime dependencies of resenv.
 
 ## Changes
 

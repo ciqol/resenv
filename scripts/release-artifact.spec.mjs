@@ -7,13 +7,13 @@ import { digest, integrity, validatePlan, verifyArtifact } from './release-artif
 
 const directories = []
 afterEach(() => { for (const directory of directories.splice(0)) rmSync(directory, { recursive: true, force: true }) })
-const plan = () => ({ schema: 1, publish: true, name: '@ciqol/resenv', repository: 'ciqol/resenv', channel: 'beta', version: '1.0.0', gitTag: 'v1.0.0', gitHead: 'a'.repeat(40), notes: 'Dummy release', dependencies: { sample: '1.0.0' } })
+const plan = () => ({ schema: 1, publish: true, name: '@ciqol/resenv', repository: 'ciqol/resenv', channel: 'beta', version: '0.1.0-beta.1', gitTag: 'v0.1.0-beta.1', gitHead: 'a'.repeat(40), notes: 'Dummy release', dependencies: { sample: '0.1.0-beta.1' } })
 
 function fixture () {
   const directory = mkdtempSync(join(tmpdir(), 'resenv-artifact-spec-'))
   directories.push(directory)
   mkdirSync(join(directory, 'package'))
-  const candidate = { ...plan(), archive: 'ciqol-resenv-1.0.0.tgz' }
+  const candidate = { ...plan(), archive: 'ciqol-resenv-0.1.0-beta.1.tgz' }
   const manifest = { name: candidate.name, version: candidate.version, dependencies: candidate.dependencies, license: 'MIT', repository: { url: 'git+https://github.com/ciqol/resenv.git' }, publishConfig: { access: 'public', tag: 'beta', registry: 'https://registry.npmjs.org/' } }
   writeFileSync(join(directory, 'package/package.json'), JSON.stringify(manifest))
   execFileSync('tar', ['-czf', candidate.archive, 'package'], { cwd: directory })
@@ -39,7 +39,7 @@ describe('release candidate boundary', () => {
     expect(() => verifyArtifact(directory, { head: 'b'.repeat(40) })).toThrow(/another commit/)
     expect(() => verifyArtifact(directory, { archiveHash: 'b'.repeat(64) })).toThrow(/tested archive/)
   })
-  it.each([{ publish: 'true' }, { archive: '../different.tgz' }, { version: '1.0.0-beta.1' }, { gitTag: 'latest' }, { name: '@other/package' }, { repository: 'other/repo' }])('rejects invalid release metadata %j', change => {
+  it.each([{ publish: 'true' }, { archive: '../different.tgz' }, { version: '1.0.0' }, { gitTag: 'latest' }, { name: '@other/package' }, { repository: 'other/repo' }])('rejects invalid release metadata %j', change => {
     expect(() => validatePlan({ ...plan(), ...change })).toThrow()
   })
 })

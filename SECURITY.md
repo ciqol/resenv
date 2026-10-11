@@ -5,7 +5,7 @@
 resenv resolves values in a process environment. It does not provide a vault,
 access-control service, key rotation, or isolation between programs running
 with the same credentials. The application can read its resolved secrets and
-any decryption keys supplied to it.
+any credentials supplied to it.
 
 Doppler mode uses a fixed HTTPS API origin, disables redirects and fetches only
 referenced secret names. It does not execute shell expressions. Credentials
@@ -40,12 +40,11 @@ control application logs, other instrumentation, or a debugger attached to the
 process.
 
 All values are resolved before resenv updates the caller's environment or
-starts the application. Missing keys, invalid ciphertext, command failures and
-invalid environment values stop startup. Fetched or decrypted values are
-never evaluated recursively. Application logs are outside resenv's control.
+starts the application. Provider failures, command failures and invalid
+environment values stop startup. Fetched values are never evaluated recursively. Application logs are outside resenv's control.
 
 Different automatic preload modes cannot be combined in one process. Otherwise
-the second mode could execute or decrypt literal data fetched by the first.
+the second mode could execute literal data fetched by the first.
 Combining a preload with the CLI is rejected for the same reason. Do not add
 another resolver to the child through `NODE_OPTIONS` or other launch hooks.
 Use one `resenv run --commands` invocation or one library call with commands

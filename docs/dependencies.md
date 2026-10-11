@@ -456,69 +456,12 @@ Evidence: [Rollup release](https://github.com/rollup/rollup/releases/tag/v4.63.5
 
 Reviewed on 2026-09-28 for the private, unpublished envref prototype.
 
-## eciesjs 0.5.0
+## Runtime dependencies
 
-- **Purpose:** decrypt dotenvx ciphertext without loading dotenv files, evaluating
-  expressions, or implementing cryptographic algorithms in envref.
-- **Source:** [ecies/js](https://github.com/ecies/js), tag `v0.5.0`, commit
-  `3b3f2d3f4ac6c497f42833c3f19c148f7a8efc1f`.
-- **License:** MIT, checked in the distributed artifact. Its four transitive
-  packages are also MIT. Notices remain in their installed packages. envref is
-  private and unpublished; redistribution must preserve those notices.
-- **Alternatives:** the standard library would require implementing ECIES framing
-  and key derivation ourselves. The full dotenvx runtime adds file loading and
-  command evaluation. `@dotenvx/primitives` 3.0.3 bundles eciesjs, but its README
-  source link returned 404 and the package had no npm provenance attestation.
-  Its minified bundle was inspected to establish the compatibility format, but
-  it is not a dependency of this project.
-- **Fit:** CommonJS, Node >=16 upstream; envref supports Node >=20. Published
-  eciesjs artifact: 40,951 unpacked bytes. Four transitive packages, no native
-  compilation or required install scripts. Only `decrypt` is used at runtime.
-- **Usage and maintenance:** npm reported 11,924,603 downloads for September
-  21–27, 2026. Latest release: April 3, 2026, with earlier releases in January
-  and March 2026. The public source page reported 677 commits and zero open
-  issues on the review date. npm lists one maintainer, `kigawas`. The package
-  predates Node 26; compatibility is checked locally rather than inferred.
-- **Concentration and version risk:** pre-1.0 API and one listed maintainer are
-  accepted for this prototype because this is the same library/version range
-  bundled by dotenvx primitives, the API surface used is small, the exact tree
-  is pinned, and ciphertext interoperability is tested independently. There
-  is no verified succession guarantee. Removal means replacing the small
-  decryption adapter with a reviewed upstream resolver; stored ciphertext does
-  not need to change if the format remains compatible.
-- **Provenance:** registry SHA-512 integrity was checked against the downloaded
-  tarball. The npm SLSA provenance statement identifies the source commit above
-  and `.github/workflows/cd.yml` at `refs/tags/v0.5.0`. Registry account MFA and
-  complete ownership history are not publicly established by these checks.
-  `npm audit signatures` verified registry signatures and provenance
-  attestations for all five installed packages on the review date.
-- **Security:** OSV returned no known advisories for all five exact versions on
-  the review date; `npm audit --omit=dev` also reported zero vulnerabilities.
-  These are advisory lookups, not a security audit. Reviewed
-  decryption code uses local cryptographic operations; no network, filesystem,
-  subprocess, telemetry, or credential discovery is needed on that path.
-  Installs run with lifecycle scripts disabled.
-- **Control:** `eciesjs` is pinned exactly, with the four reviewed transitive
-  versions pinned through npm overrides and the repository lockfile. npm
-  overrides apply only at the root: consuming projects must preserve their own
-  reviewed lockfile and verify this tree when installing the private package.
-  Updates are manual
-  and require rerunning the advisory, license, provenance and interoperability
-  checks. The ciqol maintainers own ongoing review; automatic updates and
-  publication are not enabled.
-
-| Package | Version | License |
-| --- | --- | --- |
-| eciesjs | 0.5.0 | MIT |
-| @ecies/ciphers | 0.2.6 | MIT |
-| @noble/ciphers | 1.3.0 | MIT |
-| @noble/curves | 1.9.7 | MIT |
-| @noble/hashes | 1.8.0 | MIT |
-
-Evidence: [npm metadata](https://registry.npmjs.org/eciesjs/0.5.0),
-[provenance](https://registry.npmjs.org/-/npm/v1/attestations/eciesjs@0.5.0),
-[download counts](https://api.npmjs.org/downloads/point/2026-09-21:2026-09-27/eciesjs),
-[OSV](https://osv.dev/), and distributed LICENSE files.
+As of October 12, 2026, resenv has no runtime npm dependencies. Removed
+`eciesjs` 0.5.0 and its four transitive crypto packages with dotenvx decryption.
+Doppler resolution uses Node's HTTPS fetch and built-in process/credential
+helpers. The lockfile and clean-consumer check enforce the empty runtime tree.
 
 ## CI actions
 

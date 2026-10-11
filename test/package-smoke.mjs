@@ -5,7 +5,6 @@ import { mkdtempSync, readFileSync, writeFileSync, rmSync, existsSync } from 'no
 import { homedir, tmpdir } from 'node:os'
 import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { PrivateKey, encrypt } from 'eciesjs'
 import ts from 'typescript'
 import { verifyArtifact } from '../scripts/release-artifact.mjs'
 
@@ -86,7 +85,8 @@ try {
   assert.equal(manifest.name, source.name)
   assert.equal(manifest.version, plan?.version ?? source.version)
   assert.equal(manifest.license, source.license)
-  assert.deepEqual(manifest.dependencies, source.dependencies)
+  assert.deepEqual(manifest.dependencies, {})
+  assert.deepEqual(Object.keys(runtimePackages), [])
   for (const field of ['scripts', 'devDependencies', 'type', 'overrides']) assert.equal(manifest[field], undefined)
   assert.equal(existsSync(join(directory, 'node_modules/rollup')), false)
   assert.equal(existsSync(join(directory, 'node_modules/typescript')), false)
@@ -108,16 +108,14 @@ try {
   assert.match(help.stdout, /Usage: resenv run/)
   assert.equal(help.stderr, '')
 
-  const key = new PrivateKey()
-  const ciphertext = `encrypted:${Buffer.from(encrypt(key.publicKey.toHex(), Buffer.from('dummy-package-secret'))).toString('base64')}`
-  const childEnv = { ...env, TOKEN: ciphertext, DOTENV_PRIVATE_KEY: key.toHex(), COMMAND_VALUE: "$(printf 'dummy-command-secret')" }
-  const check = "if (process.env.TOKEN !== 'dummy-package-secret') throw new Error('Token was not resolved')"
+  const childEnv = { ...env, TOKEN: 'dummy-package-secret', COMMAND_VALUE: "$(printf 'dummy-command-secret')" }
+  const check = "if (process.env.TOKEN !== 'dummy-package-secret') throw new Error('Token changed')"
   const checkCommand = "if (process.env.COMMAND_VALUE !== 'dummy-command-secret') throw new Error('Command was not resolved')"
   const probes = [
     ['--require', '@ciqol/resenv/resolve', '-e', check],
     ['--import', '@ciqol/resenv/resolve', '-e', check],
-    ['-e', `const result = require('@ciqol/resenv').resolve(); if (result.TOKEN !== 'dummy-package-secret' || result === process.env || !process.env.TOKEN.startsWith('encrypted:')) throw new Error('Default resolution must return a copy without replacing the input')`],
-    ['--input-type=module', '-e', `import { resolve } from '@ciqol/resenv'; const result = resolve(); if (result.TOKEN !== 'dummy-package-secret' || result === process.env || !process.env.TOKEN.startsWith('encrypted:')) throw new Error('Default resolution must return a copy without replacing the input')`],
+    ['-e', `const result = require('@ciqol/resenv').resolve(); if (result.TOKEN !== 'dummy-package-secret' || result === process.env || process.env.TOKEN !== 'dummy-package-secret') throw new Error('Default resolution must return a copy without replacing the input')`],
+    ['--input-type=module', '-e', `import { resolve } from '@ciqol/resenv'; const result = resolve(); if (result.TOKEN !== 'dummy-package-secret' || result === process.env || process.env.TOKEN !== 'dummy-package-secret') throw new Error('Default resolution must return a copy without replacing the input')`],
     ['-e', `require('@ciqol/resenv').resolve(process.env, { replace: true }); ${check}`],
     ['-e', `global.document = { baseURI: 'https://example.invalid/' }; require('@ciqol/resenv').resolve(process.env, { replace: true }); ${check}`],
     ['--input-type=module', '-e', `import { resolve } from '@ciqol/resenv'; resolve(process.env, { replace: true }); ${check}`],

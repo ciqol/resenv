@@ -1,29 +1,28 @@
 import { describe, expect, it, vi } from 'vitest'
-import { npmEnvironment, publishRelease, validatePublisher } from './publish.mjs'
+import { npmEnvironment, publishRelease, validatePublisher, validateStageReceipt } from './publish.mjs'
 
 function fixture () {
-  const candidate = { archive: '/dummy/archive.tgz', plan: { publish: true, version: '1.0.0', gitTag: 'v1.0.0', gitHead: 'a'.repeat(40), integrity: 'sha512-dummy', sha256: 'b'.repeat(64), notes: 'Dummy notes' } }
+  const candidate = { archive: '/dummy/archive.tgz', plan: { name: '@ciqol/resenv', publish: true, version: '0.1.0-beta.1', gitTag: 'v0.1.0-beta.1', gitHead: 'a'.repeat(40), integrity: 'sha512-dummy', sha256: 'b'.repeat(64), notes: 'Dummy notes' } }
   const effects = {
     github: vi.fn(async (method, path) => {
       if (path === '') return { private: false, default_branch: 'beta' }
       if (path === '/git/ref/heads/beta') return { object: { sha: candidate.plan.gitHead } }
       if (method === 'GET') return null
-      return { html_url: 'https://github.com/ciqol/resenv/releases/tag/v1.0.0' }
+      return { html_url: 'https://github.com/ciqol/resenv/releases/tag/v0.1.0-beta.1' }
     }),
     registry: vi.fn().mockResolvedValueOnce(null).mockResolvedValue({ dist: { integrity: candidate.plan.integrity } }),
-    npm: vi.fn()
+    npm: vi.fn().mockResolvedValue({ staged: true, stageId: '00000000-0000-4000-8000-000000000000' })
   }
   return { candidate, effects }
 }
 
 describe('publication ordering and recovery', () => {
-  it('publishes the exact archive before recording its computed tag and beta release', async () => {
+  it('stages the exact archive without recording a tag or public release', async () => {
     const { candidate, effects } = fixture()
-    await publishRelease(candidate, effects)
-    expect(effects.npm).toHaveBeenCalledWith(candidate.archive)
-    const tagCall = effects.github.mock.calls.findIndex(([method, path]) => method === 'POST' && path === '/git/refs')
-    expect(effects.github.mock.invocationCallOrder[tagCall]).toBeGreaterThan(effects.npm.mock.invocationCallOrder[0])
-    expect(effects.github).toHaveBeenCalledWith('POST', '/releases', expect.objectContaining({ prerelease: true, make_latest: 'false' }))
+    const result = await publishRelease(candidate, effects)
+    expect(effects.npm).toHaveBeenCalledWith(candidate.archive, candidate.plan)
+    expect(result.staged).toBe(true)
+    expect(effects.github.mock.calls.every(([method]) => method === 'GET')).toBe(true)
   })
   it('creates no tag or release when npm fails', async () => {
     const { candidate, effects } = fixture()
@@ -36,6 +35,7 @@ describe('publication ordering and recovery', () => {
     effects.registry.mockReset().mockResolvedValue({ dist: { integrity: candidate.plan.integrity } })
     await publishRelease(candidate, effects)
     expect(effects.npm).not.toHaveBeenCalled()
+    expect(effects.github).toHaveBeenCalledWith('POST', '/releases', expect.objectContaining({ prerelease: true, make_latest: 'false' }))
     effects.github.mockClear()
     effects.registry.mockResolvedValue({ dist: { integrity: 'sha512-other' } })
     await expect(publishRelease(candidate, effects)).rejects.toThrow(/differs/)
@@ -55,6 +55,7 @@ describe('publication ordering and recovery', () => {
   })
   it('refuses a pre-existing tag targeting a different commit', async () => {
     const { candidate, effects } = fixture()
+    effects.registry.mockReset().mockResolvedValue({ dist: { integrity: candidate.plan.integrity } })
     effects.github.mockResolvedValueOnce({ private: false, default_branch: 'beta' }).mockResolvedValueOnce({ object: { sha: candidate.plan.gitHead } }).mockResolvedValueOnce({ object: { sha: 'b'.repeat(40) } })
     await expect(publishRelease(candidate, effects)).rejects.toThrow(/another commit/)
     expect(effects.github.mock.calls.some(([method, path]) => method === 'POST' && path === '/releases')).toBe(false)
@@ -76,4 +77,15 @@ it('passes OIDC to npm but removes publishing tokens and inherited npm configura
   expect(env.ACTIONS_ID_TOKEN_REQUEST_TOKEN).toBe('dummy-oidc')
   for (const key of ['GITHUB_TOKEN', 'GH_TOKEN', 'NPM_TOKEN', 'NODE_AUTH_TOKEN', 'npm_config_userconfig']) expect(env[key]).toBeUndefined()
   expect(env.NPM_CONFIG_REGISTRY).toBe('https://registry.npmjs.org/')
+})
+
+it('checks the staged archive receipt without trusting its reported version or integrity', () => {
+  const { candidate } = fixture()
+  const receipt = { name: '@ciqol/resenv', version: candidate.plan.version, integrity: candidate.plan.integrity, stageId: '00000000-0000-4000-8000-000000000000' }
+  const output = value => JSON.stringify({ '@ciqol/resenv': value })
+  expect(validateStageReceipt(output(receipt), candidate.plan).staged).toBe(true)
+  expect(() => validateStageReceipt('{}', candidate.plan)).toThrow(/Missing/)
+  for (const change of [{ name: '@other/package' }, { version: '1.0.0' }, { integrity: 'other' }, { stageId: 'invalid' }]) {
+    expect(() => validateStageReceipt(output({ ...receipt, ...change }), candidate.plan)).toThrow()
+  }
 })

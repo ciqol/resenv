@@ -25,6 +25,16 @@ export function npmEnvironment (env, directory) {
   return { ...allowed, HOME: directory, NPM_CONFIG_USERCONFIG: join(directory, 'user.npmrc'), NPM_CONFIG_GLOBALCONFIG: join(directory, 'global.npmrc'), NPM_CONFIG_CACHE: join(directory, 'cache'), NPM_CONFIG_REGISTRY: 'https://registry.npmjs.org/' }
 }
 
+export function validateStageReceipt (output, plan) {
+  const receipt = JSON.parse(output)[plan.name]
+  assert.ok(receipt && typeof receipt === 'object', 'Missing npm staging receipt')
+  assert.equal(receipt.name, plan.name, 'Staged package name differs from the candidate')
+  assert.equal(receipt.version, plan.version, 'Staged version differs from the candidate')
+  assert.equal(receipt.integrity, plan.integrity, 'Staged archive differs from the tested candidate')
+  assert.match(receipt.stageId ?? '', /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i, 'Missing npm staging identifier')
+  return { staged: true, stageId: receipt.stageId, version: plan.version, integrity: plan.integrity }
+}
+
 // Effects are injected so failure ordering and idempotent recovery can be tested.
 export async function publishRelease ({ plan, archive }, effects) {
   assert.equal(plan.publish, true, 'No release was planned')
@@ -33,10 +43,9 @@ export async function publishRelease ({ plan, archive }, effects) {
   assert.equal(repository.default_branch, 'beta')
   const branch = await effects.github('GET', '/git/ref/heads/beta')
   assert.equal(branch.object.sha, plan.gitHead, 'The beta branch has changed; review the newer candidate')
-  let published = await effects.registry(plan.version)
+  const published = await effects.registry(plan.version)
   if (!published) {
-    await effects.npm(archive)
-    published = await effects.registry(plan.version, true)
+    return effects.npm(archive, plan)
   }
   assert.equal(published?.dist?.integrity, plan.integrity, 'Registry archive differs from the tested candidate; refusing tag/release')
   const tagPath = `/git/ref/tags/${plan.gitTag}`
@@ -76,29 +85,31 @@ async function main () {
         assert.ok(response.ok, `GitHub ${method} ${suffix || 'repository'} failed (${response.status})`)
         return response.json()
       },
-      async registry (version, retry = false) {
-        for (let attempt = 0; attempt < (retry ? 6 : 1); attempt++) {
-          const response = await fetch(`https://registry.npmjs.org/@ciqol%2fresenv/${version}`, { redirect: 'error', signal: AbortSignal.timeout(30000) })
-          if (response.ok) return response.json()
-          assert.equal(response.status, 404, `Registry lookup failed (${response.status})`)
-          if (retry) await new Promise(resolve => setTimeout(resolve, 5000))
-        }
+      async registry (version) {
+        const response = await fetch(`https://registry.npmjs.org/@ciqol%2fresenv/${version}`, { redirect: 'error', signal: AbortSignal.timeout(30000) })
+        if (response.ok) return response.json()
+        assert.equal(response.status, 404, `Registry lookup failed (${response.status})`)
         return null
       },
-      npm (archive) {
+      npm (archive, plan) {
         const version = spawnSync('npm', ['--version'], { env: npmEnv, encoding: 'utf8', timeout: 10000 })
         assert.equal(version.status, 0)
         assert.equal(process.version, 'v24.19.0', 'Re-review the publishing platform before changing Node.js')
         assert.equal(version.stdout.trim(), '11.17.0', 'Re-review the publishing platform before changing npm')
-        const result = spawnSync('npm', ['publish', archive, '--access', 'public', '--tag', 'beta', '--provenance'], { cwd: temporary, env: npmEnv, encoding: 'utf8', timeout: 180000, maxBuffer: 4 * 1024 * 1024 })
+        const result = spawnSync('npm', ['stage', 'publish', archive, '--access', 'public', '--tag', 'beta', '--provenance', '--json'], { cwd: temporary, env: npmEnv, encoding: 'utf8', timeout: 180000, maxBuffer: 4 * 1024 * 1024 })
         assert.equal(result.error, undefined)
         // npm may authenticate only during publish. Do not use whoami as an OIDC probe.
-        assert.equal(result.status, 0, 'npm publication failed; check the npm trusted publisher for ciqol/resenv, ci.yml, environment release')
-        console.log('npm accepted the archive through trusted publishing.')
+        assert.equal(result.status, 0, 'npm staging failed; check the npm trusted publisher for ciqol/resenv, ci.yml, environment release')
+        return validateStageReceipt(result.stdout, plan)
       }
     }
     const release = await publishRelease(candidate, effects)
-    console.log(`Published @ciqol/resenv@${candidate.plan.version} on beta; ${release.html_url}`)
+    if (release.staged) {
+      writeFileSync(join(resolve(process.argv[2]), 'stage.json'), `${JSON.stringify(release, null, 2)}\n`)
+      const message = `Staged @ciqol/resenv@${release.version} on beta.\n\nApprove with npm stage approve ${release.stageId}, then rerun this release job to verify publication and record its tag.\n`
+      console.log(message)
+      if (process.env.GITHUB_STEP_SUMMARY) writeFileSync(process.env.GITHUB_STEP_SUMMARY, message, { flag: 'a' })
+    } else console.log(`Published @ciqol/resenv@${candidate.plan.version} on beta; ${release.html_url}`)
   } finally { rmSync(temporary, { recursive: true, force: true }) }
 }
 

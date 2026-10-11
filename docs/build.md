@@ -28,9 +28,8 @@ name stays `resenv`.
 
 `resolve` reads the inherited environment and replaces Doppler references with
 their fetched values before application code starts. Doppler is the only
-built-in cloud provider. The earlier decryption path for original ciphertext
-also remains implemented. `resolve-doppler` imports that same preload, so loading
-both names does not resolve fetched output again. Arbitrary commands require the
+built-in cloud provider. Original `encrypted:` values remain literal.
+`resolve-doppler` imports that same preload, so loading both names does not resolve fetched output again. Arbitrary commands require the
 separate `resolve-commands` entry or `run --commands`.
 
 The private `doppler-worker.cjs` entry lets synchronous preloads wait for HTTPS
@@ -50,10 +49,10 @@ adjacent modules; higher-level process and clean-consumer checks exercise the
 compiled modules and the same archive. Matrix jobs do not recompile TypeScript. Only the
 entries in the exports map are public package imports.
 
-Runtime and peer dependencies stay external. The crypto library is still loaded
-only when ciphertext needs decryption, using Node's `createRequire` API in the
-ESM source. The build resolves `import.meta.url` to the Node filename in CJS
-output; browser-like globals in a Node test environment cannot change it.
+The package has no runtime npm dependencies. Node built-ins remain external;
+Rollup does not bundle build tools into the application package. The build
+resolves `import.meta.url` to the Node filename in CJS output; browser-like
+globals in a Node test environment cannot change it.
 [Rollup's external option](https://rollupjs.org/configuration-options/#external)
 controls which imports remain outside the bundle.
 

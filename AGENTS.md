@@ -4,17 +4,23 @@ Node.js package: `@ciqol/resenv`, MIT licensed, copyright ciqol contributors.
 The user approved public source and the transition to `beta` as the sole remote
 and default branch. PR creation remains on hold. Keep the development root and
 ordinary local builds private. CI generates the release version before packing,
-with semantic-release on the normal branch `beta` and npm channel `beta`.
-The first computed version is `1.0.0`, without a `-beta.N` suffix.
+using semantic-release's official commit-analysis and release-notes plugins.
+The sole branch and npm channel are `beta`. The first version is
+`0.1.0-beta.1`; real beta release tags supply subsequent counters. The full
+semantic-release engine is not used while there is no stable release branch.
 
 Publish only through the manually dispatched GitHub Actions workflow, after all
-candidate checks. Never publish from a developer machine or request local npm
+candidate checks. Stage the tested archive through npm OIDC; maintainer npm
+approval publishes it, and rerunning the release job records the verified tag.
+Never publish from a developer machine or request local npm
 login. The user manages npm-side ownership and authentication. The OIDC path
 requires an existing package and a matching trusted publisher; do not assume it
 bootstraps an unpublished package. No npm publishing tokens are configured.
 The `release` environment requires explicit approval before initial creation.
 Keep `RELEASE_ENABLED` unset until its protections and npm setup are verified.
 Never create tags before successful publication of the tested archive.
+The user authorized removal of npm versions 1.0.0 and 0.0.0-stage only after
+the CI beta is published and verified; never unpublish the entire package.
 
 Release planning uses bounded, expiring development advisory exceptions with
 executable guards. Read `docs/release-security.md` before changing release tools.
@@ -36,7 +42,7 @@ to the privileged publisher. The platform npm CLI review is recorded separately.
 - Keep one public `resolve()` function. Always return an independent resolved
   copy; replace input values only when `replace: true` is explicitly enabled.
   The Node preloads enable replacement; the CLI uses the returned copy.
-- Keep arbitrary shell commands explicitly enabled. Fetched and decrypted
+- Keep arbitrary shell commands explicitly enabled. Fetched
   output stays literal, and failures must leave the caller's environment intact.
 - Never print credentials, fetched values, commands or provider response bodies.
 - Never commit dotenv files, credentials, tarballs or `node_modules`.

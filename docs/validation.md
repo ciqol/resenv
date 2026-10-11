@@ -1,5 +1,26 @@
 # Validation
 
+## October 12, 2026 — first CI beta preparation
+
+Removed dotenvx decryption, `eciesjs` and its four transitive dependencies.
+The runtime dependency tree is empty. Retained Doppler references and explicit
+command opt-in; original and fetched `encrypted:` strings remain literal.
+
+Local validation passed lint, strict implementation/spec type checks, the
+Rollup build, 94 Vitest tests, 40 process tests, 16 installed-package runtime
+checks and two typed consumers. The runtime audit reported zero findings; the
+12 reviewed release-tool advisories retain their November 9 expiry.
+
+The beta planner starts at `0.1.0-beta.1`, ignores the old stable version,
+skips unchanged/docs-only history and increments real beta tags. Tests cover
+malformed beta tags, unchanged source refs, staging receipts, failure ordering,
+registry integrity conflicts and release recording after approval.
+
+CI stages the exact tested archive using the existing stage-only OIDC
+publisher. npm maintainer approval and public availability are required before
+recording its tag or removing npm versions `1.0.0` and `0.0.0-stage`. Hosted
+validation and actual publication are separate evidence from these local checks.
+
 ## Release pipeline candidate - 2026-10-10
 
 The normal `beta` branch planner computed `1.0.0` without tags or publication.

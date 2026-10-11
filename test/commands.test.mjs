@@ -5,7 +5,6 @@ import { spawnSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve as resolvePath } from 'node:path'
-import { PrivateKey, encrypt } from 'eciesjs'
 import { resolve, formatError } from '../dist/index.mjs'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
@@ -20,19 +19,6 @@ test('commands preserve whitespace, UTF-8 and literal command-looking output', p
     assert.equal(resolve(env, options).TOKEN, output.replace(/\n+$/, ''))
   }
   assert.equal(resolve({ TOKEN: '$(printf "%s" "$(printf nested)")' }, options).TOKEN, 'nested')
-})
-
-test('a command can fetch a private key before ciphertext decryption', posix, () => {
-  const key = new PrivateKey()
-  const env = {
-    TOKEN: `encrypted:${Buffer.from(encrypt(key.publicKey.toHex(), Buffer.from('dummy-decrypted'))).toString('base64')}`,
-    DOTENV_PRIVATE_KEY: expression(`process.stdout.write(${JSON.stringify(key.toHex())})`)
-  }
-  const result = resolve(env, options)
-  assert.equal(result.TOKEN, 'dummy-decrypted')
-  assert.equal(result.DOTENV_PRIVATE_KEY, key.toHex())
-  env.TOKEN = `encrypted:${Buffer.from(encrypt(key.publicKey.toHex(), Buffer.from('$(must-not-run)'))).toString('base64')}`
-  assert.equal(resolve(env, options).TOKEN, '$(must-not-run)')
 })
 
 test('failures leave the caller unchanged and never expose command output', posix, () => {
