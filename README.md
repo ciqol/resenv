@@ -20,20 +20,18 @@ Resolution happens once at startup. It does not watch the provider for changes;
 restart the application to fetch updated values. No filename is passed to
 resenv, and dotenv files are never rewritten.
 
-Requires Node.js 20 or later. This is an experimental beta, currently distributed
-as a package archive; it has not been published to npm.
+Requires Node.js 20 or later. This is an experimental beta, published on npm's
+`beta` channel.
 
 ## Install
 
-Install the archive supplied by the maintainer in your application project:
+Install the beta in your application project:
 
 ```sh
-npm install --save-exact /path/to/ciqol-resenv-0.1.0-beta.1.tgz
+npm install --save-exact @ciqol/resenv@beta
 ```
 
-This records resenv in your project's manifest and lockfile. Keep the archive
-available wherever that project installs dependencies. Once the beta is
-published to npm, you will be able to install `@ciqol/resenv@beta` instead.
+This records the selected beta version in your project's manifest and lockfile.
 
 The CLI examples below use `npx --no-install` to run the copy installed in your
 project. In an npm script, use `resenv` directly.
@@ -94,7 +92,8 @@ npx --no-install resenv run -- node app.mjs
 
 The wrapper supplies resolved values to the child process. It inherits
 stdin/stdout/stderr, preserves exit status and forwards SIGINT, SIGTERM and
-SIGHUP to that child.
+SIGHUP to that child. On POSIX, the child runs in its own session so terminal
+signals reach it only through the wrapper.
 
 ## Nx integration
 

@@ -50,10 +50,10 @@ async function login ({ cli = false, noBrowser = false }: LoginOptions = {}, {
 }: LoginDependencies = {}): Promise<'cli' | 'native'> {
   if (!interactive || env.CI) throw new ResenvError('DOPPLER_INTERACTIVE_REQUIRED', 'Login requires an interactive local terminal outside CI. Supply DOPPLER_TOKEN for unattended runs.')
   if (env.DOPPLER_TOKEN !== undefined) throw new ResenvError('DOPPLER_TOKEN_OVERRIDE', 'Unset DOPPLER_TOKEN before logging in; it overrides saved credentials.')
-  const fallback = ({ storeUnavailable = false } = {}): 'cli' => {
+  const fallback = (): 'cli' => {
     output('Using Doppler CLI login.')
     system.cliLogin()
-    if (system.canStore && !storeUnavailable) {
+    if (system.canStore) {
       // Keep the identity chosen by this login ahead of an older resenv token.
       try { system.write(validateToken(system.cliToken())) } catch {
         throw new ResenvError('DOPPLER_KEYRING_UNAVAILABLE', 'CLI login completed, but resenv could not update its saved credential. Unlock the credential store and retry.')
@@ -66,7 +66,7 @@ async function login ({ cli = false, noBrowser = false }: LoginOptions = {}, {
   // Check keyring access before creating an authorization session.
   try { system.read() } catch (err) {
     if (!hasErrorCode(err, 'DOPPLER_KEYRING_UNAVAILABLE')) throw err
-    return fallback({ storeUnavailable: true })
+    return fallback()
   }
   let challenge
   try {

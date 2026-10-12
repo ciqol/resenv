@@ -43,11 +43,13 @@ export async function publishRelease ({ plan, archive }, effects) {
   assert.equal(repository.default_branch, 'beta')
   const branch = await effects.github('GET', '/git/ref/heads/beta')
   assert.equal(branch.object.sha, plan.gitHead, 'The beta branch has changed; review the newer candidate')
-  const published = await effects.registry(plan.version)
+  const metadata = await effects.registry()
+  const published = metadata?.versions?.[plan.version]
   if (!published) {
     return effects.npm(archive, plan)
   }
   assert.equal(published?.dist?.integrity, plan.integrity, 'Registry archive differs from the tested candidate; refusing tag/release')
+  assert.deepEqual(metadata['dist-tags'], { beta: plan.version }, 'Registry channels must contain only the tested beta version; correct npm dist-tags before recording this release')
   const tagPath = `/git/ref/tags/${plan.gitTag}`
   const tag = await effects.github('GET', tagPath)
   if (tag) assert.equal(tag.object.sha, plan.gitHead, 'Existing tag points to another commit')
@@ -85,8 +87,8 @@ async function main () {
         assert.ok(response.ok, `GitHub ${method} ${suffix || 'repository'} failed (${response.status})`)
         return response.json()
       },
-      async registry (version) {
-        const response = await fetch(`https://registry.npmjs.org/@ciqol%2fresenv/${version}`, { redirect: 'error', signal: AbortSignal.timeout(30000) })
+      async registry () {
+        const response = await fetch('https://registry.npmjs.org/@ciqol%2fresenv', { redirect: 'error', signal: AbortSignal.timeout(30000) })
         if (response.ok) return response.json()
         assert.equal(response.status, 404, `Registry lookup failed (${response.status})`)
         return null

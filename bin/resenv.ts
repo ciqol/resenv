@@ -55,7 +55,8 @@ async function main (): Promise<void> {
   }
 
   assertSafeDiagnostics()
-  const child = spawn(command, commandArgs, { env, stdio: 'inherit', shell: false })
+  // Isolate the child from terminal group signals; the wrapper forwards them once.
+  const child = spawn(command, commandArgs, { env, stdio: 'inherit', shell: false, detached: process.platform !== 'win32' })
   const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP']
   const handlers = new Map<NodeJS.Signals, () => void>()
   for (const signal of signals) {

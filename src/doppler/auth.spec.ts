@@ -153,9 +153,22 @@ test('credential validation failures never fall back to another saved identity',
 
 test('an unavailable keyring falls back before creating a browser authorization session', async () => {
   const { deps, events } = loginFixture()
-  deps.system.read = () => { throw failure('DOPPLER_KEYRING_UNAVAILABLE') }
+  let saved = 'dp.ct.older0123456789'
+  let unavailable = true
+  deps.system.read = () => {
+    if (unavailable) throw failure('DOPPLER_KEYRING_UNAVAILABLE')
+    return saved
+  }
+  deps.system.write = value => { saved = value }
   assert.equal(await login({}, deps), 'cli')
+  unavailable = false
+  assert.equal(await credential({}, deps.system), token)
   assert.deepEqual(events.map(([kind]) => kind), ['output', 'cli', 'output'])
+  unavailable = true
+  deps.system.write = () => { throw failure('DOPPLER_KEYRING_UNAVAILABLE') }
+  events.length = 0
+  await assert.rejects(login({}, deps), { code: 'DOPPLER_KEYRING_UNAVAILABLE' })
+  assert.deepEqual(events.map(([kind]) => kind), ['output', 'cli'])
   deps.system.read = () => { throw failure('DOPPLER_INVALID_TOKEN') }
   events.length = 0
   await assert.rejects(login({}, deps), { code: 'DOPPLER_INVALID_TOKEN' })

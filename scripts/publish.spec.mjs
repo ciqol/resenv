@@ -3,6 +3,7 @@ import { npmEnvironment, publishRelease, validatePublisher, validateStageReceipt
 
 function fixture () {
   const candidate = { archive: '/dummy/archive.tgz', plan: { name: '@ciqol/resenv', publish: true, version: '0.1.0-beta.1', gitTag: 'v0.1.0-beta.1', gitHead: 'a'.repeat(40), integrity: 'sha512-dummy', sha256: 'b'.repeat(64), notes: 'Dummy notes' } }
+  const published = { versions: { [candidate.plan.version]: { dist: { integrity: candidate.plan.integrity } } }, 'dist-tags': { beta: candidate.plan.version } }
   const effects = {
     github: vi.fn(async (method, path) => {
       if (path === '') return { private: false, default_branch: 'beta' }
@@ -10,10 +11,10 @@ function fixture () {
       if (method === 'GET') return null
       return { html_url: 'https://github.com/ciqol/resenv/releases/tag/v0.1.0-beta.1' }
     }),
-    registry: vi.fn().mockResolvedValueOnce(null).mockResolvedValue({ dist: { integrity: candidate.plan.integrity } }),
+    registry: vi.fn().mockResolvedValue({ versions: {}, 'dist-tags': { beta: '0.1.0-beta.0' } }),
     npm: vi.fn().mockResolvedValue({ staged: true, stageId: '00000000-0000-4000-8000-000000000000' })
   }
-  return { candidate, effects }
+  return { candidate, effects, published }
 }
 
 describe('publication ordering and recovery', () => {
@@ -31,14 +32,21 @@ describe('publication ordering and recovery', () => {
     expect(effects.github.mock.calls.every(([method]) => method === 'GET')).toBe(true)
   })
   it('recovers after publication without republishing, and refuses a different registry archive', async () => {
-    const { candidate, effects } = fixture()
-    effects.registry.mockReset().mockResolvedValue({ dist: { integrity: candidate.plan.integrity } })
+    const { candidate, effects, published } = fixture()
+    effects.registry.mockResolvedValue(published)
     await publishRelease(candidate, effects)
     expect(effects.npm).not.toHaveBeenCalled()
     expect(effects.github).toHaveBeenCalledWith('POST', '/releases', expect.objectContaining({ prerelease: true, make_latest: 'false' }))
     effects.github.mockClear()
-    effects.registry.mockResolvedValue({ dist: { integrity: 'sha512-other' } })
+    published.versions[candidate.plan.version].dist.integrity = 'sha512-other'
     await expect(publishRelease(candidate, effects)).rejects.toThrow(/differs/)
+    expect(effects.github.mock.calls.every(([method]) => method === 'GET')).toBe(true)
+  })
+  it.each([undefined, {}, { latest: '0.1.0-beta.1' }, { beta: '0.1.0-beta.2' }, { beta: '0.1.0-beta.1', latest: '0.1.0-beta.1' }])('refuses incorrect registry channels %j before recording a release', async tags => {
+    const { candidate, effects, published } = fixture()
+    effects.registry.mockResolvedValue({ ...published, 'dist-tags': tags })
+    await expect(publishRelease(candidate, effects)).rejects.toThrow(/Registry channels/)
+    expect(effects.npm).not.toHaveBeenCalled()
     expect(effects.github.mock.calls.every(([method]) => method === 'GET')).toBe(true)
   })
   it('refuses a stale beta candidate or a private repository before publishing', async () => {
@@ -54,8 +62,8 @@ describe('publication ordering and recovery', () => {
     expect(effects.npm).not.toHaveBeenCalled()
   })
   it('refuses a pre-existing tag targeting a different commit', async () => {
-    const { candidate, effects } = fixture()
-    effects.registry.mockReset().mockResolvedValue({ dist: { integrity: candidate.plan.integrity } })
+    const { candidate, effects, published } = fixture()
+    effects.registry.mockResolvedValue(published)
     effects.github.mockResolvedValueOnce({ private: false, default_branch: 'beta' }).mockResolvedValueOnce({ object: { sha: candidate.plan.gitHead } }).mockResolvedValueOnce({ object: { sha: 'b'.repeat(40) } })
     await expect(publishRelease(candidate, effects)).rejects.toThrow(/another commit/)
     expect(effects.github.mock.calls.some(([method, path]) => method === 'POST' && path === '/releases')).toBe(false)

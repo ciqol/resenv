@@ -113,6 +113,35 @@ test('wrapper forwards SIGTERM and preserves the child termination signal', { sk
   applicationPid = undefined
 })
 
+test('wrapper delivers process-group signals once and waits for graceful shutdown', { skip: process.platform === 'win32', timeout: 10000 }, async t => {
+  const context = fixture(t)
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+    const script = `let count=0; process.on('${signal}',()=>{ if(++count===1) setTimeout(()=>process.exit(count===1?0:9),100) }); console.log(process.pid); setInterval(()=>{},1000)`
+    const child = spawn(process.execPath, [cli, 'run', '--', process.execPath, '-e', script], {
+      cwd: context.cwd, env: context.env, detached: true, stdio: ['ignore', 'pipe', 'pipe']
+    })
+    let applicationPid
+    t.after(() => {
+      child.kill('SIGKILL')
+      if (applicationPid) { try { process.kill(applicationPid, 'SIGKILL') } catch {} }
+    })
+    const result = await new Promise((resolve, reject) => {
+      let ready = ''
+      child.once('error', reject)
+      child.once('exit', (code, signal) => resolve({ code, signal }))
+      child.stdout.on('data', data => {
+        ready += data.toString()
+        if (ready.includes('\n') && !applicationPid) {
+          applicationPid = Number(ready.trim())
+          process.kill(-child.pid, signal)
+        }
+      })
+    })
+    assert.deepEqual(result, { code: 0, signal: null }, signal)
+    applicationPid = undefined
+  }
+})
+
 test('NODE_DEBUG reports each result and a summary without exposing sensitive data', { skip: process.platform === 'win32' }, t => {
   const context = fixture(t)
   context.env.NODE_DEBUG = 'ciqol:resenv'

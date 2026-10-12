@@ -41,7 +41,8 @@ The [CI workflow](../.github/workflows/ci.yml) builds one archive:
 4. **Approval and recording:** the maintainer reviews and approves the staged
    package in npm using interactive 2FA. Wait for npm to make it available,
    then rerun the original release job. It verifies the published integrity
-   against the original tested archive before creating its Git tag and GitHub
+   against the original tested archive and requires `beta` to be the only npm
+   tag, pointing to that version, before creating its Git tag and GitHub
    prerelease. It does not stage or publish the package again.
 
 Pushes, PRs and dispatches with `publish: false` cannot stage a package. Release
