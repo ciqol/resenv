@@ -73,7 +73,7 @@ The installed catalog contains 13 plugins. Nine apply to this repository:
 | github-actions-standards | Pin both artifact uploads to the already-reviewed v7.0.1 commit |
 | git-workflow | Signed Conventional Commits on a local task branch; delivery follows repository policy |
 | maturity | Static score and generated-output findings above |
-| repository-governance | Read-only settings audit and the proposed security changes in [public readiness](public-readiness.md) |
+| repository-governance | Settings audit and approved, verified security changes in [public readiness](public-readiness.md) |
 
 The remaining plugins do not call for changes: agent-parity concerns machine
 configuration; api-design-standards concerns server HTTP contracts;

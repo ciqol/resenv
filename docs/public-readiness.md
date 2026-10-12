@@ -7,9 +7,10 @@ Read-only GitHub inspection as `titan-ron` confirmed a public repository with
 and `latest` tags both point to `0.1.0-beta.1`. The release environment permits
 only the `beta` branch. No rulesets or beta branch protection are enabled.
 
-The following security changes are proposed for maintainer confirmation:
+The maintainer approved all three security changes, applied as `titan-ron` on
+2026-10-13 and verified through GitHub API read-back:
 
-| Setting | Observed | Proposed |
+| Setting | Before | Verified |
 | --- | --- | --- |
 | Private vulnerability reporting | Disabled | Enabled |
 | Secret scanning | Disabled | Enabled |
@@ -17,9 +18,13 @@ The following security changes are proposed for maintainer confirmation:
 
 These provide a private reporting channel and detection/prevention of supported
 credential patterns. `titan-ron` is the approver and implementation owner.
-Apply only these settings through GitHub's repository API, then read them back
-and verify the reporting entry point. Access, visibility, merge methods, branch
-rules and release controls are outside this proposal.
+The [private reporting URL](https://github.com/ciqol/resenv/security/advisories/new)
+redirects signed-out visitors to GitHub sign-in with that reporting route as
+the return target. Report submission was not exercised. Secret scanning
+returned no open alerts at verification time; this is not proof of a completed
+history scan. The [security policy](../SECURITY.md) now links directly to private
+reporting. Access, visibility, merge methods, branch rules and release controls
+were unchanged.
 
 Pre-change setting snapshots are retained outside the repository. Rollback
 restores the two disabled scanning values with the repository PATCH endpoint

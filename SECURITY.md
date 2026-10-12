@@ -63,11 +63,9 @@ evidence and platform limits are recorded in [docs/validation.md](docs/validatio
 ## Reporting a vulnerability
 
 Do not open a public issue containing a vulnerability, credentials or sensitive
-output. Open the repository's Security tab and use "Report a vulnerability"
-when available. If that option is unavailable, contact the maintainer through
-an existing private channel. Before the public transition is complete,
-maintainers must enable GitHub private vulnerability reporting and verify that
-it is available.
+output. [Report a vulnerability privately](https://github.com/ciqol/resenv/security/advisories/new)
+through GitHub. If that option is unavailable, contact the maintainer through
+an existing private channel.
 
 Include affected versions, platform, impact and a minimal reproduction using
 dummy data. Never include production tokens, private keys or environment dumps.
