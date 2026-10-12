@@ -11,11 +11,11 @@ reporting, secret scanning and push protection are enabled. npm's `beta` and
 Pinned Node 24 verification passed lint, strict types, build, 101 unit/tooling
 tests, 41 process tests, 16 packed runtime checks and two typed consumers.
 Source unit coverage is 93.20% statements, 93.25% branches, 95.45% functions and
-94.98% lines, with a 90% global floor enforced locally and in CI. Cobertura
-paths and compressed upload payloads passed checks for branch and PR events.
-CI retains LCOV/Cobertura artifacts and uploads from an isolated job; release
-depends on that job. Runtime audit: zero findings; the 12 reviewed development
-advisories retain their November 9 expiry. Live native-login/Linux-keyring
+94.98% lines, with a 90% global floor enforced locally and in CI. Cobertura file
+paths were verified. CI retains LCOV/Cobertura artifacts for seven days; GitHub
+Code Quality remains disabled by maintainer choice. Runtime audit: zero findings;
+the 12 reviewed development advisories retain their November 9 expiry.
+Live native-login/Linux-keyring
 verification remains a documented limit in [the handoff](maintainer-handoff.md).
 
 ## October 12, 2026 — delivery and session handoff review

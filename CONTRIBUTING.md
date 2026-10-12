@@ -72,9 +72,7 @@ report measures source and is separate from packed-package and process checks.
 `npm run verify` enforces a 90% global floor for source statements, branches,
 functions and lines. Worker and preload entry files stay in the denominator;
 the CLI is checked separately by process and packed-package tests. CI retains
-LCOV and Cobertura reports for seven days and uploads Cobertura to GitHub's
-native coverage API in a separate job. Fork PRs still run the coverage gate
-and retain reports; they skip the upload because their token cannot write.
+LCOV and Cobertura reports for seven days in the `resenv-coverage` artifact.
 
 Use normal npm lifecycle behavior locally and in CI. Review install hooks,
 including implicit native builds, when changing dependencies; record any
