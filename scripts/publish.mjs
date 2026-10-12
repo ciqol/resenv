@@ -49,7 +49,7 @@ export async function publishRelease ({ plan, archive }, effects) {
     return effects.npm(archive, plan)
   }
   assert.equal(published?.dist?.integrity, plan.integrity, 'Registry archive differs from the tested candidate; refusing tag/release')
-  assert.deepEqual(metadata['dist-tags'], { beta: plan.version }, 'Registry channels must contain only the tested beta version; correct npm dist-tags before recording this release')
+  assert.deepEqual(metadata['dist-tags'], { beta: plan.version, latest: plan.version }, 'Registry channels must contain beta and latest pointing to the tested version; correct npm dist-tags before recording this release')
   const tagPath = `/git/ref/tags/${plan.gitTag}`
   const tag = await effects.github('GET', tagPath)
   if (tag) assert.equal(tag.object.sha, plan.gitHead, 'Existing tag points to another commit')
@@ -108,7 +108,7 @@ async function main () {
     const release = await publishRelease(candidate, effects)
     if (release.staged) {
       writeFileSync(join(resolve(process.argv[2]), 'stage.json'), `${JSON.stringify(release, null, 2)}\n`)
-      const message = `Staged @ciqol/resenv@${release.version} on beta.\n\nApprove with npm stage approve ${release.stageId}, then rerun this release job to verify publication and record its tag.\n`
+      const message = `Staged @ciqol/resenv@${release.version} on beta.\n\nApprove with npm stage approve ${release.stageId}. After public availability, run npm dist-tag add @ciqol/resenv@${release.version} latest, then rerun this release job to verify publication and both npm tags before recording the release.\n`
       console.log(message)
       if (process.env.GITHUB_STEP_SUMMARY) writeFileSync(process.env.GITHUB_STEP_SUMMARY, message, { flag: 'a' })
     } else console.log(`Published @ciqol/resenv@${candidate.plan.version} on beta; ${release.html_url}`)

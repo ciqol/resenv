@@ -75,16 +75,18 @@ npm view @ciqol/resenv versions dist-tags --json
 npm stage list @ciqol/resenv --json
 ```
 
-The first intended version is `0.1.0-beta.1` on npm's `beta` tag. The planner
-uses semantic-release's official commit-analysis and notes plugins directly;
+The first intended version is `0.1.0-beta.1`; npm tags `beta` and `latest` point
+to the same tested beta release. The planner uses semantic-release's official
+commit-analysis and notes plugins directly;
 it does not run the full semantic-release engine. Real published release tags
 supply later beta counters. Do not fabricate tags to advance a version.
 
 Publishing is staged: a trusted manual CI dispatch submits the exact archive
 that passed all consumer checks. The `release` environment accepts only `beta`
 and has no GitHub reviewer gate. npm approval with 2FA makes a stage public.
-After public availability and integrity verification, rerun the original
-release job to record its Git tag and GitHub prerelease. Keep `beta` at that
+After public availability, the maintainer updates npm's `latest` tag to the
+approved version. Rerun the original release job to verify integrity and both
+npm tags, then record its Git tag and GitHub prerelease. Keep `beta` at that
 candidate's commit until this step finishes, unless the maintainer explicitly
 chooses to reject and replace the pending stage. Do not rerun the whole
 workflow to recover an existing stage.
@@ -92,9 +94,9 @@ workflow to recover an existing stage.
 A staged version reserves its version number. To replace an unapproved
 candidate, the maintainer must reject the old stage with npm 2FA before CI
 stages the replacement. Check stage status before retrying an ambiguous result.
-Never publish from a developer machine, add a publishing token, promote a beta
-to `latest`, or delete the whole npm package. The `0.0.0-stage` placeholder must
-remain until a functional beta is public; removing the last published version
+Never publish from a developer machine, add a publishing token, or delete the
+whole npm package. The `0.0.0-stage` placeholder must remain until a functional
+beta is public; removing the last published version
 would remove the package and impose npm's publishing cooldown.
 
 ## Known limits and follow-ups

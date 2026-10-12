@@ -6,9 +6,10 @@ and [repository instructions](https://github.com/ciqol/resenv/blob/beta/AGENTS.m
 The [README](README.md) covers using resenv in an application. This guide covers
 changing resenv itself and verifying those changes.
 
-Releases start at `0.1.0-beta.1` on the sole branch `beta`, using npm channel
-`beta`. Semantic-release's official commit-analysis and release-notes plugins
-select releasable changes and generate notes; actual beta tags supply the next
+Releases start at `0.1.0-beta.1` on the sole branch `beta`, using npm tags
+`beta` and `latest` for the same tested version. Semantic-release's official
+commit-analysis and release-notes plugins select releasable changes and generate
+notes; actual beta tags supply the next
 prerelease counter. The root and ordinary local builds remain private prototypes.
 CI generates the publishable manifest before packing and testing it, then stages
 the exact archive through npm OIDC for maintainer approval. See

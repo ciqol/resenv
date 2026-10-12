@@ -3,7 +3,7 @@ import { npmEnvironment, publishRelease, validatePublisher, validateStageReceipt
 
 function fixture () {
   const candidate = { archive: '/dummy/archive.tgz', plan: { name: '@ciqol/resenv', publish: true, version: '0.1.0-beta.1', gitTag: 'v0.1.0-beta.1', gitHead: 'a'.repeat(40), integrity: 'sha512-dummy', sha256: 'b'.repeat(64), notes: 'Dummy notes' } }
-  const published = { versions: { [candidate.plan.version]: { dist: { integrity: candidate.plan.integrity } } }, 'dist-tags': { beta: candidate.plan.version } }
+  const published = { versions: { [candidate.plan.version]: { dist: { integrity: candidate.plan.integrity } } }, 'dist-tags': { beta: candidate.plan.version, latest: candidate.plan.version } }
   const effects = {
     github: vi.fn(async (method, path) => {
       if (path === '') return { private: false, default_branch: 'beta' }
@@ -42,7 +42,12 @@ describe('publication ordering and recovery', () => {
     await expect(publishRelease(candidate, effects)).rejects.toThrow(/differs/)
     expect(effects.github.mock.calls.every(([method]) => method === 'GET')).toBe(true)
   })
-  it.each([undefined, {}, { latest: '0.1.0-beta.1' }, { beta: '0.1.0-beta.2' }, { beta: '0.1.0-beta.1', latest: '0.1.0-beta.1' }])('refuses incorrect registry channels %j before recording a release', async tags => {
+  it.each([
+    undefined, {}, { latest: '0.1.0-beta.1' }, { beta: '0.1.0-beta.1' },
+    { beta: '0.1.0-beta.2', latest: '0.1.0-beta.1' },
+    { beta: '0.1.0-beta.1', latest: '0.1.0-beta.2' },
+    { beta: '0.1.0-beta.1', latest: '0.1.0-beta.1', other: '0.1.0-beta.1' }
+  ])('refuses incorrect registry channels %j before recording a release', async tags => {
     const { candidate, effects, published } = fixture()
     effects.registry.mockResolvedValue({ ...published, 'dist-tags': tags })
     await expect(publishRelease(candidate, effects)).rejects.toThrow(/Registry channels/)

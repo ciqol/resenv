@@ -32,6 +32,7 @@ npm install --save-exact @ciqol/resenv@beta
 ```
 
 This records the selected beta version in your project's manifest and lockfile.
+The `latest` tag points to the same beta; omitting `@beta` installs it too.
 
 The CLI examples below use `npx --no-install` to run the copy installed in your
 project. In an npm script, use `resenv` directly.

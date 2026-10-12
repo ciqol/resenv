@@ -3,7 +3,7 @@
 ## Versions
 
 `beta` is the sole remote and default branch. Releases start at `0.1.0-beta.1`
-and use the npm `beta` tag. A beta tag is not promoted to `latest`.
+and use npm tags `beta` and `latest`, both pointing to the same tested beta.
 
 The planner uses semantic-release's official commit-analysis and release-notes
 plugins. Conventional Commits decide whether changes need a release. Each
@@ -40,10 +40,10 @@ The [CI workflow](../.github/workflows/ci.yml) builds one archive:
    staging receipt; no Git tag or GitHub release is created yet.
 4. **Approval and recording:** the maintainer reviews and approves the staged
    package in npm using interactive 2FA. Wait for npm to make it available,
-   then rerun the original release job. It verifies the published integrity
-   against the original tested archive and requires `beta` to be the only npm
-   tag, pointing to that version, before creating its Git tag and GitHub
-   prerelease. It does not stage or publish the package again.
+   update `latest` to the approved version, then rerun the original release job.
+   It verifies the published integrity against the original tested archive and
+   requires npm tags `beta` and `latest` to point to that version before creating
+   its Git tag and GitHub prerelease. It does not stage or publish the package again.
 
 Pushes, PRs and dispatches with `publish: false` cannot stage a package. Release
 jobs are serialized and not cancelled. Artifacts last seven days. A fresh
@@ -92,8 +92,15 @@ npm stage approve <stage-id>
 
 These are maintainer review/approval commands; the archive is built and staged
 by GitHub Actions. OIDC cannot perform the approval step. Wait for npm scanning
-and public availability, then rerun the original release job to record the tag.
-Verify the npm version, `beta` tag, archive integrity, provenance and GitHub
+and public availability, then update the default install tag in the maintainer
+session:
+
+```sh
+npm dist-tag add @ciqol/resenv@<approved-version> latest
+```
+
+Rerun the original release job to record the release. Verify the npm version,
+`beta` and `latest` tags, archive integrity, provenance and GitHub
 prerelease. Never infer success from a staging receipt alone.
 
 For a hosted rehearsal, leave the staging input off. Local verification is:

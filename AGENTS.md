@@ -7,7 +7,8 @@ The user approved public source and the transition to `beta` as the sole remote
 and default branch. PR creation remains on hold. Keep the development root and
 ordinary local builds private. CI generates the release version before packing,
 using semantic-release's official commit-analysis and release-notes plugins.
-The sole branch and npm channel are `beta`. The first version is
+The sole branch is `beta`; npm tags `beta` and `latest` point to the same tested
+beta release. The first version is
 `0.1.0-beta.1`; real beta release tags supply subsequent counters. The full
 semantic-release engine is not used while there is no stable release branch.
 
@@ -82,7 +83,8 @@ tests against that archive and never recompile the source.
 Use `npm run release:check` for non-publishing local verification. Hosted
 checks plan a version and test the final archive; publication is a separate
 manual workflow input. CI's push filter is `beta`.
-Beta publication must use the `beta` npm dist-tag; never promote it to `latest`.
+Stage with the `beta` npm dist-tag. After npm approval and public availability,
+the maintainer updates `latest` to that version before CI records the release.
 
 README documents how application users install and use resenv. Contributor setup,
 tests, local linking and release preparation belong in CONTRIBUTING.md and docs/.
