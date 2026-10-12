@@ -1,6 +1,6 @@
 # Maturity evaluation
 
-Evaluated on October 8, 2026 with the Tashtit maturity 0.3.1 catalog, using
+Evaluated on October 13, 2026 with the Tashtit maturity 0.3.1 catalog, using
 static working-tree evidence only. This measures the catalog's repository
 hygiene rules; it does not certify security or readiness to publish. Tests
 and hosted checks are recorded separately in [validation](validation.md).
@@ -38,8 +38,7 @@ also discovers the generated `dist/package.json`, so its findings are retained.
   normal lifecycle behavior; it does not pass `--ignore-scripts`.
 - Repository: valid CODEOWNERS syntax, README, CONTRIBUTING and `.editorconfig`.
 - CI: a parseable workflow, explicit scoped token permissions, bounded job
-  timeouts, no `pull_request_target`, and pinned remote actions. The GitHub-owned
-  upload action's exact `v7.0.1` tag is permitted by the catalog.
+  timeouts, no `pull_request_target`, and full commit pins for every remote action.
 
 The earlier 88% score included a lifecycle-script finding that is now resolved.
 No dependency installation, build, test, or remote request was used to derive
@@ -59,3 +58,25 @@ See [public readiness](public-readiness.md) for the separate exposure audit and
 No automatic fix is appropriate. The generated package's broad runtime range
 does not identify a development version to pin, and adding another lockfile
 would misrepresent it as a maintained workspace.
+
+## Tashtit plugin review — 2026-10-13
+
+The installed catalog contains 13 plugins. Nine apply to this repository:
+
+| Plugin | Application |
+| --- | --- |
+| engineering-standards | Atomic resolution, bounded effects and existing failure tests |
+| typescript-style-standards | Strict types, readonly public shapes and typed lint; preserve local style |
+| typescript-library-build | Generated manifests, shared CJS/ESM identity and packed runtime/type consumers |
+| dependency-standards | Exact development pins, review records and expiring executable advisory guards |
+| logging-standards | Value-free diagnostics, safe error codes and synthetic leak checks |
+| github-actions-standards | Pin both artifact uploads to the already-reviewed v7.0.1 commit |
+| git-workflow | Signed Conventional Commits on a local task branch; delivery follows repository policy |
+| maturity | Static score and generated-output findings above |
+| repository-governance | Read-only settings audit and the proposed security changes in [public readiness](public-readiness.md) |
+
+The remaining plugins do not call for changes: agent-parity concerns machine
+configuration; api-design-standards concerns server HTTP contracts;
+architecture-diagrams concerns C4 views; repository-onboarding duplicates the
+existing maintainer handoff for this already-familiar checkout. No runtime
+dependency, logging framework, diagram or style migration is needed.

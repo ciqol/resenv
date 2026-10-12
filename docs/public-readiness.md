@@ -1,5 +1,32 @@
 # Public repository readiness
 
+## Tashtit governance review — 2026-10-13
+
+Read-only GitHub inspection as `titan-ron` confirmed a public repository with
+`beta` as its default branch. The first beta release is recorded; npm's `beta`
+and `latest` tags both point to `0.1.0-beta.1`. The release environment permits
+only the `beta` branch. No rulesets or beta branch protection are enabled.
+
+The following security changes are proposed for maintainer confirmation:
+
+| Setting | Observed | Proposed |
+| --- | --- | --- |
+| Private vulnerability reporting | Disabled | Enabled |
+| Secret scanning | Disabled | Enabled |
+| Secret scanning push protection | Disabled | Enabled |
+
+These provide a private reporting channel and detection/prevention of supported
+credential patterns. `titan-ron` is the approver and implementation owner.
+Apply only these settings through GitHub's repository API, then read them back
+and verify the reporting entry point. Access, visibility, merge methods, branch
+rules and release controls are outside this proposal.
+
+Pre-change setting snapshots are retained outside the repository. Rollback
+restores the two disabled scanning values with the repository PATCH endpoint
+and disables private reporting with its DELETE endpoint, followed by read-back.
+The API supports these inverse operations; rollback has not been executed.
+See [GitHub's repository API](https://docs.github.com/en/rest/repos/repos).
+
 ## Follow-up review — 2026-10-12
 
 The repository is now public, with `beta` as the sole remote and default branch.
