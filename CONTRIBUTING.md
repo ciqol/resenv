@@ -61,7 +61,7 @@ shipping them in JavaScript or declarations. Do not maintain separate handwritte
 ```sh
 npm run test:unit         # colocated Vitest specs, no build required
 npm run test:watch        # watch unit specs while editing
-npm run test:coverage     # source unit coverage, text and lcov output
+npm run test:coverage     # source unit coverage, text, lcov and Cobertura output
 npm run test:integration  # process checks, requires a build
 ```
 
@@ -69,6 +69,12 @@ npm run test:integration  # process checks, requires a build
 helpers, browser launchers and process control in unit tests. Keep checks that
 spawn actual commands or temporary applications in `test/`. The unit coverage
 report measures source and is separate from packed-package and process checks.
+`npm run verify` enforces a 90% global floor for source statements, branches,
+functions and lines. Worker and preload entry files stay in the denominator;
+the CLI is checked separately by process and packed-package tests. CI retains
+LCOV and Cobertura reports for seven days and uploads Cobertura to GitHub's
+native coverage API in a separate job. Fork PRs still run the coverage gate
+and retain reports; they skip the upload because their token cannot write.
 
 Use normal npm lifecycle behavior locally and in CI. Review install hooks,
 including implicit native builds, when changing dependencies; record any

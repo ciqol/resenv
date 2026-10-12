@@ -34,6 +34,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+          ref: '${{ github.event.pull_request.head.sha || github.sha }}'
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version-file: '.nvmrc'
@@ -45,8 +46,17 @@ jobs:
         run: npm run lint
       - name: Check TypeScript implementation
         run: npm run typecheck
-      - name: Run colocated unit specs
+      - name: Run unit specs with coverage
         run: npm run test:coverage
+      - name: Save coverage reports
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: 'resenv-coverage'
+          path: |
+            coverage/cobertura-coverage.xml
+            coverage/lcov.info
+          if-no-files-found: 'error'
+          retention-days: 7
       - name: Plan the version and notes without publishing
         run: node scripts/release-plan.mjs candidate
       - name: Build the final version once
@@ -83,6 +93,7 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
+          ref: '${{ github.event.pull_request.head.sha || github.sha }}'
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           # An empty node-version falls back to the repository's .nvmrc.
@@ -103,8 +114,59 @@ jobs:
           tar -xzf artifacts/*.tgz -C dist --strip-components=1
       - run: npm run test:integration
 
+  coverage:
+    needs: build
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      code-quality: write # Upload the generated report to GitHub's coverage API.
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: 'resenv-coverage'
+          digest-mismatch: 'error'
+      # Read report data only; never check out or execute project code here.
+      - name: Upload coverage to GitHub
+        env:
+          GH_TOKEN: '${{ github.token }}'
+          COVERAGE_SHA: '${{ github.event.pull_request.head.sha || github.sha }}'
+          COVERAGE_PR: '${{ github.event.pull_request.number }}'
+        run: |
+          python3 - <<'PY' > "$RUNNER_TEMP/resenv-coverage.json"
+          import base64, gzip, json, os
+          from pathlib import Path
+          payload = {
+              'commit_oid': os.environ['COVERAGE_SHA'],
+              'coverage_report': base64.b64encode(gzip.compress(Path('cobertura-coverage.xml').read_bytes())).decode('ascii'),
+              'language_name': 'TypeScript',
+              'label': 'code-coverage/vitest'
+          }
+          if os.environ.get('COVERAGE_PR'):
+              payload['pull_request_number'] = int(os.environ['COVERAGE_PR'])
+          else:
+              payload['ref'] = os.environ['GITHUB_REF']
+          print(json.dumps(payload))
+          PY
+          coverage_id="$(gh api --method PUT "repos/$GITHUB_REPOSITORY/code-coverage/report" --input "$RUNNER_TEMP/resenv-coverage.json" --jq '.id // empty')"
+          if [ -z "$coverage_id" ]; then
+            echo '::notice::GitHub skipped coverage processing for this commit.'
+            exit 0
+          fi
+          for attempt in {1..36}; do
+            status="$(gh api "repos/$GITHUB_REPOSITORY/code-coverage/reports/$coverage_id" --jq '.processing_status')"
+            case "$status" in
+              succeeded) echo 'Coverage report processed successfully.'; exit 0 ;;
+              pending|processing) sleep 5 ;;
+              *) echo '::error::Coverage report processing failed.'; exit 1 ;;
+            esac
+          done
+          echo '::error::Coverage report processing timed out.'
+          exit 1
+
   release:
-    needs: [build, test]
+    needs: [build, test, coverage]
     # Enable only after the protected environment and npm authentication exist.
     if: vars.RELEASE_ENABLED == 'true' && github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/beta' && needs.build.outputs.publish == 'true'
     runs-on: ubuntu-24.04

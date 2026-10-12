@@ -1,5 +1,23 @@
 # Validation
 
+## October 13, 2026 — final repository review and coverage
+
+Rechecked credential persistence, CLI signal forwarding, literal fetched values,
+atomic replacement, packed exports and release integrity/tag guards. The earlier
+review fixes remain covered; no further runtime change was needed. GitHub private
+reporting, secret scanning and push protection are enabled. npm's `beta` and
+`latest` tags both point to the recorded `0.1.0-beta.1` release.
+
+Pinned Node 24 verification passed lint, strict types, build, 101 unit/tooling
+tests, 41 process tests, 16 packed runtime checks and two typed consumers.
+Source unit coverage is 93.20% statements, 93.25% branches, 95.45% functions and
+94.98% lines, with a 90% global floor enforced locally and in CI. Cobertura
+paths and compressed upload payloads passed checks for branch and PR events.
+CI retains LCOV/Cobertura artifacts and uploads from an isolated job; release
+depends on that job. Runtime audit: zero findings; the 12 reviewed development
+advisories retain their November 9 expiry. Live native-login/Linux-keyring
+verification remains a documented limit in [the handoff](maintainer-handoff.md).
+
 ## October 12, 2026 — delivery and session handoff review
 
 Reviewed the resolver, command opt-in, provider and credential boundaries,

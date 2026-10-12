@@ -1,5 +1,16 @@
 # Dependency review
 
+## GitHub coverage reporting — 2026-10-13
+
+Follow the Cobertura artifact and native GitHub coverage API pattern in
+[sonarqube-api-client](https://github.com/ciqol/sonarqube-api-client/blob/main/.github/workflows/ci.yml).
+The reference's `actions/upload-code-coverage` v1.4.4 declares no license in its
+source tree or Python metadata, so it was not admitted. The isolated upload job
+uses the runner's Python standard library and GitHub CLI instead; it installs
+no dependencies and executes no project code. Existing pinned artifact actions
+transfer report data only. ciqol maintainers own this integration; removing the
+upload job leaves the local coverage floor and downloadable reports intact.
+
 ## Release tools admitted with bounded controls - 2026-10-10
 
 The current release pipeline and launch state are documented in [releasing](releasing.md).

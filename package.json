@@ -89,7 +89,7 @@
     "test:integration": "node --test test/*.test.mjs",
     "test:package": "node test/package-smoke.mjs",
     "test:nx": "node test/nx-interop.mjs",
-    "verify": "npm run lint && npm run typecheck && npm run build && npm test && npm run test:package",
+    "verify": "npm run lint && npm run typecheck && npm run build && npm run test:coverage && npm run test:integration && npm run test:package",
     "release:check": "npm run verify && npm pack ./dist --dry-run",
     "pack:local": "npm pack ./dist"
   },
