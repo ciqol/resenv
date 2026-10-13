@@ -78,6 +78,11 @@ job; fork PRs retain the local gate and reports but cannot upload. The Linux
 Node 24 job also checks real Secret Service storage with dummy tokens in an
 isolated D-Bus session and temporary keyring, never a developer credential store.
 
+The [dependency snapshot workflow](.github/workflows/dependencies.yml) refreshes
+GitHub's dependency graph through its API when the lockfile or snapshot tooling
+changes on `beta`. It uses npm's lockfile-only SBOM without installing packages
+and replaces the existing snapshot. Dispatch it on `beta` to retry a failed refresh.
+
 Use normal npm lifecycle behavior locally and in CI. Review install hooks,
 including implicit native builds, when changing dependencies; record any
 required setup in [the dependency review](docs/dependencies.md). Suppressing
