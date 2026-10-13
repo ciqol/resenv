@@ -33,7 +33,9 @@ If login falls back to the Doppler CLI, that CLI handles its own browser prompt.
 The native flow follows the protocol observed in Doppler's published
 `@dopplerhq/mcp-server` 1.0.5 package. These login endpoints are not a documented
 third-party OAuth contract. They can change independently of the public API.
-resenv identifies itself with its own version and user agent.
+resenv identifies itself with its own version core and user agent. Doppler's
+authorization endpoint accepts only `vX.Y.Z`, so version metadata omits beta
+and build suffixes while the package retains its complete release version.
 
 The user token is saved in the OS credential store under service
 `ciqol.envref.doppler`, account `default`. The identifier is retained across

@@ -72,7 +72,8 @@ async function login ({ cli = false, noBrowser = false }: LoginOptions = {}, {
   try {
     // Observed in Doppler's official MCP client, not a public OAuth contract.
     // Identify resenv honestly rather than impersonating Doppler's MCP client.
-    const query = new URLSearchParams({ hostname: 'resenv', version: `v${version}`, os: process.platform, arch: process.arch })
+    // Doppler accepts only vX.Y.Z metadata, rejecting prerelease/build suffixes.
+    const query = new URLSearchParams({ hostname: 'resenv', version: `v${version.replace(/[-+].*$/, '')}`, os: process.platform, arch: process.arch })
     challenge = await request(`/v3/auth/cli/generate/2?${query.toString()}`)
   } catch (err) {
     if (hasErrorCode(err, 'DOPPLER_ENDPOINT_UNAVAILABLE')) return fallback()
