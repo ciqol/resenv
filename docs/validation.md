@@ -1,5 +1,23 @@
 # Validation
 
+## October 13, 2026 — PR review and command shutdown
+
+Review found that forwarding a signal only to the wrapped command could leave
+its worker running and hang shutdown. The expanded regression timed out before
+the fix. POSIX forwarding now targets the command's isolated process group;
+SIGINT, SIGTERM and SIGHUP each reach both processes once, and graceful shutdown
+completes. Already-exited groups are tolerated; Windows keeps direct signaling.
+Pinned Node 24 verification passed lint, types, build, 101 unit/tooling tests,
+41 process tests, 16 packed runtime checks and two typed consumers. Runtime
+audit: zero findings; the 12 bounded development exceptions are unchanged.
+The first PR run also exposed a candidate check against GitHub's synthetic merge
+SHA despite checking out the PR head. Package verification now uses the actual
+checkout commit. The exact hosted archive passed with a simulated merge SHA;
+a candidate with the wrong source commit still failed.
+GitHub posted the first PR coverage report after the action's 160-second wait
+expired. The official uploader now allows 240 seconds within the five-minute
+job limit, retaining failure on upload or processing errors.
+
 ## October 13, 2026 — native boundaries and official coverage action
 
 Live Doppler generation rejected `v0.1.0-beta.1` with HTTP 400 but accepted

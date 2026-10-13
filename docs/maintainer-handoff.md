@@ -10,9 +10,10 @@ the push remote and recent commits before changing anything.
 
 The repository is [ciqol/resenv](https://github.com/ciqol/resenv). Authenticate
 GitHub as `titan-ron` using the repository-local credential setup in AGENTS.md.
-`beta` is the sole remote and default branch. Work on a local `titan/*` branch;
-never commit directly on the default branch. The repository stores all source,
-tests, build configuration and operating instructions needed to continue.
+`beta` is the default and sole release branch. Work on a `titan/*` branch;
+when a PR is requested, push that temporary branch and leave `beta` unchanged
+for review. Never commit directly on the default branch. The repository stores
+all source, tests, build configuration and operating instructions needed to continue.
 Do not depend on previous chat history or copy credentials between sessions.
 
 ## Product contract
@@ -102,7 +103,8 @@ would remove the package and impose npm's publishing cooldown.
 ## Known limits and follow-ups
 
 - Real Doppler challenge generation, pending polling and timeout were checked;
-  browser approval and issued-token recovery still require a personal/test account.
+  the maintainer skipped live account approval, so issued-token recovery remains
+  unverified.
   macOS storage passed in an isolated temporary keychain. CI checks Linux storage
   through real Secret Service in a disposable session with dummy credentials;
   Windows native login/storage is not implemented. Explicit tokens and existing

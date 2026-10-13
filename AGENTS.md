@@ -3,11 +3,12 @@
 Node.js package: `@ciqol/resenv`, MIT licensed, copyright ciqol contributors.
 Start each session with [the maintainer handoff](docs/maintainer-handoff.md),
 then inspect Git, GitHub and npm for current state; this chat is not required.
-The user approved public source and the transition to `beta` as the sole remote
-and default branch. PR creation remains on hold. Keep the development root and
-ordinary local builds private. CI generates the release version before packing,
+The user approved public source and `beta` as the default and sole release
+branch. Open PRs only when asked, using temporary `titan/*` remote branches.
+Keep the development root and ordinary local builds private. CI generates the
+release version before packing,
 using semantic-release's official commit-analysis and release-notes plugins.
-The sole branch is `beta`; npm tags `beta` and `latest` point to the same tested
+The release branch is `beta`; npm tags `beta` and `latest` point to the same tested
 beta release. The first version is
 `0.1.0-beta.1`; real beta release tags supply subsequent counters. The full
 semantic-release engine is not used while there is no stable release branch.
@@ -117,11 +118,13 @@ that.
 - Commit on a `titan/*` branch, never `beta`, `main`, `master`, or the default
   branch. Use Conventional Commits and preserve signing. Add no co-author
   trailers or attribution footers.
-- Keep `beta` as the sole remote branch. Once a pending release is recorded or
-  explicitly rejected for replacement, completed commits from the local task
+- Keep `beta` as the default and sole release branch. Temporary `titan/*` remote
+  branches are allowed for requested PRs; leave `beta` unchanged for PR review.
+  Once a pending release is recorded or explicitly rejected for replacement,
+  completed commits from the local task
   branch may fast-forward `beta` when the user has authorized delivery.
   Do not force-push the default branch.
-- PR creation is on hold. Do not merge, enable auto-merge, change visibility,
+- Open PRs only when asked. Do not merge, enable auto-merge, change visibility,
   collaborators, permissions or protections without explicit authorization.
 - Keep credentials, dotenv files, local consumer links and employer-specific
   names or URLs out of commits, issues and release notes.

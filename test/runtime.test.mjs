@@ -113,17 +113,22 @@ test('wrapper forwards SIGTERM and preserves the child termination signal', { sk
   applicationPid = undefined
 })
 
-test('wrapper delivers process-group signals once and waits for graceful shutdown', { skip: process.platform === 'win32', timeout: 10000 }, async t => {
+test('wrapper delivers process-group signals to the command and its worker once and waits for graceful shutdown', { skip: process.platform === 'win32', timeout: 10000 }, async t => {
   const context = fixture(t)
   for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
-    const script = `let count=0; process.on('${signal}',()=>{ if(++count===1) setTimeout(()=>process.exit(count===1?0:9),100) }); console.log(process.pid); setInterval(()=>{},1000)`
+    const worker = `let count=0; process.on('${signal}',()=>{ if(++count===1) setTimeout(()=>process.exit(count===1?0:9),100) }); console.log('worker '+process.pid); setInterval(()=>{},1000)`
+    const script = `const child=require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(worker)}],{stdio:'inherit'}); let count=0; process.on('${signal}',()=>count++); child.once('exit',code=>process.exit(code===0&&count===1?0:9)); console.log('command '+process.pid); setInterval(()=>{},1000)`
     const child = spawn(process.execPath, [cli, 'run', '--', process.execPath, '-e', script], {
       cwd: context.cwd, env: context.env, detached: true, stdio: ['ignore', 'pipe', 'pipe']
     })
     let applicationPid
     t.after(() => {
       child.kill('SIGKILL')
-      if (applicationPid) { try { process.kill(applicationPid, 'SIGKILL') } catch {} }
+      if (applicationPid) {
+        try { process.kill(-applicationPid, 'SIGKILL') } catch (err) {
+          if (err.code !== 'ESRCH') throw err
+        }
+      }
     })
     const result = await new Promise((resolve, reject) => {
       let ready = ''
@@ -131,8 +136,9 @@ test('wrapper delivers process-group signals once and waits for graceful shutdow
       child.once('exit', (code, signal) => resolve({ code, signal }))
       child.stdout.on('data', data => {
         ready += data.toString()
-        if (ready.includes('\n') && !applicationPid) {
-          applicationPid = Number(ready.trim())
+        const commandPid = ready.match(/^command (\d+)$/m)?.[1]
+        if (commandPid && /^worker \d+$/m.test(ready) && !applicationPid) {
+          applicationPid = Number(commandPid)
           process.kill(-child.pid, signal)
         }
       })

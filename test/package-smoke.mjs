@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { mkdtempSync, readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
@@ -10,9 +10,9 @@ import { verifyArtifact } from '../scripts/release-artifact.mjs'
 
 assert.ok(process.argv.length <= 4, 'Usage: npm run test:package -- [package.tgz [release.json]]')
 const suppliedArchive = process.argv[2] ? resolve(process.argv[2]) : undefined
-const plan = process.argv[3] ? verifyArtifact(dirname(resolve(process.argv[3])), { head: process.env.GITHUB_SHA }).plan : undefined
-if (plan) assert.equal(suppliedArchive, resolve(dirname(process.argv[3]), plan.archive), 'Test the archive described by this release plan')
 const root = fileURLToPath(new URL('..', import.meta.url))
+const plan = process.argv[3] ? verifyArtifact(dirname(resolve(process.argv[3])), { head: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', timeout: 10000 }).trim() }).plan : undefined
+if (plan) assert.equal(suppliedArchive, resolve(dirname(process.argv[3]), plan.archive), 'Test the archive described by this release plan')
 const env = { PATH: `${dirname(process.execPath)}:${process.env.PATH}` }
 const source = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 const directory = mkdtempSync(join(tmpdir(), 'resenv-package-'))
