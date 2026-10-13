@@ -14,6 +14,9 @@ The first PR run also exposed a candidate check against GitHub's synthetic merge
 SHA despite checking out the PR head. Package verification now uses the actual
 checkout commit. The exact hosted archive passed with a simulated merge SHA;
 a candidate with the wrong source commit still failed.
+GitHub posted the first PR coverage report after the action's 160-second wait
+expired. The official uploader now allows 240 seconds within the five-minute
+job limit, retaining failure on upload or processing errors.
 
 ## October 13, 2026 — native boundaries and official coverage action
 

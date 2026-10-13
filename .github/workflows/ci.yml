@@ -146,6 +146,8 @@ jobs:
           file: 'cobertura-coverage.xml'
           language: 'TypeScript'
           label: 'code-coverage/vitest'
+          # The first PR report processed after the default 160-second wait.
+          wait-for-processing-timeout: '240'
 
   release:
     needs: [build, test, coverage]
