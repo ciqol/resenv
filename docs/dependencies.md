@@ -1,5 +1,34 @@
 # Dependency review
 
+## Official GitHub actions — 2026-10-13
+
+At the maintainer's explicit request, official `actions/*` and `github/*`
+actions use exact release tags under Tashtit's official-publisher exception.
+Current versions: checkout 6.1.0, setup-node 6.5.0, upload-artifact 7.0.1,
+download-artifact 8.0.1 and upload-code-coverage 1.4.4. Earlier commit references
+below record reviewed source; they are not the executable pin policy.
+
+The requested [coverage action](https://github.com/actions/upload-code-coverage/tree/v1.4.4)
+follows the reference client and replaces custom API upload code. It uses Bash,
+Python's standard library and GitHub CLI, without an installation or npm tree.
+Its isolated job reads the Cobertura artifact, writes GitHub coverage and status
+telemetry, and receives no provider credentials, npm identity or project code.
+The 90% local floor remains independent of reporting. Maintainers can remove
+the upload job and disable Code Quality to return to artifact-only reporting.
+
+The exact tag resolved to GitHub-verified commit
+`2b21a77928be8d5168c2b9581a67f2adbebacc52`, released October 1, 2026. Upstream
+showed 102 stars, 21 forks, ten open issues and no published security advisories.
+The tagged source contains no LICENSE or declared SPDX license; the API returns
+`license: null`. Apply the user's explicit selection of this official action
+without claiming MIT licensing or independent license clearance. Nothing from
+the action is redistributed in the package. ciqol maintainers own version and
+advisory review through Dependabot; exact tags still trust GitHub against retagging.
+
+Native Linux checks use Ubuntu's `libsecret-tools`, `gnome-keyring` and D-Bus
+packages only on a disposable hosted runner. No runtime dependency is added;
+the temporary keyring contains dummy tokens and is deleted after the check.
+
 ## Release tools admitted with bounded controls - 2026-10-10
 
 The current release pipeline and launch state are documented in [releasing](releasing.md).

@@ -1,5 +1,23 @@
 # Validation
 
+## October 13, 2026 — native boundaries and official coverage action
+
+Live Doppler generation rejected `v0.1.0-beta.1` with HTTP 400 but accepted
+`v0.1.0`. Login now sends its own version core, keeping the resenv identity.
+Real challenge generation, pending polling and timeout passed after the fix.
+The challenge expired without browser approval; no token was issued. A temporary
+macOS keychain passed absent/write/readback/replacement/deletion checks and was
+removed with the original keychain search list preserved. Browser approval and
+issued-token recovery remain a manual check requiring a personal/test account.
+
+Local verification passed lint, strict types, build, 101 unit/tooling tests,
+41 process tests, 16 packed runtime checks and two typed consumers. The runtime
+audit is clean; all 12 development exceptions and their unchanged November 9
+expiry were rechecked, including npm 12.2.0's affected bundled copies.
+CI now uses exact official action tags, a real isolated Linux keyring check,
+and `actions/upload-code-coverage@v1.4.4`. Code Quality was explicitly approved
+and enabled for this repository with AI findings disabled; its initial scan passed.
+
 ## October 13, 2026 — final repository review and coverage
 
 Rechecked credential persistence, CLI signal forwarding, literal fetched values,

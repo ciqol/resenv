@@ -57,6 +57,10 @@ to the privileged publisher. The platform npm CLI review is recorded separately.
 
 ## Verification
 
+Use exact `vX.Y.Z` release tags for official `actions/*` and `github/*` actions.
+The repository intentionally trusts GitHub as publisher; do not replace these
+with commit digests or floating major tags. Other remote actions require full SHAs.
+
 Use the Node version in `.nvmrc` and the pinned lockfile.
 
 ```sh

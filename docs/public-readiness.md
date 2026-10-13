@@ -1,5 +1,28 @@
 # Public repository readiness
 
+## Native coverage enablement — 2026-10-13
+
+Scope: `ciqol/resenv` only; owner and approver `titan-ron`. The maintainer
+explicitly approved enabling Code Quality for the requested
+`actions/upload-code-coverage@v1.4.4` integration, following the reference client.
+API read-back confirmed `configured`, JavaScript/TypeScript, standard runner,
+weekly schedule and AI findings disabled. The [initial scan](https://github.com/ciqol/resenv/actions/runs/38362205449)
+passed. No organization-wide enablement or plan upgrade occurred. GitHub documents
+committer-license charges and Actions usage for this feature; disabling it does
+not reverse current-period charges.
+
+The pre-change API snapshot and inverse request are retained privately. Applied
+`PATCH /repos/ciqol/resenv/code-quality/setup` with `state: configured`.
+Rollback sets `state: not-configured`
+and restores the snapshot's other writable fields through the same endpoint,
+then removes the upload job. The inverse request shape was checked against the
+API contract; a live disable/re-enable was not performed. If GitHub requires a
+paid plan upgrade or wider scope, stop. Current 90% gates and CI artifacts remain.
+
+Sources: [coverage prerequisites](https://docs.github.com/en/code-security/how-tos/maintain-quality-code/set-up-code-coverage),
+[setup API](https://docs.github.com/en/rest/code-quality/code-quality),
+[billing](https://docs.github.com/en/billing/concepts/product-billing/github-code-quality).
+
 ## Tashtit governance review — 2026-10-13
 
 Read-only GitHub inspection as `titan-ron` confirmed a public repository with

@@ -5,6 +5,10 @@ static working-tree evidence only. This measures the catalog's repository
 hygiene rules; it does not certify security or readiness to publish. Tests
 and hosted checks are recorded separately in [validation](validation.md).
 
+This score predates the maintainer's exact-release-tag policy for official
+GitHub actions. That policy follows the GitHub Actions skill's publisher
+exception; the older catalog's SHA-only rule will flag those tags.
+
 ## Maturity: 91% (11/120 weight failing)
 
 The maintained source tree scores 100% (0/97 weight failing). The full catalog
@@ -70,7 +74,7 @@ The installed catalog contains 13 plugins. Nine apply to this repository:
 | typescript-library-build | Generated manifests, shared CJS/ESM identity and packed runtime/type consumers |
 | dependency-standards | Exact development pins, review records and expiring executable advisory guards |
 | logging-standards | Value-free diagnostics, safe error codes and synthetic leak checks |
-| github-actions-standards | Pin both artifact uploads to the already-reviewed v7.0.1 commit |
+| github-actions-standards | Exact official release tags under the publisher exception; isolate coverage writes |
 | git-workflow | Signed Conventional Commits on a local task branch; delivery follows repository policy |
 | maturity | Static score and generated-output findings above |
 | repository-governance | Settings audit and approved, verified security changes in [public readiness](public-readiness.md) |

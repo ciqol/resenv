@@ -140,9 +140,10 @@ release-tool tree has bounded, executable advisory exceptions expiring November
 9, 2026; it is not vulnerability-free. The privileged job does not install that
 tree. See [release security](release-security.md).
 
-Doppler is the only built-in cloud provider. Fresh native browser login has not
-been verified end to end, Linux credential storage has mock coverage, and
-Windows native login/storage is not implemented. Explicit tokens and existing
+Doppler is the only built-in cloud provider. Real native challenge/polling and
+isolated macOS storage checks passed; browser approval with a personal/test
+account remains unverified. CI checks real isolated Linux storage, and Windows
+native login/storage is not implemented. Explicit tokens and existing
 CLI credentials remain supported. Commands require explicit opt-in. Dotenvx
 ciphertext is left unchanged. See [Security](../SECURITY.md).
 

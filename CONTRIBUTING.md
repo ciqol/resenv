@@ -73,6 +73,10 @@ report measures source and is separate from packed-package and process checks.
 functions and lines. Worker and preload entry files stay in the denominator;
 the CLI is checked separately by process and packed-package tests. CI retains
 LCOV and Cobertura reports for seven days in the `resenv-coverage` artifact.
+The official `actions/upload-code-coverage` action uploads Cobertura in a separate
+job; fork PRs retain the local gate and reports but cannot upload. The Linux
+Node 24 job also checks real Secret Service storage with dummy tokens in an
+isolated D-Bus session and temporary keyring, never a developer credential store.
 
 Use normal npm lifecycle behavior locally and in CI. Review install hooks,
 including implicit native builds, when changing dependencies; record any

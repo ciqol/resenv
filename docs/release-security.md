@@ -5,6 +5,15 @@ planning in read-only CI. The runtime package has no advisory exceptions.
 
 ## Decision and controls
 
+Rechecked October 13, 2026: the runtime audit is clean and all 12 active
+moderate/high advisory IDs still match the exact development paths below.
+The engine and official plugins have no newer releases; braces 3.0.3 has no
+published patch. npm 12.2.0's actual archive still bundles brace-expansion 5.0.9,
+http-cache-semantics 4.2.0, ip-address 10.5.0, postcss-selector-parser 7.1.4 and
+undici 6.28.0, so that upgrade would not remove these findings. Guard, expiry,
+drift, adversarial analysis and publisher-isolation tests passed. Retain the
+existing scope and November 9 deadline; no exception or dependency was broadened.
+
 Admit semantic-release 25.0.9, commit-analyzer 13.0.1 and release-notes-generator
 14.1.1 as exact development dependencies for version calculation and notes.
 Use the bounded exceptions in [security-exceptions.json](security-exceptions.json)

@@ -101,8 +101,10 @@ would remove the package and impose npm's publishing cooldown.
 
 ## Known limits and follow-ups
 
-- Native Doppler browser login has unit/mock coverage but has not been verified
-  end to end with a fresh account. Linux credential storage has mock coverage;
+- Real Doppler challenge generation, pending polling and timeout were checked;
+  browser approval and issued-token recovery still require a personal/test account.
+  macOS storage passed in an isolated temporary keychain. CI checks Linux storage
+  through real Secret Service in a disposable session with dummy credentials;
   Windows native login/storage is not implemented. Explicit tokens and existing
   CLI credentials are supported. See [Doppler details](doppler.md).
 - The development release-tool tree has reviewed advisories. Exceptions expire
