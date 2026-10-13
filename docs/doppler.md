@@ -13,14 +13,15 @@ a provider option. `resolve-doppler` and
 
 ## Local setup
 
-From the checkout, build and log in:
+After [installing resenv](../README.md#install) in your application project, log in:
 
 ```sh
-npm run build
-node dist/bin/resenv.cjs login doppler
+npx --no-install resenv login doppler
 ```
 
-After installing a packed build, the same command is `resenv login doppler`.
+The examples below use `resenv` directly in an npm script; from your shell,
+prefix it with `npx --no-install` to use the project's installed copy.
+For checkout builds and local testing, see [CONTRIBUTING.md](../CONTRIBUTING.md).
 If the references are already loaded into the shell environment, `resenv login`
 infers Doppler without naming it. No cloud references means no login is needed.
 Neither command loads dotenv files; Nx remains responsible for file selection.
@@ -40,7 +41,7 @@ and build suffixes while the package retains its complete release version.
 The user token is saved in the OS credential store under service
 `ciqol.envref.doppler`, account `default`. The identifier is retained across
 the resenv rename so existing logins continue to work. Nothing is saved in the repository,
-dotenv files or worktree. The current prototype stores one workplace login per
+dotenv files or worktree. The current beta stores one workplace login per
 OS user; logging in again replaces that saved identity. Each developer logs in
 separately and receives the permissions of their own Doppler account.
 

@@ -96,6 +96,8 @@ Pass an existing archive to test the same build CI uses:
 `npm run test:package -- /absolute/path/to/package.tgz`. For a final CI candidate,
 also pass its `release.json` as the second argument. The supplied package's
 name, version, executable mode and manifest are checked before runtime probes.
+The README inside the archive must match the checkout, install from npm's
+`beta` channel and avoid unpublished or local-archive installation guidance.
 `npm run verify` runs lint, typecheck, build and tests; `npm run release:check`
 also previews the package contents. Neither publishes or creates a tag.
 

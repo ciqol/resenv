@@ -52,6 +52,13 @@ try {
   if (source.license !== 'UNLICENSED') assert.ok(packed.files.some(file => file.path === 'LICENSE'))
   assert.ok(packed.files.find(file => file.path === 'bin/resenv.cjs').mode & 0o111, 'CLI must remain executable')
   const archive = suppliedArchive ?? join(directory, packed.filename)
+  const readme = run('tar', ['-xOf', archive, 'package/README.md'], root).stdout
+  assert.equal(readme, readFileSync(join(root, 'README.md'), 'utf8'), 'Packed README must match the checked-out documentation')
+  const install = readme.split(/^## /m).find(section => section.startsWith('Install\n'))
+  assert.ok(install, 'README must include application installation instructions')
+  assert.match(install, /npm install --save-exact @ciqol\/resenv@beta/, 'Application installation must use the public npm beta')
+  assert.doesNotMatch(install, /\.tgz\b|file:|\/path\/to\//, 'Local archive installation belongs in CONTRIBUTING.md')
+  assert.doesNotMatch(readme, /not (?:yet )?published|has not been published|once .{0,40}published|currently distributed\s+as a package archive/i, 'README must not describe the public package as unpublished')
   const packedManifest = JSON.parse(run('tar', ['-xOf', archive, 'package/package.json'], root).stdout)
   const dependency = `file:${archive}`
   const dependencies = { [source.name]: dependency }
