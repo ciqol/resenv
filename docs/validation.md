@@ -1,5 +1,21 @@
 # Validation
 
+## October 13, 2026 — packaged installation documentation
+
+npm lists only `0.1.0-beta.1`, with both `beta` and `latest` pointing to it.
+Its public archive still contains the unpublished, archive-only installation
+instructions corrected later in the source README. Package checks now compare
+the archived README with the checkout and require npm beta installation,
+rejecting local archive paths and unpublished claims. The actual published
+archive fails the new gate; restoring its README in both source and build also
+fails the installation check. The current build passes all 16 packed runtime
+checks and both typed consumers. Lint, strict types, build, 101 unit/tooling
+tests, the coverage gate and 41 process tests passed on pinned Node 24.19.0.
+The package check used a writable temporary npm cache after the sandbox denied
+access to the default cache. The Doppler guide now starts with the installed
+CLI and links to contributor setup. The existing public archive is unchanged;
+publishing corrected documentation requires a new staged, approved release.
+
 ## October 13, 2026 — PR review and command shutdown
 
 Review found that forwarding a signal only to the wrapped command could leave

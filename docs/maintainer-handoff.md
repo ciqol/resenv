@@ -76,6 +76,13 @@ npm view @ciqol/resenv versions dist-tags --json
 npm stage list @ciqol/resenv --json
 ```
 
+Inspect the tested archive's README as well as the source README before release.
+The first public beta shipped obsolete archive-only installation instructions;
+later source corrections cannot update an already published archive. Package
+checks now enforce npm installation guidance and README equality with the
+checkout. Ship documentation corrections in a new tested release through the
+same staging and approval workflow.
+
 The first intended version is `0.1.0-beta.1`; npm tags `beta` and `latest` point
 to the same tested beta release. The planner uses semantic-release's official
 commit-analysis and notes plugins directly;
