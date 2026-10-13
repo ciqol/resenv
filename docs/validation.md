@@ -1,5 +1,16 @@
 # Validation
 
+## October 13, 2026 — PR review and command shutdown
+
+Review found that forwarding a signal only to the wrapped command could leave
+its worker running and hang shutdown. The expanded regression timed out before
+the fix. POSIX forwarding now targets the command's isolated process group;
+SIGINT, SIGTERM and SIGHUP each reach both processes once, and graceful shutdown
+completes. Already-exited groups are tolerated; Windows keeps direct signaling.
+Pinned Node 24 verification passed lint, types, build, 101 unit/tooling tests,
+41 process tests, 16 packed runtime checks and two typed consumers. Runtime
+audit: zero findings; the 12 bounded development exceptions are unchanged.
+
 ## October 13, 2026 — native boundaries and official coverage action
 
 Live Doppler generation rejected `v0.1.0-beta.1` with HTTP 400 but accepted

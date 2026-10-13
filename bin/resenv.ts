@@ -60,7 +60,14 @@ async function main (): Promise<void> {
   const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP']
   const handlers = new Map<NodeJS.Signals, () => void>()
   for (const signal of signals) {
-    const handler = () => { child.kill(signal) }
+    const handler = () => {
+      try {
+        if (process.platform !== 'win32' && child.pid) process.kill(-child.pid, signal)
+        else child.kill(signal)
+      } catch (err) {
+        if (!hasErrorCode(err, 'ESRCH')) throw err
+      }
+    }
     handlers.set(signal, handler)
     process.on(signal, handler)
   }
