@@ -17,6 +17,11 @@ expiry were rechecked, including npm 12.2.0's affected bundled copies.
 CI now uses exact official action tags, a real isolated Linux keyring check,
 and `actions/upload-code-coverage@v1.4.4`. Code Quality was explicitly approved
 and enabled for this repository with AI findings disabled; its initial scan passed.
+The [hosted run](https://github.com/ciqol/resenv/actions/runs/38363153784) passed
+all matrix jobs and the real Linux keyring check; coverage processing succeeded.
+Code Quality's two `js/invalid-prototype-value` findings are fixture false positives:
+`Object.defineProperty` defines own `__proto__` data properties in regression tests,
+without invoking the prototype setter. No runtime fix or suppression is needed.
 
 ## October 13, 2026 — final repository review and coverage
 
