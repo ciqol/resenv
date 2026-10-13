@@ -10,6 +10,10 @@ completes. Already-exited groups are tolerated; Windows keeps direct signaling.
 Pinned Node 24 verification passed lint, types, build, 101 unit/tooling tests,
 41 process tests, 16 packed runtime checks and two typed consumers. Runtime
 audit: zero findings; the 12 bounded development exceptions are unchanged.
+The first PR run also exposed a candidate check against GitHub's synthetic merge
+SHA despite checking out the PR head. Package verification now uses the actual
+checkout commit. The exact hosted archive passed with a simulated merge SHA;
+a candidate with the wrong source commit still failed.
 
 ## October 13, 2026 — native boundaries and official coverage action
 
