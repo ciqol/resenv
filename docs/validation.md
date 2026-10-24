@@ -1,5 +1,32 @@
 # Validation
 
+## October 25, 2026 — consolidate primary CI checks
+
+The main `ci` job now runs audits, lint, types, source coverage, candidate
+build/pack verification, packed-package/process tests and the isolated Linux
+keyring check. The compatibility `smoke` matrix retains Linux Node 20/22 and
+macOS with the pinned Node version. Coverage upload and protected publication
+remain isolated from project scripts. This removes the separate pinned-Node
+Linux test invocation. Coverage artifacts survive a failed coverage gate unless
+cancelled, and staging-receipt upload is attempted after release-step failures.
+
+On pinned Node 24.19.0, `npm ci` and `npm run verify` passed: lint, strict source
+and spec types, 101 unit/tooling specs, the 90% coverage gate, 41 process tests,
+16 packed runtime checks and two typed consumers. A separately planned,
+non-published candidate also passed hash verification and packed-consumer checks.
+YAML lint, workflow structure and shell syntax checks passed. `actionlint` is
+not installed. Linux keyring and hosted compatibility checks were not rerun
+locally.
+
+The runtime audit found zero vulnerabilities, but `npm run audit` failed on the
+new [Vitest mocker advisory](https://github.com/advisories/GHSA-qxg6-89mg-rqv8)
+in the unchanged development tree. The installed 4.1.11 is affected; 4.1.12 is
+the patched 4.x version. This repository disables the browser/API mode that
+exposes the reported handler, but the guard correctly rejects an unreviewed
+advisory. No exception, dependency or expiry was changed to bypass it. A green
+hosted run remains unverified. Required-check context migration is documented
+in [the build guide](build.md) and requires separate approval.
+
 ## October 13, 2026 — packaged installation documentation
 
 npm lists only `0.1.0-beta.1`, with both `beta` and `latest` pointing to it.
