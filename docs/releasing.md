@@ -135,10 +135,12 @@ See [npm's policy](https://docs.npmjs.com/policies/unpublish/).
 
 ## Security and platform limits
 
-The runtime package has no npm dependencies or advisory exceptions. The
-release-tool tree has bounded, executable advisory exceptions expiring November
-9, 2026; it is not vulnerability-free. The privileged job does not install that
-tree. See [release security](release-security.md).
+The runtime package has no npm dependencies or advisory exceptions. Installed
+runtime and development audits pass with the unused engine/publisher peer graph
+omitted. Audit and planning enforce that absence; the lockfile still records
+the uninstalled peers. The existing November 9, 2026 review deadline remains
+for the policy and separately reviewed platform npm. The privileged job does
+not install release-tool modules. See [release security](release-security.md).
 
 Doppler is the only built-in cloud provider. Authentication is owned by the
 Doppler CLI; resenv reads its existing directory-scoped token or accepts

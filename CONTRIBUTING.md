@@ -26,6 +26,14 @@ npm ci
 npm run verify
 ```
 
+The committed `.npmrc` omits automatically installed peer dependencies. The
+release planner calls the two official plugins directly, so their full engine
+peer and its publisher dependencies are intentionally not installed. Audit and
+planning enforce that absence. `npm ls` still reports the declared missing
+engine peers; standalone plugin behavior is covered directly by the release
+specs. Keep this install policy when refreshing the lockfile; do not use force
+or legacy peer resolution. See [the dependency review](docs/dependencies.md).
+
 `npm run verify` is the complete local check: lint, strict source/spec type
 checks, build, unit/process tests and installed-package checks. To build without
 running the checks, use `npm run build`.

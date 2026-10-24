@@ -3,7 +3,35 @@
 Reviewed October 10, 2026. Owner: `titan-ron`. Scope: semantic-release version
 planning in read-only CI. The runtime package has no advisory exceptions.
 
+## Current installation - October 25, 2026
+
+The development audit now passes without adding exceptions. The planner keeps
+only the two official analysis/notes plugins as direct dependencies. The unused
+full engine is removed from the manifest, and `.npmrc` omits its automatically
+resolved peer installation. That also removes the npm/GitHub publisher plugins
+and npm's vulnerable bundled dependencies from disk. npm retains the omitted
+peer graph in the lockfile for dependency resolution; an audit explicitly
+including those uninstalled peers can still report their vulnerabilities.
+
+Before auditing or planning, an executable guard requires that the engine,
+`@semantic-release/npm`, `@semantic-release/github` and `npm` are unavailable
+from the project and both selected plugins. Normal installation and release
+planning are checked with the official plugin exports and real Git history.
+Their declared engine peers are intentionally absent in this standalone use;
+`npm ls` reports that metadata condition. Existing version and braces guards
+remain in force. No audit exception or expiry has been broadened.
+
+November 9 is the pre-existing project review deadline, introduced with the
+October 10 review, thirty days earlier. It is not an upstream npm or Vitest
+deadline; the commit records no further rationale for the particular interval.
+The policy and publisher still enforce that date, including for the separately
+reviewed platform npm. Removing unused development tooling does not change the
+platform CLI or extend its review window.
+
 ## Decision and controls
+
+The October 24 and earlier records below describe the previous installation;
+they remain historical evidence. The current installation is described above.
 
 Current status, October 24, 2026: updating Vitest to 4.1.12 clears its new
 advisory, and the separately installed Undici copies are patched to 6.29.1 and

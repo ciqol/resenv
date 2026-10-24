@@ -1,5 +1,45 @@
 # Dependency review
 
+## Standalone release plugins without the engine - 2026-10-25
+
+Remove the unused direct `semantic-release` engine dependency. Keep the exact
+existing official commit-analyzer 13.0.1 and release-notes-generator 14.1.1
+plugins and the current beta versioning and staging behavior. Both plugins
+export standalone functions already called directly by the planner; source
+inspection found no runtime import of the engine. A disposable installation
+verified real commit classification and release-note generation without the
+engine or publishing plugins.
+
+The plugins declare `semantic-release` as a required peer for their usual
+engine-driven integration. The committed `.npmrc` now uses npm's documented
+[`omit=peer`](https://docs.npmjs.com/cli/v11/commands/npm-ci/#omit) setting to
+leave that unused integration out of the installed tree. npm still resolves
+and records the peer graph in the lockfile; it does not install those packages.
+No package version, source, license or install-script permission changes.
+The install keeps normal lifecycle behavior. This removes the vulnerable
+bundled npm copies from disk, rather than accepting their advisories.
+
+The audit and planner verify that the engine, npm and both publishing plugins
+cannot resolve from the project or either selected plugin. They fail if an
+install overrides peer omission and restores those tools. The resolution hook
+also rejects their bare names and resolved paths. Existing plugin-version pins,
+braces execution guards, exception scope and expiry remain unchanged. A plain
+`npm audit` follows the committed install scope; `npm audit --include=peer`
+also audits uninstalled lockfile entries and can still report their advisories.
+
+`npm ls` reports the two deliberately unsatisfied engine peers even with its
+peer-omission flag. This metadata warning is expected for the standalone use:
+the two real plugin exports, release history cases and absence guards are
+verified directly. Do not use `--force`, `--legacy-peer-deps` or an alias package
+to conceal the declared peer contract. Restoring the full engine requires a
+fresh dependency and security review.
+
+ciqol maintainers own this installation policy. No new dependency or advisory
+exception is admitted. The full engine can be restored only together with a
+reviewed upstream dependency tree and a deliberate change to the absence guard.
+The publishing job still uses its pinned platform npm in a separate environment;
+its existing November 9 review deadline is unaffected.
+
 ## Vitest and Undici security patches - 2026-10-24
 
 At the maintainer's request, pin `vitest` and `@vitest/coverage-v8` to 4.1.12,

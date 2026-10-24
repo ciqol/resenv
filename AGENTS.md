@@ -11,7 +11,10 @@ using semantic-release's official commit-analysis and release-notes plugins.
 The release branch is `beta`; npm tags `beta` and `latest` point to the same tested
 beta release. The first version is
 `0.1.0-beta.1`; real beta release tags supply subsequent counters. The full
-semantic-release engine is not used while there is no stable release branch.
+semantic-release engine is not installed or used while there is no stable
+release branch. Keep `.npmrc` peer omission enabled; the official plugins are
+called standalone, and audit/planning enforce absence of the unused engine and
+publisher modules.
 
 Publish only through the manually dispatched GitHub Actions workflow, after all
 candidate checks. Stage the tested archive through npm OIDC; maintainer npm

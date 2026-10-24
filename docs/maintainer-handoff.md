@@ -89,7 +89,9 @@ same staging and approval workflow.
 The first intended version is `0.1.0-beta.1`; npm tags `beta` and `latest` point
 to the same tested beta release. The planner uses semantic-release's official
 commit-analysis and notes plugins directly;
-it does not run the full semantic-release engine. Real published release tags
+it does not install or run the full semantic-release engine. The committed
+`.npmrc` omits that unused peer, and audit/planning guards enforce its absence.
+Real published release tags
 supply later beta counters. Do not fabricate tags to advance a version.
 
 Publishing is staged: a trusted manual CI dispatch submits the exact archive
@@ -117,15 +119,15 @@ would remove the package and impose npm's publishing cooldown.
   Automated lookup checks use dummy executables and injected effects, never a
   developer login or credential store. Earlier native resenv logins are ignored;
   see [authentication and migration](doppler.md).
-- Vitest and its coverage provider are pinned to 4.1.12; the Vitest advisory is
-  fixed. Separately installed Undici copies are patched to 6.29.1 and 7.30.1.
-  `npm run audit` still rejects newly reported ip-address and Undici advisories
-  inside npm's bundled development dependencies. The latest npm 11/12 archives
-  still contain affected versions; no exception was added. Runtime audit is
-  clean. See [release security](release-security.md) and [validation](validation.md).
-- The development release-tool tree has reviewed advisories. Exceptions expire
-  November 9, 2026, and executable guards fail on expiry or drift. Review
-  [release security](release-security.md); never broaden or bypass the policy.
+- The installed runtime and development audits pass after omitting the unused
+  engine and publisher peer graph. Keep the committed `.npmrc` policy; audit
+  and planning fail if the engine or publishing modules become resolvable.
+  `npm ls` reports the intentionally missing engine peers; official standalone
+  plugin behavior is covered directly. See [dependency review](dependencies.md).
+- The November 9, 2026 review deadline remains in the exception policy and
+  publisher's platform-npm guard. It was introduced with the October 10 review;
+  it is a project review deadline. Do not extend or bypass it. See
+  [release security](release-security.md).
 - This beta has not had an independent security audit. Passing tests or the
   static maturity checklist does not establish production readiness.
 - Consumer repositories are separate. Keep local links out of their committed

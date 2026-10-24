@@ -1,5 +1,42 @@
 # Validation
 
+## October 25, 2026 - remove unused release-engine installation
+
+Before the change, pinned Node 24.19.0 reproduced `npm run audit` failure at
+`scripts/release-guards.mjs` with the unreviewed ip-address advisory
+GHSA-rxp7-6hxx-x8q5. This was a local audit failure: the task branch had no
+GitHub Actions run, and the latest beta workflow remained successful at its
+older commit. The CI build invokes the same audit command.
+
+A disposable install proved that the existing official commit-analyzer and
+release-notes-generator functions work without their unused full-engine peer.
+Removed the direct engine dependency and committed npm's peer-omission policy.
+The lockfile keeps the inferred peer graph for resolution, with 386 entries
+reclassified as peer-only; no package version, integrity or other package
+metadata changed. The engine, npm and npm/GitHub publisher plugins are absent
+from disk and unresolvable from the project and both selected plugins.
+Executable guards now enforce that absence before development audit/planning,
+and block their imports. The existing braces guards, exception policy and
+November 9 expiry are unchanged; no new advisory exception was applied.
+
+A fresh `npm ci` installed 215 packages. Runtime and development audits reported
+zero vulnerabilities. Registry checks verified all 215 signatures and 69
+attestations. Full verification passed lint, strict types, build, 94 unit/tooling
+tests, the 90% coverage gate, 43 process tests, 16 packed runtime checks and two
+typed consumers. Source coverage remains 92.13% statements, 91.48% branches,
+97.05% functions and 93.83% lines. Release-history tests cover the first beta,
+no-change history, the next beta, malformed tags and documentation-only changes.
+Negative tests reject any restored engine/publisher resolver and unexpected
+resolver errors.
+
+`npm ls --omit=peer --all` still reports the two deliberately unfulfilled
+engine peer declarations; that metadata warning is documented. `npm audit
+--include=peer` also scans the uninstalled lockfile graph and reports its
+advisories. The normal committed install/audit scope is backed by physical
+absence checks, not added risk exceptions. The existing optional fsevents hook
+warning is unchanged. The privileged publisher and its platform npm were not
+changed; no package was published or release tag created.
+
 ## October 24, 2026 - Vitest and Undici security updates
 
 Updated Vitest and its matching V8 coverage provider from 4.1.11 to 4.1.12,
