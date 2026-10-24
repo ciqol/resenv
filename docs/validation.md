@@ -1,5 +1,32 @@
 # Validation
 
+## October 24, 2026 - Vitest and Undici security updates
+
+Updated Vitest and its matching V8 coverage provider from 4.1.11 to 4.1.12,
+including the transitive mocker patch for GHSA-qxg6-89mg-rqv8. Nine Vitest-family
+lock entries changed. The separately installed Undici copies moved from 6.29.0
+to 6.29.1 and from 7.30.0 to 7.30.1 to fix newly reported release-tool findings.
+No package was added or removed; all eleven changed entries are development
+only. Unrelated Vite/Rolldown versions and the bundled npm distribution remain
+unchanged. Registry metadata, distributed licenses, archive integrity and
+upstream release notes were reviewed; see [dependency review](dependencies.md).
+
+On pinned Node 24.19.0, a normal `npm ci` and `npm run verify` passed: lint,
+strict implementation/spec type checks, build, 88 unit/tooling tests, the 90%
+coverage gate, 43 process tests, 16 packed runtime checks and two typed consumers.
+Coverage remains 92.13% statements, 91.48% branches, 97.05% functions and 93.83%
+lines. `npm audit signatures` verified 601 package signatures and 181
+attestations. Runtime audit found zero vulnerabilities. The existing optional
+fsevents install-script policy warning is unchanged; no script policy was altered.
+
+The full `npm run audit` still rejects three newly reported advisories in
+npm's bundled ip-address 10.5.0 and Undici 6.28.0. The actual latest npm
+11.21.1 and npm 12.2.1 archives both still bundle affected ip-address 10.7.2 and
+Undici 6.29.0, so an npm upgrade cannot clear these findings. The current
+exceptions, November 9 expiry and executable guards are unchanged; the release
+remains blocked. [Release security](release-security.md) records the advisory
+links and the upstream fixes required. No release was published or tagged.
+
 ## October 24, 2026 - reuse Doppler CLI authentication
 
 Removed resenv login/logout, native browser authorization, direct OS credential

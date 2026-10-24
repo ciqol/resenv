@@ -5,6 +5,25 @@ planning in read-only CI. The runtime package has no advisory exceptions.
 
 ## Decision and controls
 
+Current status, October 24, 2026: updating Vitest to 4.1.12 clears its new
+advisory, and the separately installed Undici copies are patched to 6.29.1 and
+7.30.1. The audit still fails on newly reported findings in npm's bundled
+ip-address and Undici copies. These are not admitted by the existing exception
+policy. No exception, version allowance, expiry or executable guard was broadened.
+The remaining findings include
+[IPv6 zone parsing](https://github.com/advisories/GHSA-rxp7-6hxx-x8q5),
+[EventSource buffering](https://github.com/advisories/GHSA-4qv8-2p9j-2685) and
+[content-encoding handling](https://github.com/advisories/GHSA-xjj6-f33q-929c).
+
+The actual latest npm 11.21.1 and npm 12.2.1 archives still bundle
+ip-address 10.7.2 and Undici 6.29.0. The newly required fixes are ip-address
+10.7.4 and Undici 6.29.1. An upgrade to either inspected npm archive would
+therefore leave the audit blocked, so neither was admitted. The pinned Node
+runtime and publishing-platform npm are unchanged. Release remains blocked
+pending an upstream distribution with the fixes or a separately approved
+change to the release-tool dependency design. The dated review below explains
+the existing controls; it does not admit these new findings.
+
 Rechecked October 13, 2026: the runtime audit is clean and all 12 active
 moderate/high advisory IDs still match the exact development paths below.
 The engine and official plugins have no newer releases; braces 3.0.3 has no

@@ -117,10 +117,12 @@ would remove the package and impose npm's publishing cooldown.
   Automated lookup checks use dummy executables and injected effects, never a
   developer login or credential store. Earlier native resenv logins are ignored;
   see [authentication and migration](doppler.md).
-- `npm run audit` currently rejects the newly reported Vitest development
-  dependency advisory [GHSA-qxg6-89mg-rqv8](https://github.com/advisories/GHSA-qxg6-89mg-rqv8).
-  The runtime audit is clean; dependency updates and a fresh review are needed
-  before release. See [the current validation](validation.md).
+- Vitest and its coverage provider are pinned to 4.1.12; the Vitest advisory is
+  fixed. Separately installed Undici copies are patched to 6.29.1 and 7.30.1.
+  `npm run audit` still rejects newly reported ip-address and Undici advisories
+  inside npm's bundled development dependencies. The latest npm 11/12 archives
+  still contain affected versions; no exception was added. Runtime audit is
+  clean. See [release security](release-security.md) and [validation](validation.md).
 - The development release-tool tree has reviewed advisories. Exceptions expire
   November 9, 2026, and executable guards fail on expiry or drift. Review
   [release security](release-security.md); never broaden or bypass the policy.

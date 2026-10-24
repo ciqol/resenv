@@ -1,5 +1,49 @@
 # Dependency review
 
+## Vitest and Undici security patches - 2026-10-24
+
+At the maintainer's request, pin `vitest` and `@vitest/coverage-v8` to 4.1.12,
+the first patched 4.x release for
+[GHSA-qxg6-89mg-rqv8](https://github.com/advisories/GHSA-qxg6-89mg-rqv8).
+The matching provider is required by Vitest's exact peer contract. The upstream
+[4.1.12 release](https://github.com/vitest-dev/vitest/releases/tag/v4.1.12)
+contains the reviewed mock serialization and redirect-path hardening backport.
+Inspection of the published mocker artifact confirmed JSON serialization of
+module URLs and export names. Node 20/22/24 support is retained; a major-version
+migration is unnecessary. Browser/API servers remain disabled in this project,
+so the vulnerable browser interceptor is not used by its Node-mode tests.
+
+The two direct packages and transitive `@vitest/mocker` retain the same canonical
+vitest-dev/vitest repository, five registry maintainers and distributed MIT
+licenses as 4.1.11. Their downloaded archives matched registry SHA-512 integrity
+and declare provenance attestations. They add no install hooks. All nine Vitest
+family lock entries move from 4.1.11 to 4.1.12; Vite, Rolldown and other unrelated
+packages retain their previously reviewed versions. The earlier dated Vitest
+intake below remains historical evidence; 4.1.12 is the current pin.
+
+After the Vitest finding cleared, the audit exposed additional advisories in
+the existing release-tool tree. The separately installed Undici copies are
+updated from 6.29.0 to 6.29.1 and from 7.30.0 to 7.30.1 within their existing
+parent ranges. Reviewed [6.29.1](https://github.com/nodejs/undici/releases/tag/v6.29.1)
+and [7.30.1](https://github.com/nodejs/undici/releases/tag/v7.30.1) release notes
+describe the EventSource, content-encoding and integrity fixes. Both artifacts
+retain the nodejs/undici source, registry maintainers and distributed MIT
+license; their SHA-512 hashes matched registry metadata and both declare
+provenance. There are no preinstall/install/postinstall hooks. Their development
+`prepare` script is not run when installing the published registry artifacts.
+No runtime dependency or override is added; all eleven changed package entries
+are development-only. ciqol maintainers own the pinned lockfile and updates.
+
+The latest compatible npm 11.21.1 archive and latest npm 12.2.1 archive were
+inspected without installing them. Both still bundle ip-address 10.7.2 and
+Undici 6.29.0, affected by newly reported advisories. Neither distribution can
+clear the full audit; no npm upgrade or bundled-module override was admitted.
+The current npm dependency, release guards and expiring exception policy remain
+unchanged. A clean install verified 601 registry signatures and 181 provenance
+attestations, and the full verification suite passed. Account MFA and complete
+ownership history remain outside what this registry review establishes. See
+[release security](release-security.md) for the remaining gate.
+
 ## Doppler CLI authentication simplification - 2026-10-24
 
 resenv now delegates login, logout, token issuance and persistence to the
