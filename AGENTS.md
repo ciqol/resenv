@@ -61,6 +61,9 @@ to the privileged publisher. The platform npm CLI review is recorded separately.
 - Never commit dotenv files, credentials, tarballs or `node_modules`.
 - Keep already distributed local tarballs immutable. Build a new version for
   changed package behavior.
+- Keep docs focused on current contracts, lasting decisions and procedures.
+  Record per-run test results, benchmarks, audit snapshots and session history
+  in PRs or CI; do not create or append repository log documents.
 
 ## Verification
 

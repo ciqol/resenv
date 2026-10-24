@@ -160,7 +160,6 @@ credentials; real login is a manual integration check owned by Doppler's CLI.
 `npm run bench` measures fresh-process startup, a plain 200-variable environment,
 and a mocked provider with eight distinct lookups. It needs a build first and
 does not contact a provider. Timings are observations, not CI pass/fail thresholds.
-See [the review](docs/security-performance-review.md) for the recorded comparison.
 
 With an existing Nx installation:
 
@@ -186,7 +185,8 @@ enable that option; the CLI passes the returned copy to its child process.
 
 Add regression tests for changed behavior and avoid real provider calls. Use
 Conventional Commit subjects, for example `fix(resolver): preserve empty values`.
-Dependency changes require an updated [review record](docs/dependencies.md).
+Review dependency changes under the [dependency policy](docs/dependencies.md)
+and put the evidence in the PR. Update the guide when a lasting choice changes.
 
 CODEOWNERS identifies the maintainer. Keep bug reports and pull requests focused
 on observable behavior and include the checks run. Weekly dependency updates are
@@ -195,6 +195,8 @@ grouped, with major version updates reviewed separately; bots cannot merge them.
 Keep the README focused on installation, authentication, application integration,
 API behavior and troubleshooting. Put contributor tooling, test commands and
 local development instructions here; detailed internals belong in `docs/`.
+Keep docs current rather than appending session logs, dated audit reports or
+test transcripts. Record run results in PRs and CI.
 
 Security reports follow [SECURITY.md](SECURITY.md). Publication and repository
 visibility changes require a separate maintainer decision; see the

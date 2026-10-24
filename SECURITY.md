@@ -59,8 +59,8 @@ all changed properties; read-only properties, setters and Proxy targets are
 rejected before any values are committed. Use `resolve()` to obtain a copy
 when the input is not a writable environment record.
 
-This experimental package has not had an independent security audit. Validation
-evidence and platform limits are recorded in [docs/validation.md](docs/validation.md).
+This experimental package has not had an independent security audit. See
+[verification](CONTRIBUTING.md) and [Doppler platform limits](docs/doppler.md).
 
 ## Reporting a vulnerability
 

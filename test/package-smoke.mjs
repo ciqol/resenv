@@ -41,7 +41,7 @@ try {
   assert.equal(packed.name, source.name)
   assert.equal(packed.version, plan?.version ?? source.version)
   assert.ok(!packed.files.some(file => /\.spec\./.test(file.path)), 'Unit specs must not be packed')
-  for (const path of ['index.cjs', 'index.mjs', 'index.d.cts', 'index.d.mts', 'resolve-commands.cjs', 'resolve-commands.mjs', 'resolve-doppler.cjs', 'resolve-doppler.mjs', 'doppler-worker.cjs', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/dependencies.md', 'docs/validation.md', 'docs/releasing.md', 'docs/doppler.md']) {
+  for (const path of ['index.cjs', 'index.mjs', 'index.d.cts', 'index.d.mts', 'resolve-commands.cjs', 'resolve-commands.mjs', 'resolve-doppler.cjs', 'resolve-doppler.mjs', 'doppler-worker.cjs', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/dependencies.md', 'docs/build.md', 'docs/release-security.md', 'docs/releasing.md', 'docs/doppler.md']) {
     assert.ok(packed.files.some(file => file.path === path), `Missing package file: ${path}`)
   }
   assert.ok(packed.files.every(file => !/^(src|test|scripts|node_modules)\//.test(file.path) && !file.path.split('/').some(part => part.startsWith('.env'))))
