@@ -39,10 +39,13 @@ project. In an npm script, use `resenv` directly.
 
 ## Use with Doppler
 
+Doppler manages application secrets. If you're new to it, start with
+[Doppler's introduction](https://docs.doppler.com/docs/start).
+
 ### 1. Authenticate locally
 
-Install the [official Doppler CLI](https://docs.doppler.com/docs/cli), then
-log in from your application directory:
+Follow the [official Doppler CLI installation guide](https://docs.doppler.com/docs/cli#installation)
+for your operating system, then log in from your application directory:
 
 ```sh
 doppler login
@@ -65,6 +68,10 @@ For CI and other unattended environments, supply `DOPPLER_TOKEN` through your
 runner's secret facility; the CLI is not needed in that mode. See
 [Doppler authentication and platform details](docs/doppler.md), including
 migration from the earlier resenv-managed login.
+
+Need another secrets provider, operating system or CLI installation method?
+[Request support](https://github.com/ciqol/resenv/issues/new) with your use case
+and platform details.
 
 ### 2. Declare references in the environment your app already loads
 
