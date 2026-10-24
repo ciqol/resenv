@@ -66,17 +66,17 @@ npm run test:integration  # process checks, requires a build
 ```
 
 `npm test` runs unit and process tests. Mock or inject provider calls, credential
-helpers, browser launchers and process control in unit tests. Keep checks that
-spawn actual commands or temporary applications in `test/`. The unit coverage
+lookup and process control in unit tests. Keep checks that spawn actual commands
+or temporary applications in `test/`. The unit coverage
 report measures source and is separate from packed-package and process checks.
 `npm run verify` enforces a 90% global floor for source statements, branches,
 functions and lines. Worker and preload entry files stay in the denominator;
 the CLI is checked separately by process and packed-package tests. CI retains
 LCOV and Cobertura reports for seven days in the `resenv-coverage` artifact.
 The official `actions/upload-code-coverage` action uploads Cobertura in a separate
-job; fork PRs retain the local gate and reports but cannot upload. The Linux
-Node 24 job also checks real Secret Service storage with dummy tokens in an
-isolated D-Bus session and temporary keyring, never a developer credential store.
+job; fork PRs retain the local gate and reports but cannot upload. CLI lookup
+checks use injected helpers and temporary dummy executables; they never access
+a developer credential store or authenticated provider session.
 
 Use normal npm lifecycle behavior locally and in CI. Review install hooks,
 including implicit native builds, when changing dependencies; record any
@@ -138,15 +138,14 @@ local. Leave its manifest, lockfile and CI configuration unchanged.
 
 Rebuild resenv after source, metadata or documentation changes and restart the
 application. An application `npm ci` can remove the link; recreate it when needed.
-If you only created the package link, run its CLI directly:
+Authenticate with the official Doppler CLI from the application's directory:
 
 ```sh
-node node_modules/@ciqol/resenv/bin/resenv.cjs login doppler
+doppler login
 ```
 
-For login from the resenv checkout, use
-`node dist/bin/resenv.cjs login doppler`. Real login is a manual integration
-check; automated tests must use injected or mocked credentials.
+resenv reuses that login at runtime. Automated tests use injected or mocked
+credentials; real login is a manual integration check owned by Doppler's CLI.
 
 ## Optional integration checks
 

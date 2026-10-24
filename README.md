@@ -41,23 +41,26 @@ project. In an npm script, use `resenv` directly.
 
 ### 1. Authenticate locally
 
-After installing the package, run:
+Install the [official Doppler CLI](https://docs.doppler.com/docs/cli), then
+log in from your application directory:
 
 ```sh
-npx --no-install resenv login doppler
+doppler login
 ```
 
-Each developer authenticates with their own Doppler access. Secret reads use
-the HTTPS API. Credentials come from `DOPPLER_TOKEN`, the saved OS credential,
-or an existing Doppler CLI login, in that order. Startup reports missing access
-and stops; it does not open a login prompt.
+Each developer authenticates with their own Doppler access. Doppler's CLI owns
+login, logout, token storage and directory-scoped identities. resenv does not
+manage a separate login or access the OS credential store directly.
 
-Native login uses the browser flow observed in Doppler's official MCP client
-and saves the token in macOS Keychain or Linux Secret Service. The CLI is a
-fallback; the browser protocol is not a public OAuth contract and fresh native
-login is not yet verified end to end. Windows needs `DOPPLER_TOKEN` because
-native login/storage is not implemented there. See
-[Doppler login and platform details](docs/doppler.md).
+At startup, resenv uses `DOPPLER_TOKEN` when supplied; otherwise it reads the
+existing Doppler CLI token for the application's working directory. It then
+fetches only referenced secrets through the HTTPS API. Missing credentials or
+access stop startup without opening a browser or prompting for login.
+
+For CI and other unattended environments, supply `DOPPLER_TOKEN` through your
+runner's secret facility; the CLI is not needed in that mode. See
+[Doppler authentication and platform details](docs/doppler.md), including
+migration from the earlier resenv-managed login.
 
 ### 2. Declare references in the environment your app already loads
 

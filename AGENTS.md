@@ -49,6 +49,9 @@ to the privileged publisher. The platform npm CLI review is recorded separately.
 - Keep one public `resolve()` function. Always return an independent resolved
   copy; replace input values only when `replace: true` is explicitly enabled.
   The Node preloads enable replacement; the CLI uses the returned copy.
+- Delegate authentication to the official Doppler CLI. Read its existing
+  directory-scoped token or an explicit `DOPPLER_TOKEN`; do not implement login,
+  logout, browser authorization or direct OS credential storage.
 - Keep arbitrary shell commands explicitly enabled. Fetched
   output stays literal, and failures must leave the caller's environment intact.
 - Never print credentials, fetched values, commands or provider response bodies.

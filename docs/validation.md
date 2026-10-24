@@ -1,5 +1,32 @@
 # Validation
 
+## October 24, 2026 - reuse Doppler CLI authentication
+
+Removed resenv login/logout, native browser authorization, direct OS credential
+storage and their Linux keyring CI setup. Runtime credentials now come from
+an explicit `DOPPLER_TOKEN` or the existing Doppler CLI identity for the
+application working directory. HTTPS reads and atomic environment replacement
+are unchanged. The CLI helper uses fixed standard installation paths, captured
+output, no shell, a restricted environment, and disabled update checks and
+environment configuration. Standard per-user WinGet and Scoop discovery is
+covered with injected Windows fixtures; a native Windows run remains unverified.
+
+On pinned Node 24.19.0, `npm ci` and `npm run verify` passed: lint, strict
+implementation/spec checks, build, 88 unit/tooling tests, the 90% coverage gate,
+43 process tests, 16 packed runtime checks and two typed consumers. Source
+coverage was 92.13% statements, 91.48% branches, 97.05% functions and 93.83%
+lines. Process checks use temporary dummy CLI executables and mocked HTTPS to
+verify working-directory scope, credential isolation, safe lookup failure and
+removal of lifecycle commands. No developer CLI credentials or OS-store entries
+were used. Package verification needed npm cache access outside the sandbox.
+
+The runtime audit found zero vulnerabilities. `npm run audit` rejects the
+newly reported development dependency advisory
+[GHSA-qxg6-89mg-rqv8](https://github.com/advisories/GHSA-qxg6-89mg-rqv8)
+for `@vitest/mocker` through the existing Vitest toolchain. The manifest,
+lockfile and security exception policy are unchanged; this check remains a
+release blocker. No package was published and no release tags were created.
+
 ## October 13, 2026 — packaged installation documentation
 
 npm lists only `0.1.0-beta.1`, with both `beta` and `latest` pointing to it.

@@ -1,5 +1,11 @@
 # Security and performance review
 
+Current authentication update (2026-10-24): native resenv login and OS-store
+adapters have been removed. Doppler's CLI owns authentication; resenv only reads
+its existing token and fetches referenced secrets. The dated findings and
+measurements below describe the implementation reviewed at that time. See
+[current authentication boundaries](doppler.md).
+
 Historical review: the October 12 beta removes dotenvx decryption and its entire
 runtime dependency tree. Earlier cryptography and ciphertext findings below
 apply to the prototype. Current behavior is in [Security](../SECURITY.md).

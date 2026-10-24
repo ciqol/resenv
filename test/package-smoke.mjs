@@ -158,7 +158,7 @@ try {
   assert.equal(once.stderr, '')
 
   // Exercise the installed private worker without contacting a provider or
-  // reading this machine's keyring: an explicit invalid token fails first.
+  // reading this machine's Doppler CLI login: an explicit invalid token fails first.
   for (const preload of ['--require', '--import']) {
     const failed = spawnSync(process.execPath, [preload, '@ciqol/resenv/resolve', '-e', "process.stdout.write('must-not-start')"], {
       cwd: directory, env: { ...env, TOKEN: 'doppler://dummy/dev/TOKEN', DOPPLER_TOKEN: 'dummy-invalid' },

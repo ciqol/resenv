@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { spawnSync } from 'node:child_process'
-import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs'
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -44,6 +44,59 @@ function fixture (t, responses) {
 function run (args, cwd, env) {
   return spawnSync(process.execPath, args, { cwd, env, encoding: 'utf8', timeout: 10000 })
 }
+
+function cliFixture (t, program) {
+  const { directory, pkg } = fixture(t, { API_KEY: { body: { value: { computed: 'dummy-cloud' } } } })
+  const home = join(directory, 'cli-home')
+  const executable = join(home, 'bin', 'doppler')
+  const record = join(directory, 'cli-calls.json')
+  mkdirSync(join(home, 'bin'), { recursive: true })
+  writeFileSync(executable, `#!${process.execPath}\nconst fs = require('node:fs');
+    fs.writeFileSync(${JSON.stringify(record)}, JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd(), home: process.env.HOME, unrelated: process.env.UNRELATED, token: process.env.DOPPLER_TOKEN, loader: process.env.NODE_OPTIONS }));
+    ${program}\n`, { mode: 0o700 })
+  // The private package copy points only at a dummy executable. It cannot
+  // discover an installed Doppler CLI or read the developer's credentials.
+  const system = join(pkg, 'doppler/system.cjs')
+  writeFileSync(system, readFileSync(system, 'utf8') + `
+    const originalCreateSystem = exports.createSystem;
+    exports.createSystem = () => originalCreateSystem({ home: ${JSON.stringify(home)}, exists: file => file === ${JSON.stringify(executable)} });
+  `)
+  return { directory, pkg, home, record }
+}
+
+test('runtime reads the CLI identity for the application directory without forwarding app secrets', { skip: process.platform === 'win32' }, t => {
+  const { directory, pkg, home, record } = cliFixture(t, `process.stdout.write('${token}\\n');`)
+  const application = join(directory, 'application')
+  mkdirSync(application)
+  const check = "if(process.env.TOKEN!=='dummy-cloud') process.exit(9)"
+  const env = { TOKEN: 'doppler://dummy/dev/API_KEY', UNRELATED: 'dummy-sensitive-unrelated', NODE_DEBUG: 'ciqol:resenv' }
+  for (const args of [
+    ['--require', '@ciqol/resenv/resolve', '-e', check],
+    ['--import', '@ciqol/resenv/resolve', '-e', check],
+    [join(pkg, 'bin/resenv.cjs'), 'run', '--', process.execPath, '-e', check],
+    ['-e', "const {resolve}=require('@ciqol/resenv'); if(resolve().TOKEN!=='dummy-cloud') process.exit(9)"]
+  ]) {
+    const result = run(args, application, env)
+    assert.equal(result.status, 0, result.stderr)
+    assert.deepEqual(JSON.parse(readFileSync(record, 'utf8')), {
+      args: ['configure', 'get', 'token', '--plain', '--no-check-version', '--no-read-env'], cwd: realpathSync(application), home
+    })
+    assert.equal(result.stdout, '')
+    for (const value of [token, env.UNRELATED]) assert.ok(!result.stderr.includes(value))
+    rmSync(record)
+  }
+})
+
+test('a failed CLI token lookup blocks startup without exposing captured output or trying login', { skip: process.platform === 'win32' }, t => {
+  const { directory, record } = cliFixture(t, `process.stdout.write('${token}'); process.stderr.write('dummy-sensitive-helper-detail'); process.exit(1);`)
+  const result = run(['--require', '@ciqol/resenv/resolve', '-e', "throw new Error('application-must-not-start')"], directory, { TOKEN: 'doppler://dummy/dev/API_KEY' })
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /DOPPLER_AUTH_REQUIRED/)
+  assert.match(result.stderr, /doppler login/)
+  assert.deepEqual(JSON.parse(readFileSync(record, 'utf8')).args, ['configure', 'get', 'token', '--plain', '--no-check-version', '--no-read-env'])
+  for (const value of [token, 'dummy-sensitive', 'application-must-not-start']) assert.ok(!result.stderr.includes(value))
+  assert.equal(result.stdout, '')
+})
 
 test('built Doppler preloads and CLI resolve before imports without executing secret output', t => {
   const value = '$(must-not-run)\nencrypted:literal\n'
@@ -162,31 +215,30 @@ test('built library without references never starts the credential worker', t =>
   assert.equal(result.status, 0, result.stderr)
 })
 
-test('login infers Doppler from inherited values without reading dotenv files', t => {
+test('removed authentication commands direct users to Doppler without starting helpers', t => {
   const { directory, pkg } = fixture(t, {})
   const cli = join(pkg, 'bin/resenv.cjs')
-  writeFileSync(join(directory, '.env'), 'TOKEN=doppler://dummy/dev/API_KEY\n')
-  const empty = run([cli, 'login'], directory, {})
-  assert.equal(empty.status, 0, empty.stderr)
-  assert.match(empty.stderr, /Nothing to handle/)
-  const inferred = run([cli, 'login'], directory, { TOKEN: 'doppler://dummy/dev/API_KEY', CI: 'true' })
-  assert.equal(inferred.status, 1)
-  assert.match(inferred.stderr, /DOPPLER_INTERACTIVE_REQUIRED/)
-  const invalid = run([cli, 'login'], directory, { TOKEN: 'doppler://missing-config' })
-  assert.equal(invalid.status, 1)
-  assert.match(invalid.stderr, /DOPPLER_INVALID_REFERENCE/)
+  const system = join(pkg, 'doppler/system.cjs')
+  writeFileSync(system, readFileSync(system, 'utf8') + "\nexports.createSystem = () => { throw new Error('helper-must-not-run'); };\n")
+  for (const args of [['login'], ['login', 'doppler'], ['login', 'doppler', '--cli'], ['logout', 'doppler']]) {
+    const result = run([cli, ...args], directory, { TOKEN: 'doppler://dummy/dev/API_KEY' })
+    assert.equal(result.status, 2)
+    assert.match(result.stderr, /doppler login and doppler logout/)
+    assert.ok(!result.stderr.includes('helper-must-not-run'))
+    assert.equal(result.stdout, '')
+  }
+  const help = run([cli, '--help'], directory, {})
+  assert.equal(help.status, 0, help.stderr)
+  assert.match(help.stdout, /doppler login and doppler logout/)
+  assert.doesNotMatch(help.stdout, /resenv login|resenv logout/)
 })
 
-test('noninteractive login and malformed credentials never open a browser or read local credentials', t => {
-  const { directory, pkg } = fixture(t, {})
-  const cli = join(pkg, 'bin/resenv.cjs')
-  const login = run([cli, 'login', 'doppler'], directory, {})
-  assert.equal(login.status, 1)
-  assert.match(login.stderr, /DOPPLER_INTERACTIVE_REQUIRED/)
-  const resolve = run(['--require', '@ciqol/resenv/resolve-doppler', '-e', ''], directory, { TOKEN: 'doppler://my-app/dev/API_KEY', DOPPLER_TOKEN: 'dummy-invalid' })
-  assert.equal(resolve.status, 1)
-  assert.match(resolve.stderr, /DOPPLER_INVALID_TOKEN/)
-  assert.ok(!resolve.stderr.includes('dummy-invalid'))
+test('malformed explicit credentials fail without reading the CLI login', t => {
+  const { directory } = fixture(t, {})
+  const result = run(['--require', '@ciqol/resenv/resolve-doppler', '-e', ''], directory, { TOKEN: 'doppler://my-app/dev/API_KEY', DOPPLER_TOKEN: 'dummy-invalid' })
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /DOPPLER_INVALID_TOKEN/)
+  assert.ok(!result.stderr.includes('dummy-invalid'))
 })
 
 test('built CommonJS and ESM library calls infer cloud references without options', t => {

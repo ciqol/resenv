@@ -1,5 +1,24 @@
 # Dependency review
 
+## Doppler CLI authentication simplification - 2026-10-24
+
+resenv now delegates login, logout, token issuance and persistence to the
+user-installed [official Doppler CLI](https://docs.doppler.com/docs/cli).
+The only helper operation is the documented `configure get token --plain`,
+with update checks and environment config disabled. The runtime captures its
+output privately and uses Node's HTTPS fetch for named secret reads.
+No npm dependency is added. Explicit `DOPPLER_TOKEN` remains supported without
+installing the CLI.
+
+Direct `/usr/bin/security`, `/usr/bin/secret-tool`, browser launchers and the
+private browser authorization protocol have been removed. CI no longer installs
+Linux keyring packages or manages a credential store. Historical entries below
+record earlier validation and are superseded by this authentication design.
+Standard per-user WinGet/Scoop locations supplement the existing Unix paths.
+CLI calls retain a filtered environment, fixed absolute executable paths,
+private output, limits and no shell. CI uses dummy process fixtures rather
+than an authenticated CLI or a developer's OS credential store.
+
 ## Official GitHub actions — 2026-10-13
 
 At the maintainer's explicit request, official `actions/*` and `github/*`
@@ -25,9 +44,9 @@ without claiming MIT licensing or independent license clearance. Nothing from
 the action is redistributed in the package. ciqol maintainers own version and
 advisory review through Dependabot; exact tags still trust GitHub against retagging.
 
-Native Linux checks use Ubuntu's `libsecret-tools`, `gnome-keyring` and D-Bus
-packages only on a disposable hosted runner. No runtime dependency is added;
-the temporary keyring contains dummy tokens and is deleted after the check.
+At that review date, native Linux checks used disposable runner keyring
+packages. Those checks and package installations were removed with the
+2026-10-24 CLI authentication simplification above.
 
 ## Release tools admitted with bounded controls - 2026-10-10
 

@@ -31,6 +31,9 @@ Do not depend on previous chat history or copy credentials between sessions.
   failed pass leaves the caller's environment unchanged.
 - Debug selector: `NODE_DEBUG=ciqol:resenv`. Never log secret values, tokens,
   command text or provider response bodies.
+- Authentication: use `doppler login/logout`; resenv only reads the existing
+  CLI token for the application working directory, or an explicit
+  `DOPPLER_TOKEN`. No native storage or resenv login lifecycle.
 - Runtime npm dependencies: none. Dotenvx decryption has been removed;
   `encrypted:` values remain literal.
 
@@ -40,9 +43,9 @@ Do not depend on previous chat history or copy credentials between sessions.
 | --- | --- |
 | `src/index.ts` | Resolution API and atomic replacement |
 | `src/preload.ts`, `src/resolve*.ts` | Startup integration and shared preload state |
-| `src/doppler/` | Reference parsing, HTTPS, bounded concurrency, credentials and login |
+| `src/doppler/` | Reference parsing, HTTPS, bounded concurrency and CLI credential lookup |
 | `src/commands.ts` | Explicit shell substitution and process limits |
-| `bin/resenv.ts` | Login, logout and child-process CLI |
+| `bin/resenv.ts` | Child-process CLI |
 | `rollup.config.mjs`, `scripts/build.mjs` | CJS implementation, shared ESM facades and generated types |
 | `scripts/release-plan.mjs` | Official semantic-release analysis/notes plugins and beta counter |
 | `scripts/publish.mjs` | OIDC staging of the tested archive and post-publication tag recording |
@@ -109,13 +112,15 @@ would remove the package and impose npm's publishing cooldown.
 
 ## Known limits and follow-ups
 
-- Real Doppler challenge generation, pending polling and timeout were checked;
-  the maintainer skipped live account approval, so issued-token recovery remains
-  unverified.
-  macOS storage passed in an isolated temporary keychain. CI checks Linux storage
-  through real Secret Service in a disposable session with dummy credentials;
-  Windows native login/storage is not implemented. Explicit tokens and existing
-  CLI credentials are supported. See [Doppler details](doppler.md).
+- Doppler CLI discovery covers standard macOS/Linux paths and per-user WinGet
+  and Scoop on Windows. Native Windows end-to-end execution is not yet verified.
+  Automated lookup checks use dummy executables and injected effects, never a
+  developer login or credential store. Earlier native resenv logins are ignored;
+  see [authentication and migration](doppler.md).
+- `npm run audit` currently rejects the newly reported Vitest development
+  dependency advisory [GHSA-qxg6-89mg-rqv8](https://github.com/advisories/GHSA-qxg6-89mg-rqv8).
+  The runtime audit is clean; dependency updates and a fresh review are needed
+  before release. See [the current validation](validation.md).
 - The development release-tool tree has reviewed advisories. Exceptions expire
   November 9, 2026, and executable guards fail on expiry or drift. Review
   [release security](release-security.md); never broaden or bypass the policy.
