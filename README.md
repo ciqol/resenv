@@ -48,9 +48,13 @@ log in from your application directory:
 doppler login
 ```
 
-Each developer authenticates with their own Doppler access. Doppler's CLI owns
-login, logout, token storage and directory-scoped identities. resenv does not
-manage a separate login or access the OS credential store directly.
+Each developer authenticates with their own Doppler access.
+
+> [!WARNING]
+> Authentication and credential storage depend on the Doppler CLI's implementation
+> and may vary by platform or CLI version. resenv only reuses its existing token;
+> it does not manage login, logout or credential storage, or access the OS
+> credential store directly.
 
 At startup, resenv uses `DOPPLER_TOKEN` when supplied; otherwise it reads the
 existing Doppler CLI token for the application's working directory. It then
