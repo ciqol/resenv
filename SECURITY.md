@@ -9,22 +9,24 @@ any credentials supplied to it.
 
 Doppler mode uses a fixed HTTPS API origin, disables redirects and fetches only
 referenced secret names. It does not execute shell expressions. Credentials
-come from an explicit token, resenv's OS credential store or a fixed Doppler CLI
-helper. An API rejection never triggers a switch to another identity. Native
-browser login uses endpoints observed in Doppler's official MCP client rather
-than a public third-party OAuth contract. See [Doppler details](docs/doppler.md)
-for fallback rules, credential scope and platform limits.
+come from an explicit `DOPPLER_TOKEN` or the current directory's existing
+Doppler CLI login. A fixed CLI helper captures that token privately; resenv
+does not parse Doppler's config files. An API rejection never triggers a switch
+to another identity. The official Doppler CLI owns browser authorization,
+token storage, login and logout. See [Doppler details](docs/doppler.md)
+for lookup rules, credential scope, migration and platform limits.
 The canonical `resolve` preload and `run` command select Doppler only for
 `doppler://` values. They do not infer shell execution from `$()` values.
-Startup does not initiate login; the separate login command rejects CI and
-noninteractive sessions.
+Startup does not initiate login. Use `doppler login` separately for local
+development or supply a suitably scoped token for unattended runs.
 
-The local credential store does not prevent code running as the same user from
-requesting credentials. resenv does not automatically remove an explicitly
-supplied `DOPPLER_TOKEN` from the application environment. Interactive login
-displays a temporary human authorization code; tokens and the polling code are
-not logged. The Node preload's private worker exchanges credentials and results
-over captured pipes, never process arguments or dotenv files.
+Doppler's credential storage does not isolate credentials from other code
+running as the same user with access to them. resenv does not read or write the
+OS credential store directly or persist login tokens or fetched secrets.
+It does not automatically remove an explicitly supplied `DOPPLER_TOKEN` from
+the application environment. Tokens, captured CLI output and provider response
+bodies are not logged. The Node preload's private worker exchanges credentials
+and results over captured pipes, never process arguments or dotenv files.
 
 Command mode executes trusted configuration with the current user's
 permissions. Enable it only for configuration you have reviewed. Commands can
@@ -57,8 +59,8 @@ all changed properties; read-only properties, setters and Proxy targets are
 rejected before any values are committed. Use `resolve()` to obtain a copy
 when the input is not a writable environment record.
 
-This experimental package has not had an independent security audit. Validation
-evidence and platform limits are recorded in [docs/validation.md](docs/validation.md).
+This experimental package has not had an independent security audit. See
+[verification](CONTRIBUTING.md) and [Doppler platform limits](docs/doppler.md).
 
 ## Reporting a vulnerability
 

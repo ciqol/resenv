@@ -1,4 +1,4 @@
-# Doppler references and login
+# Doppler references and CLI authentication
 
 Doppler is resenv's only built-in cloud provider. After Nx or another loader
 populates the environment, resenv fetches referenced values through HTTPS and
@@ -13,43 +13,57 @@ a provider option. `resolve-doppler` and
 
 ## Local setup
 
-After [installing resenv](../README.md#install) in your application project, log in:
+After [installing resenv](../README.md#install) in your application project,
+install the [official Doppler CLI](https://docs.doppler.com/docs/cli) and run
+this from the application's directory:
 
 ```sh
-npx --no-install resenv login doppler
+doppler login
 ```
 
-The examples below use `resenv` directly in an npm script; from your shell,
-prefix it with `npx --no-install` to use the project's installed copy.
-For checkout builds and local testing, see [CONTRIBUTING.md](../CONTRIBUTING.md).
-If the references are already loaded into the shell environment, `resenv login`
-infers Doppler without naming it. No cloud references means no login is needed.
-Neither command loads dotenv files; Nx remains responsible for file selection.
-It requests a browser authorization code, opens Doppler's authorization page,
-and waits up to five minutes for you to approve the login. `--no-browser`
-prints the page and code without opening it. Login requires a terminal outside
-CI; application startup never opens a browser or prompts for credentials.
-If login falls back to the Doppler CLI, that CLI handles its own browser prompt.
+Doppler owns browser authorization, token persistence, login scopes and logout.
+Use `doppler logout` to manage the CLI login. resenv never opens a browser,
+prompts for login, issues or revokes tokens, or reads or writes the OS
+credential store directly. There is no separate resenv login.
 
-The native flow follows the protocol observed in Doppler's published
-`@dopplerhq/mcp-server` 1.0.5 package. These login endpoints are not a documented
-third-party OAuth contract. They can change independently of the public API.
-resenv identifies itself with its own version core and user agent. Doppler's
-authorization endpoint accepts only `vX.Y.Z`, so version metadata omits beta
-and build suffixes while the package retains its complete release version.
+Existing Doppler users can reuse their login. resenv asks the CLI for the token
+selected by its current working directory, so Doppler's directory-scoped
+workplace identities continue to apply. See
+[Doppler's scope guide](https://docs.doppler.com/docs/multiple-workplaces).
+`doppler setup` is not required for resenv references: their project and config
+are already explicit in each `doppler://` value. Nx or the caller remains
+responsible for dotenv file loading.
 
-The user token is saved in the OS credential store under service
-`ciqol.envref.doppler`, account `default`. The identifier is retained across
-the resenv rename so existing logins continue to work. Nothing is saved in the repository,
-dotenv files or worktree. The current beta stores one workplace login per
-OS user; logging in again replaces that saved identity. Each developer logs in
-separately and receives the permissions of their own Doppler account.
+### Platforms and installation locations
 
-Native persistence supports macOS Keychain via `/usr/bin/security` and Linux
-Secret Service via an installed `/usr/bin/secret-tool`. The token is passed to
-the helper through stdin, never through process arguments. resenv does not
-install these tools or fall back to a plaintext credential file. Windows can
-use a supplied `DOPPLER_TOKEN`; native Windows login/storage is not implemented.
+The CLI handles its own credential storage on macOS, Linux and Windows. resenv
+does not require `secret-tool`, a separate keyring package or native Node addons.
+It discovers the CLI in these standard locations:
+
+| Platform | Locations, in lookup order |
+| --- | --- |
+| macOS / Linux | `/opt/homebrew/bin/doppler`, `/usr/local/bin/doppler`, `/usr/bin/doppler`, `~/.local/bin/doppler`, `~/bin/doppler` |
+| Windows | `~/AppData/Local/Microsoft/WinGet/Links/doppler.exe`, `~/scoop/apps/doppler/current/doppler.exe` |
+
+Here `~` is the OS user's home directory. Windows paths cover default per-user
+WinGet and Scoop installations. Custom and system-wide Windows installations
+outside these locations need an explicit `DOPPLER_TOKEN`. WSL uses the Linux
+installation and login within WSL. The runtime deliberately ignores the
+application's `PATH` so a repository-local executable cannot replace the
+credential helper.
+
+Windows discovery is covered with injected process tests; a native Windows
+end-to-end run is not yet verified. Automated checks never use a developer's
+Doppler login or OS credential store.
+
+### Migration from resenv-managed login
+
+`resenv login` and `resenv logout` have been removed. Run `doppler login` to
+establish the CLI identity, then start the application normally. Earlier resenv
+credentials stored under service `ciqol.envref.doppler`, account `default`, are
+ignored and are not migrated or deleted automatically. If you used that flow,
+remove the obsolete entry through your OS credential manager and revoke the
+obsolete token in Doppler when it is no longer needed.
 
 ## Declare a reference
 
@@ -76,38 +90,31 @@ For an Nx command target, use `resenv run -- node app.mjs` inside the
 target. Preloading the outer Nx process would run before Nx loads target files.
 resenv does not choose, read or rewrite dotenv files.
 
-## Credentials and CLI fallback
+## Runtime credential lookup
 
 Resolution checks these sources in order:
 
 1. An explicitly supplied `DOPPLER_TOKEN`.
-2. The resenv credential in the OS store.
-3. The current directory's existing Doppler CLI login, retrieved with the
+2. The current directory's existing Doppler CLI login, retrieved with the
    documented `doppler configure get token --plain` operation.
 
-The fallback captures that token internally and still fetches secrets through
-HTTPS. It does not parse the CLI's private config format. It invokes a fixed
-executable with separate arguments and a restricted environment. Current
-executable locations are `/opt/homebrew/bin/doppler`,
-`/usr/local/bin/doppler` and `/usr/bin/doppler`; a repository's `PATH` cannot
-select a different credential helper. Other installations can supply a token.
+resenv captures the token internally and fetches secrets through HTTPS; it does
+not parse the CLI's private config format. The command uses a fixed executable,
+separate arguments, `--no-check-version` and `--no-read-env`, with a restricted
+environment. It inherits the application's working directory to preserve login
+scopes. Lookup has a fifteen-second timeout and a 16 KiB output limit. Captured
+output and helper errors are never forwarded to application logs.
 
-Native login falls back to `doppler login` when the OS store is unavailable or
-the authorization endpoint returns HTTP 404, 405 or 501. To select it directly:
+If the CLI is missing, install it in a supported location and run `doppler login`,
+or supply `DOPPLER_TOKEN`. A failed or empty CLI lookup reports that login is
+required. An explicitly supplied invalid token, malformed CLI token, access
+denial or network failure stops the operation without switching identities or
+starting login.
 
-```sh
-resenv login doppler --cli
-```
-
-An explicit invalid token, access denial, login rejection, timeout or network
-error stops the operation. These failures do not silently switch identities.
-Unset `DOPPLER_TOKEN` before interactive login because it overrides saved logins.
-In CI, supply a suitably scoped token through the runner's credential facility.
-
-`resenv logout doppler` removes only resenv's local credential. It does not
-revoke the remote token, unset an environment variable or log the Doppler CLI
-out. Those other credential sources can still authenticate. Revoke unwanted
-tokens from Doppler's CLI Tokens page.
+In CI, containers and other unattended environments, supply a suitably scoped
+`DOPPLER_TOKEN` through the runner's secret facility. No CLI installation or
+local credential store is needed in that mode. Changing the CLI login affects
+the next application startup; resenv does not keep a persistent token cache.
 
 ## Resolution and security boundaries
 
@@ -129,10 +136,9 @@ tokens from Doppler's CLI Tokens page.
 - Preloads use a child Node process to wait for asynchronous HTTPS while
   retaining `--require` compatibility. It receives only references and an
   explicit credential through stdin, with results returned through a private
-  pipe. No Doppler CLI is required when a native credential is available.
+  pipe. No Doppler CLI is required when `DOPPLER_TOKEN` is supplied.
 - Diagnostics show variable names and error codes, never tokens, provider
-  response bodies or resolved values. Only explicit interactive login displays
-  its temporary human authorization code.
+  response bodies, CLI output or resolved values.
 
 This removes shell evaluation from Doppler lookups. It does not isolate
 untrusted repository code or agents that can access the same user's credential
@@ -142,8 +148,8 @@ to a specific config.
 
 ## Sources
 
-- [Doppler MCP authentication](https://docs.doppler.com/docs/mcp#1-authenticate)
-- [Published MCP package](https://www.npmjs.com/package/@dopplerhq/mcp-server/v/1.0.5)
+- [Doppler CLI installation and authentication](https://docs.doppler.com/docs/cli)
+- [Directory-scoped workplace logins](https://docs.doppler.com/docs/multiple-workplaces)
 - [Retrieve a secret](https://docs.doppler.com/reference/secrets-get)
 - [API authentication](https://docs.doppler.com/reference/api)
 - [Retrieve the CLI token](https://docs.doppler.com/docs/cli#fetch-cli-token-from-your-local-environment)

@@ -11,7 +11,10 @@ using semantic-release's official commit-analysis and release-notes plugins.
 The release branch is `beta`; npm tags `beta` and `latest` point to the same tested
 beta release. The first version is
 `0.1.0-beta.1`; real beta release tags supply subsequent counters. The full
-semantic-release engine is not used while there is no stable release branch.
+semantic-release engine is not installed or used while there is no stable
+release branch. Keep `.npmrc` peer omission enabled; the official plugins are
+called standalone, and audit/planning enforce absence of the unused engine and
+publisher modules.
 
 Publish only through the manually dispatched GitHub Actions workflow, after all
 candidate checks. Stage the tested archive through npm OIDC; maintainer npm
@@ -49,12 +52,18 @@ to the privileged publisher. The platform npm CLI review is recorded separately.
 - Keep one public `resolve()` function. Always return an independent resolved
   copy; replace input values only when `replace: true` is explicitly enabled.
   The Node preloads enable replacement; the CLI uses the returned copy.
+- Delegate authentication to the official Doppler CLI. Read its existing
+  directory-scoped token or an explicit `DOPPLER_TOKEN`; do not implement login,
+  logout, browser authorization or direct OS credential storage.
 - Keep arbitrary shell commands explicitly enabled. Fetched
   output stays literal, and failures must leave the caller's environment intact.
 - Never print credentials, fetched values, commands or provider response bodies.
 - Never commit dotenv files, credentials, tarballs or `node_modules`.
 - Keep already distributed local tarballs immutable. Build a new version for
   changed package behavior.
+- Keep docs focused on current contracts, lasting decisions and procedures.
+  Record per-run test results, benchmarks, audit snapshots and session history
+  in PRs or CI; do not create or append repository log documents.
 
 ## Verification
 

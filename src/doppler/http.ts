@@ -3,34 +3,27 @@ import { isRecord } from '../values.js'
 
 export type RequestOptions = {
   readonly token?: string
-  readonly body?: Readonly<Record<string, string>>
-  readonly pending?: boolean
 }
 
-export type Request = (path: string, options?: RequestOptions) => Promise<Record<string, unknown> | null>
+export type Request = (path: string, options?: RequestOptions) => Promise<Record<string, unknown>>
 
 const API_ORIGIN = 'https://api.doppler.com'
 
 // No environment-controlled endpoint or redirects: credentials stay at Doppler.
 function createClient (fetchImpl: typeof globalThis.fetch = globalThis.fetch): Request {
-  return async function request (path, { token, body, pending = false } = {}) {
+  return async function request (path, { token } = {}) {
     let response
     try {
       response = await fetchImpl(new URL(path, API_ORIGIN), {
-        method: body === undefined ? 'GET' : 'POST',
+        method: 'GET',
         headers: {
           'content-type': 'application/json',
           'user-agent': 'ciqol-resenv',
           ...(token ? { authorization: `Bearer ${token}` } : {})
         },
-        body: body === undefined ? undefined : JSON.stringify(body),
         redirect: 'error',
         signal: AbortSignal.timeout(10000)
       })
-      if (pending && response.status === 409) {
-        await response.body?.cancel()
-        return null
-      }
       if (!response.ok) {
         await response.body?.cancel()
         const code = response.status === 401 ? 'DOPPLER_AUTH_REQUIRED'
@@ -69,7 +62,7 @@ function createClient (fetchImpl: typeof globalThis.fetch = globalThis.fetch): R
 
 function validateToken (token: unknown): string {
   if (typeof token !== 'string' || !/^dp\.[a-z]+\.[A-Za-z0-9_.-]{10,512}$/.test(token)) {
-    throw new ResenvError('DOPPLER_INVALID_TOKEN', 'The Doppler credential is malformed. Run resenv login doppler or supply a valid DOPPLER_TOKEN.')
+    throw new ResenvError('DOPPLER_INVALID_TOKEN', 'The Doppler credential is malformed. Check your Doppler CLI login or supply a valid DOPPLER_TOKEN.')
   }
   return token
 }

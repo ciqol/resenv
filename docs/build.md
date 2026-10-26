@@ -71,7 +71,7 @@ Public options use type aliases and readonly properties. `Environment` stays
 mutable for optional in-place replacement. `resolve()` always returns a new
 `Environment`, with input replacement enabled only by `{ replace: true }`. It
 does not preserve a generic input type: resolved strings cannot retain a
-literal reference type. This intentionally tightens the unpublished API.
+literal reference type.
 ESLint uses type information and enforces the selected style rules. The compiler
 checks all library/CLI source, colocated unit specs and both consumer formats with `strict` and
 `noUncheckedIndexedAccess`. Provider responses and parsed worker input start as
@@ -92,9 +92,9 @@ and docs are copied into the distribution and included in the archive.
 
 Ordinary local builds retain `private: true`. The CI build accepts a validated
 release plan and sets its computed version, removing `private` before the final
-archive is packed and tested. The development root stays private. Earlier
-builds kept both manifests private while the package was an unpublished
-prototype. There is no publishing workflow.
+archive is packed and tested. The development root stays private. Only the
+manual release workflow stages that tested archive for npm approval; see
+[releasing](releasing.md).
 
 `npm run pack:local` packs the generated directory. `npm run test:package`
 instead packs into a temporary directory and installs it offline into a clean
@@ -122,15 +122,14 @@ package, extracts the same build
 for the process tests, and never recompiles it. The matrix checks Node 20
 and 22 on Linux plus the `.nvmrc` version on Linux and macOS.
 
-Jobs have read-only repository permissions and receive no application or
+Build and test jobs have read-only repository permissions and receive no application or
 registry secrets. Missing artifacts and digest mismatches fail the run. The
-archive is retained for seven days for maintainer review. The workflow has no
-publish or deploy step. Hosted results must be observed before treating the
-workflow definition as a passing CI run.
+archive is retained for seven days for maintainer review. A separate release
+job requires manual dispatch on `beta`, the protected `release` environment and
+all candidate checks. Hosted results must be observed before treating the workflow definition
+as a passing CI run.
 
-Checkout and setup/download actions use full commit pins. The GitHub-owned
-upload action uses the Tashtit exception for a complete release tag; major tags
-and third-party movable refs are not permitted. Installs use normal npm lifecycle
-behavior, and dependency updates require an install-hook review. Build commands
-run explicitly.
-See the [maturity evaluation](maturity.md) for the static catalog results.
+Official `actions/*` and `github/*` actions use exact release tags under the
+repository's GitHub publisher trust policy. Other remote actions require full
+commit SHAs. Installs use normal npm lifecycle behavior, and dependency updates
+require an install-hook review. Build commands run explicitly.

@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
-import { checkAudit } from './release-guards.mjs'
+import { assertReleaseToolIsolation, checkAudit } from './release-guards.mjs'
 
+assertReleaseToolIsolation()
 const result = spawnSync('npm', ['audit', '--json'], { encoding: 'utf8', timeout: 120000, maxBuffer: 4 * 1024 * 1024 })
 assert.equal(result.error, undefined)
 assert.ok(result.status === 0 || result.status === 1, 'npm audit could not complete')

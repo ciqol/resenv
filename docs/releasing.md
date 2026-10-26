@@ -2,7 +2,7 @@
 
 ## Versions
 
-`beta` is the sole remote and default branch. Releases start at `0.1.0-beta.1`
+`beta` is the sole release and default branch. Releases start at `0.1.0-beta.1`
 and use npm tags `beta` and `latest`, both pointing to the same tested beta.
 
 The planner uses semantic-release's official commit-analysis and release-notes
@@ -23,7 +23,7 @@ Never edit a generated manifest or overwrite a previously shared archive.
 
 ## CI pipeline
 
-The [CI workflow](../.github/workflows/ci.yml) builds one archive:
+The [CI workflow](https://github.com/ciqol/resenv/blob/beta/.github/workflows/ci.yml) builds one archive:
 
 1. **Build:** normal npm installation, runtime/development audits, registry
    signatures, lint, strict types and colocated Vitest specs. The read-only
@@ -75,7 +75,7 @@ setup, set Actions variable `RELEASE_ENABLED=true`. Leave it unset until then
 to prevent a dispatch from creating an unrestricted environment automatically.
 Environment creation or protection changes require explicit authorization.
 
-## Run the first beta
+## Run a beta release
 
 Open [CI](https://github.com/ciqol/resenv/actions/workflows/ci.yml), choose
 **Run workflow**, select `beta`, and enable the staging input. When build and
@@ -126,8 +126,8 @@ matches its candidate. A conflicting archive, changed beta head or conflicting
 Git tag stops recovery. Keep the beta branch at the reviewed commit until the
 release is recorded. If its artifact expires, review recovery separately.
 
-The maintainer removed the accidental `1.0.0` publication. Retain the
-`0.0.0-stage` placeholder until `0.1.0-beta.1` is publicly available and verified.
+Retain the `0.0.0-stage` placeholder until a functional beta is publicly
+available and verified.
 With explicit authorization, remove that exact placeholder version and check
 remaining versions and tags. Never unpublish the whole package. npm's unpublish
 policy still applies; deleted versions cannot be reused.
@@ -135,17 +135,19 @@ See [npm's policy](https://docs.npmjs.com/policies/unpublish/).
 
 ## Security and platform limits
 
-The runtime package has no npm dependencies or advisory exceptions. The
-release-tool tree has bounded, executable advisory exceptions expiring November
-9, 2026; it is not vulnerability-free. The privileged job does not install that
-tree. See [release security](release-security.md).
+The runtime package has no npm dependencies or advisory exceptions. Installed
+runtime and development audits must pass with the unused engine/publisher peer graph
+omitted. Audit and planning enforce that absence; the lockfile still records
+the uninstalled peers. The existing November 9, 2026 review deadline remains
+for the policy and separately reviewed platform npm. The privileged job does
+not install release-tool modules. See [release security](release-security.md).
 
-Doppler is the only built-in cloud provider. Real native challenge/polling and
-isolated macOS storage checks passed; browser approval with a personal/test
-account remains unverified. CI checks real isolated Linux storage, and Windows
-native login/storage is not implemented. Explicit tokens and existing
-CLI credentials remain supported. Commands require explicit opt-in. Dotenvx
-ciphertext is left unchanged. See [Security](../SECURITY.md).
+Doppler is the only built-in cloud provider. Authentication is owned by the
+Doppler CLI; resenv reads its existing directory-scoped token or accepts
+`DOPPLER_TOKEN` for unattended use. It does not manage native credential storage
+or browser login. Standard Windows CLI discovery has injected coverage but no
+native Windows end-to-end verification. Commands require explicit opt-in.
+Dotenvx ciphertext is left unchanged. See [Security](../SECURITY.md).
 
 Sources: [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/),
 [staged publishing](https://docs.npmjs.com/cli/v11/commands/npm-stage/),

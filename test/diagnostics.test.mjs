@@ -15,7 +15,7 @@ const cases = [
   ['credential helpers', ['--input-type=module', '-e', `
     import { createSystem } from './dist/doppler/system.cjs';
     const system = createSystem({ platform: 'darwin', exists: () => true, run: () => { throw new Error('helper-must-not-start'); } });
-    system.write('dp.ct.dummy0123456789');
+    system.cliToken();
   `]]
 ]
 

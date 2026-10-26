@@ -5,31 +5,14 @@ import { constants } from 'node:os'
 import { assertSafeDiagnostics } from '../src/assert-safe-diagnostics.js'
 import { assertNoPreload } from '../src/preload.js'
 import { resolve, formatError } from '../src/index.js'
-import { login } from '../src/doppler/auth.js'
-import { createSystem } from '../src/doppler/system.js'
-import { references } from '../src/doppler/references.js'
 import { hasErrorCode } from '../src/values.js'
 
-const usage = 'Usage: resenv run [--commands] -- <command> [arguments...]\n       resenv login [doppler] [--cli] [--no-browser]\n       resenv logout doppler\nInfer secret providers from values already in the environment.\n--doppler remains accepted for compatibility.\n--commands enables whole-value $(command) expressions using /bin/sh.\n'
+const usage = 'Usage: resenv run [--commands] -- <command> [arguments...]\nInfer secret providers from values already in the environment.\nManage authentication with doppler login and doppler logout, or supply DOPPLER_TOKEN.\n--doppler remains accepted for compatibility.\n--commands enables whole-value $(command) expressions using /bin/sh.\n'
 
-async function main (): Promise<void> {
+function main (): void {
   const args = process.argv.slice(2)
   if (args.length === 1 && ['--help', '-h'].includes(args[0] || '')) {
     process.stdout.write(usage)
-    return
-  }
-  const explicitProvider = args[1] === 'doppler'
-  if (args[0] === 'login' && args.slice(explicitProvider ? 2 : 1).every(arg => ['--cli', '--no-browser'].includes(arg))) {
-    if (!explicitProvider && !references(process.env).length) {
-      process.stderr.write('Nothing to handle: no cloud secret references in the environment. Load your target environment first, or use resenv login doppler.\n')
-      return
-    }
-    await login({ cli: args.includes('--cli'), noBrowser: args.includes('--no-browser') })
-    return
-  }
-  if (args.length === 2 && args[0] === 'logout' && args[1] === 'doppler') {
-    createSystem().remove()
-    process.stderr.write('Removed the resenv credential. Doppler CLI credentials and DOPPLER_TOKEN are unchanged; revoke the token in Doppler to invalidate it.\n')
     return
   }
   let commands = false
@@ -91,7 +74,7 @@ async function main (): Promise<void> {
   })
 }
 
-void main().catch(err => {
+try { main() } catch (err) {
   process.stderr.write(`${formatError(err)}\n`)
   process.exitCode = 1
-})
+}
