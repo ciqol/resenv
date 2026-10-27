@@ -9,7 +9,7 @@ import { verifyArtifact } from './release-artifact.mjs'
 export function validatePublisher (env, expires, now = Date.now()) {
   assert.ok(now < Date.parse(expires), 'Publishing platform security review has expired')
   assert.equal(env.GITHUB_ACTIONS, 'true')
-  assert.equal(env.GITHUB_EVENT_NAME, 'workflow_dispatch')
+  assert.ok(['push', 'workflow_dispatch'].includes(env.GITHUB_EVENT_NAME), 'Publishing requires a beta push or manual dispatch')
   assert.equal(env.GITHUB_REPOSITORY, 'ciqol/resenv')
   assert.equal(env.GITHUB_REF, 'refs/heads/beta')
   assert.equal(env.GITHUB_WORKFLOW_REF, 'ciqol/resenv/.github/workflows/ci.yml@refs/heads/beta')

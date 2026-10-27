@@ -32,9 +32,11 @@ The [CI workflow](https://github.com/ciqol/resenv/blob/beta/.github/workflows/ci
 2. **Consumers:** Linux Node 20, 22 and the pinned Node 24, plus macOS Node 24,
    install and test the same archive. Checks cover ESM, CJS, types, preloads,
    CLI, literal secret output and failure boundaries. Nothing is rebuilt.
-3. **Release:** a manual dispatch from `beta` with `publish: true`, after every
-   check passes. The protected job verifies hashes, workflow identity and the
-   current branch head. It installs no project dependencies and runs no package
+3. **Release:** pushes to `beta`, including merged PRs, automatically stage a
+   releasable candidate after every check passes. A manual dispatch from `beta`
+   with `publish: true` can also stage or recover a release. The protected job
+   verifies hashes, workflow identity and the current branch head. It installs
+   no project dependencies and runs no package
    code. `npm stage publish` submits the exact archive through OIDC with
    provenance and the explicit `beta` tag. The job validates and saves npm's
    staging receipt; no Git tag or GitHub release is created yet.
@@ -45,9 +47,9 @@ The [CI workflow](https://github.com/ciqol/resenv/blob/beta/.github/workflows/ci
    requires npm tags `beta` and `latest` to point to that version before creating
    its Git tag and GitHub prerelease. It does not stage or publish the package again.
 
-Pushes, PRs and dispatches with `publish: false` cannot stage a package. Release
-jobs are serialized and not cancelled. Artifacts last seven days. A fresh
-workflow run is not a substitute for rerunning the original release job when
+PR runs and dispatches with `publish: false` cannot stage a package. Pushes with
+no releasable changes skip staging. Release jobs are serialized and not cancelled.
+Artifacts last seven days. A fresh workflow run is not a substitute for rerunning the original release job when
 recovering an already staged/published candidate.
 
 ## Required setup
@@ -77,10 +79,11 @@ Environment creation or protection changes require explicit authorization.
 
 ## Run a beta release
 
-Open [CI](https://github.com/ciqol/resenv/actions/workflows/ci.yml), choose
-**Run workflow**, select `beta`, and enable the staging input. When build and
-consumer checks pass, the release job stages the archive without another GitHub
-approval. Its summary and the `resenv-stage` artifact contain the stage
+Merge releasable changes into `beta`. When build and consumer checks pass, the
+release job automatically stages the archive without another GitHub approval.
+For a manual release, open [CI](https://github.com/ciqol/resenv/actions/workflows/ci.yml),
+choose **Run workflow**, select `beta`, and enable the staging input.
+The release job's summary and the `resenv-stage` artifact contain the stage
 identifier and tested integrity.
 
 Review the staged package in npm, then approve it with the stage identifier:
@@ -103,7 +106,9 @@ Rerun the original release job to record the release. Verify the npm version,
 `beta` and `latest` tags, archive integrity, provenance and GitHub
 prerelease. Never infer success from a staging receipt alone.
 
-For a hosted rehearsal, leave the staging input off. Local verification is:
+For a hosted rehearsal, manually dispatch with the staging input off. Automatic
+staging currently applies only to `beta`; moving to `main` requires a separate
+branch-policy and npm trusted-publisher review. Local verification is:
 
 ```sh
 npm ci

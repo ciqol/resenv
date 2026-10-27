@@ -139,7 +139,7 @@ jobs:
   release:
     needs: [build, test, coverage]
     # Enable only after the protected environment and npm authentication exist.
-    if: vars.RELEASE_ENABLED == 'true' && github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/beta' && needs.build.outputs.publish == 'true'
+    if: vars.RELEASE_ENABLED == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)) && github.ref == 'refs/heads/beta' && needs.build.outputs.publish == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     environment: release
@@ -167,7 +167,7 @@ jobs:
         run: node scripts/publish.mjs artifacts
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          RELEASE_APPROVED: ${{ inputs.publish }}
+          RELEASE_APPROVED: ${{ github.event_name == 'push' || inputs.publish }}
           RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
           PLAN_SHA256: ${{ needs.build.outputs.plan_sha256 }}
           ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}

@@ -75,14 +75,23 @@ describe('publication ordering and recovery', () => {
   })
 })
 
-it('requires the exact trusted workflow event and hashes', () => {
-  const env = { GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REPOSITORY: 'ciqol/resenv', GITHUB_REF: 'refs/heads/beta', GITHUB_WORKFLOW_REF: 'ciqol/resenv/.github/workflows/ci.yml@refs/heads/beta', RELEASE_APPROVED: 'true', GITHUB_SHA: 'a'.repeat(40), GITHUB_TOKEN: 'dummy', ACTIONS_ID_TOKEN_REQUEST_URL: 'dummy', ACTIONS_ID_TOKEN_REQUEST_TOKEN: 'dummy', PLAN_SHA256: 'b'.repeat(64), ARCHIVE_SHA256: 'c'.repeat(64) }
+it.each(['push', 'workflow_dispatch'])('requires the exact trusted workflow and hashes for %s', event => {
+  const env = { GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: event, GITHUB_REPOSITORY: 'ciqol/resenv', GITHUB_REF: 'refs/heads/beta', GITHUB_WORKFLOW_REF: 'ciqol/resenv/.github/workflows/ci.yml@refs/heads/beta', RELEASE_APPROVED: 'true', GITHUB_SHA: 'a'.repeat(40), GITHUB_TOKEN: 'dummy', ACTIONS_ID_TOKEN_REQUEST_URL: 'dummy', ACTIONS_ID_TOKEN_REQUEST_TOKEN: 'dummy', PLAN_SHA256: 'b'.repeat(64), ARCHIVE_SHA256: 'c'.repeat(64) }
   env.RELEASE_ENABLED = 'true'
   const now = Date.parse('2026-10-10')
   expect(() => validatePublisher(env, '2026-11-09', now)).not.toThrow()
   expect(() => validatePublisher(env, '2026-10-10', now)).toThrow(/expired/)
   expect(() => validatePublisher(env, 'invalid', now)).toThrow(/expired/)
-  for (const change of [{ RELEASE_ENABLED: '' }, { GITHUB_EVENT_NAME: 'pull_request' }, { RELEASE_APPROVED: 'false' }, { GITHUB_REF: 'refs/heads/other' }, { PLAN_SHA256: '' }, { GITHUB_WORKFLOW_REF: 'other/repo/.github/workflows/ci.yml@refs/heads/beta' }]) expect(() => validatePublisher({ ...env, ...change }, '2026-11-09', now)).toThrow()
+  const rejected = [
+    { RELEASE_ENABLED: '' }, { GITHUB_ACTIONS: 'false' }, { GITHUB_REPOSITORY: 'other/repo' }, { RELEASE_APPROVED: 'false' },
+    { GITHUB_REF: 'refs/heads/other' }, { GITHUB_REF: 'refs/heads/main' }, { GITHUB_REF: 'refs/tags/v0.1.0-beta.1' },
+    { PLAN_SHA256: '' }, { ARCHIVE_SHA256: '' },
+    { GITHUB_WORKFLOW_REF: 'other/repo/.github/workflows/ci.yml@refs/heads/beta' },
+    { GITHUB_WORKFLOW_REF: 'ciqol/resenv/.github/workflows/other.yml@refs/heads/beta' },
+    { GITHUB_WORKFLOW_REF: 'ciqol/resenv/.github/workflows/ci.yml@refs/heads/other' },
+    ...['pull_request', 'pull_request_target', 'workflow_run', 'schedule', undefined].map(GITHUB_EVENT_NAME => ({ GITHUB_EVENT_NAME }))
+  ]
+  for (const change of rejected) expect(() => validatePublisher({ ...env, ...change }, '2026-11-09', now)).toThrow()
 })
 
 it('passes OIDC to npm but removes publishing tokens and inherited npm configuration', () => {

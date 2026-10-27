@@ -93,7 +93,7 @@ and docs are copied into the distribution and included in the archive.
 Ordinary local builds retain `private: true`. The CI build accepts a validated
 release plan and sets its computed version, removing `private` before the final
 archive is packed and tested. The development root stays private. Only the
-manual release workflow stages that tested archive for npm approval; see
+release workflow stages that tested archive for npm approval; see
 [releasing](releasing.md).
 
 `npm run pack:local` packs the generated directory. `npm run test:package`
@@ -125,7 +125,8 @@ and 22 on Linux plus the `.nvmrc` version on Linux and macOS.
 Build and test jobs have read-only repository permissions and receive no application or
 registry secrets. Missing artifacts and digest mismatches fail the run. The
 archive is retained for seven days for maintainer review. A separate release
-job requires manual dispatch on `beta`, the protected `release` environment and
+job runs automatically for pushes to `beta` with releasable changes, or an explicit
+publishing dispatch on `beta`. It requires the protected `release` environment and
 all candidate checks. Hosted results must be observed before treating the workflow definition
 as a passing CI run.
 

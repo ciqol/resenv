@@ -16,9 +16,10 @@ release branch. Keep `.npmrc` peer omission enabled; the official plugins are
 called standalone, and audit/planning enforce absence of the unused engine and
 publisher modules.
 
-Publish only through the manually dispatched GitHub Actions workflow, after all
-candidate checks. Stage the tested archive through npm OIDC; maintainer npm
-approval publishes it, and rerunning the release job records the verified tag.
+Publish only through GitHub Actions, automatically after pushes to `beta` or an
+explicit publishing dispatch, after all candidate checks. Stage the tested
+archive through npm OIDC; maintainer npm approval publishes it, and rerunning
+the release job records the verified tag.
 Never publish from a developer machine or request local npm
 login. The user manages npm-side ownership and authentication. The OIDC path
 requires an existing package and a matching trusted publisher; do not assume it
@@ -95,8 +96,9 @@ CI builds one archive and all matrix jobs test that same archive through
 Source unit specs run before the CI build; matrix jobs run only higher-level
 tests against that archive and never recompile the source.
 Use `npm run release:check` for non-publishing local verification. Hosted
-checks plan a version and test the final archive; publication is a separate
-manual workflow input. CI's push filter is `beta`.
+checks plan a version and test the final archive; pushes to `beta` automatically
+stage releasable candidates. Manual dispatch retains an explicit publishing input.
+CI's push filter is `beta`.
 Stage with the `beta` npm dist-tag. After npm approval and public availability,
 the maintainer updates `latest` to that version before CI records the release.
 
