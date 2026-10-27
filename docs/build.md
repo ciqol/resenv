@@ -130,6 +130,12 @@ publishing dispatch on `beta`. It requires the protected `release` environment a
 all candidate checks. Hosted results must be observed before treating the workflow definition
 as a passing CI run.
 
+`finalize-release.yml` checks completed trusted beta CI runs and polls every
+15 minutes for npm publication and matching `beta`/`latest` tags. It downloads
+the original staging receipt and tested archive, verifies their producer and
+integrity, and records the GitHub prerelease without rebuilding or running npm.
+It shares release serialization and uses the existing protected environment.
+
 Official `actions/*` and `github/*` actions use exact release tags under the
 repository's GitHub publisher trust policy. Other remote actions require full
 commit SHAs. Installs use normal npm lifecycle behavior, and dependency updates

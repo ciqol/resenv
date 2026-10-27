@@ -36,21 +36,24 @@ The [CI workflow](https://github.com/ciqol/resenv/blob/beta/.github/workflows/ci
    releasable candidate after every check passes. A manual dispatch from `beta`
    with `publish: true` can also stage or recover a release. The protected job
    verifies hashes, workflow identity and the current branch head. It installs
-   no project dependencies and runs no package
-   code. `npm stage publish` submits the exact archive through OIDC with
+   no project dependencies and runs no package code. `npm stage publish` submits the exact archive through OIDC with
    provenance and the explicit `beta` tag. The job validates and saves npm's
    staging receipt; no Git tag or GitHub release is created yet.
 4. **Approval and recording:** the maintainer reviews and approves the staged
    package in npm using interactive 2FA. Wait for npm to make it available,
-   update `latest` to the approved version, then rerun the original release job.
-   It verifies the published integrity against the original tested archive and
+   update `latest` to the approved version. The **Finalize release** workflow
+   checks after successful beta CI runs and every 15 minutes. It selects the
+   original successful staging run, verifies its package and staging artifacts,
+   and checks the published integrity against the original tested archive. It
    requires npm tags `beta` and `latest` to point to that version before creating
-   its Git tag and GitHub prerelease. It does not stage or publish the package again.
+   its Git tag and GitHub prerelease. No CI rerun is required. The finalizer has
+   no npm/OIDC credentials and cannot stage or publish a package.
 
 PR runs and dispatches with `publish: false` cannot stage a package. Pushes with
 no releasable changes skip staging. Release jobs are serialized and not cancelled.
-Artifacts last seven days. A fresh workflow run is not a substitute for rerunning the original release job when
-recovering an already staged/published candidate.
+Artifacts last seven days. Recording must complete while the original package
+and staging artifacts are retained. A fresh CI build is not a substitute for
+the original tested candidate when recovering a staged/published version.
 
 ## Required setup
 
@@ -102,7 +105,8 @@ session:
 npm dist-tag add @ciqol/resenv@<approved-version> latest
 ```
 
-Rerun the original release job to record the release. Verify the npm version,
+The finalizer records the GitHub prerelease automatically after both tags match;
+allow roughly 15 minutes plus GitHub scheduling delays. Verify the npm version,
 `beta` and `latest` tags, archive integrity, provenance and GitHub
 prerelease. Never infer success from a staging receipt alone.
 
@@ -126,10 +130,18 @@ retrying an ambiguous outcome: a staged version reserves its version number.
 Do not attempt to stage it again while awaiting approval. Approve or reject the
 existing stage through npm. Rejection requires a reviewed replacement candidate.
 
-The original release job accepts an existing public version only if integrity
+The finalizer accepts an existing public version only if integrity
 matches its candidate. A conflicting archive, changed beta head or conflicting
 Git tag stops recovery. Keep the beta branch at the reviewed commit until the
 release is recorded. If its artifact expires, review recovery separately.
+While retained artifacts exist, manually dispatch **Finalize release** to retry
+recording without rebuilding or staging. Rerunning the original release job is
+also retained as a recovery option after public availability and tag promotion.
+
+This follow-up becomes active once its workflow is on `beta`. A candidate staged
+before that change still needs its original release job rerun once to record
+the release before merging the workflow change; keep the original beta head
+until that recovery finishes.
 
 Retain the `0.0.0-stage` placeholder until a functional beta is publicly
 available and verified.
@@ -154,6 +166,7 @@ or browser login. Standard Windows CLI discovery has injected coverage but no
 native Windows end-to-end verification. Commands require explicit opt-in.
 Dotenvx ciphertext is left unchanged. See [Security](../SECURITY.md).
 
-Sources: [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/),
+Sources: [GitHub workflow events and scheduling](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows),
+[npm trusted publishing](https://docs.npmjs.com/trusted-publishers/),
 [staged publishing](https://docs.npmjs.com/cli/v11/commands/npm-stage/),
 [semantic-release branching](https://semantic-release.org/foundation/workflow-configuration/).

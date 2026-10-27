@@ -18,8 +18,9 @@ publisher modules.
 
 Publish only through GitHub Actions, automatically after pushes to `beta` or an
 explicit publishing dispatch, after all candidate checks. Stage the tested
-archive through npm OIDC; maintainer npm approval publishes it, and rerunning
-the release job records the verified tag.
+archive through npm OIDC; maintainer npm approval publishes it. After the
+maintainer promotes `latest`, the scheduled finalizer records the verified tag
+and GitHub prerelease automatically from the original CI artifacts.
 Never publish from a developer machine or request local npm
 login. The user manages npm-side ownership and authentication. The OIDC path
 requires an existing package and a matching trusted publisher; do not assume it
@@ -100,7 +101,8 @@ checks plan a version and test the final archive; pushes to `beta` automatically
 stage releasable candidates. Manual dispatch retains an explicit publishing input.
 CI's push filter is `beta`.
 Stage with the `beta` npm dist-tag. After npm approval and public availability,
-the maintainer updates `latest` to that version before CI records the release.
+the maintainer updates `latest` to that version before the finalizer records the
+release. The finalizer has no npm/OIDC credentials and must never stage a package.
 
 README documents how application users install and use resenv. Contributor setup,
 tests, local linking and release preparation belong in CONTRIBUTING.md and docs/.

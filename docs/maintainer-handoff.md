@@ -33,7 +33,9 @@ credentials between sessions.
 | `rollup.config.mjs`, `scripts/build.mjs` | CJS implementation, ESM facades, types and manifest |
 | `scripts/release-plan.mjs` | Official release plugins and beta counter |
 | `scripts/publish.mjs` | Tested-archive staging and verified release recording |
+| `scripts/finalize-release.mjs` | Trusted staging-run discovery and recording after npm approval |
 | `.github/workflows/ci.yml` | Build once, archive matrix tests and automatic beta staging |
+| `.github/workflows/finalize-release.yml` | Scheduled GitHub release recording from original CI artifacts |
 
 Keep docs focused on current contracts, decisions and procedures. Put per-run
 test results, benchmarks, audit snapshots and session history in PRs or CI.

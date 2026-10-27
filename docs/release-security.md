@@ -52,9 +52,19 @@ selector or arbitrary URL input. Registry and signing services remain trusted
 inputs. These controls bound exposure; they do not patch the platform CLI.
 
 The publisher validates the staging receipt's package name, version and
-integrity. npm approval publishes the stage. A retry verifies the public
-archive's integrity and both npm tags before recording the Git tag/release.
-No tag is created for a pending stage.
+integrity. npm approval publishes the stage. The scheduled finalizer verifies
+the public archive's integrity and both npm tags before recording the Git
+tag/release. No tag is created for a pending stage.
+
+The finalizer checks after successful beta CI runs and every 15 minutes. It
+runs only trusted default-branch code in the existing `release` environment,
+with Actions read and contents write permissions, without OIDC or npm tokens.
+It selects only successful push/manual runs of `ci.yml` from this repository,
+at the current beta head, with retained package and staging artifacts. Artifacts
+are downloaded outside the checkout with digest checking; candidate contents
+are never executed. It verifies the archive, plan, staging receipt and registry
+integrity before recording. Its record-only path cannot invoke npm or restage.
+The same review expiry and release concurrency group still apply.
 
 ## Reviewing changes
 

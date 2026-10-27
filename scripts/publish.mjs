@@ -36,7 +36,7 @@ export function validateStageReceipt (output, plan) {
 }
 
 // Effects are injected so failure ordering and idempotent recovery can be tested.
-export async function publishRelease ({ plan, archive }, effects) {
+export async function publishRelease ({ plan, archive }, effects, { recordOnly = false } = {}) {
   assert.equal(plan.publish, true, 'No release was planned')
   const repository = await effects.github('GET', '')
   assert.equal(repository.private, false, 'Public source is required for provenance')
@@ -46,9 +46,11 @@ export async function publishRelease ({ plan, archive }, effects) {
   const metadata = await effects.registry()
   const published = metadata?.versions?.[plan.version]
   if (!published) {
+    if (recordOnly) return { pending: true, reason: 'Waiting for npm approval and public availability' }
     return effects.npm(archive, plan)
   }
   assert.equal(published?.dist?.integrity, plan.integrity, 'Registry archive differs from the tested candidate; refusing tag/release')
+  if (recordOnly && (metadata['dist-tags']?.beta !== plan.version || metadata['dist-tags']?.latest !== plan.version)) return { pending: true, reason: 'Waiting for npm beta and latest tags to match the approved candidate' }
   assert.deepEqual(metadata['dist-tags'], { beta: plan.version, latest: plan.version }, 'Registry channels must contain beta and latest pointing to the tested version; correct npm dist-tags before recording this release')
   const tagPath = `/git/ref/tags/${plan.gitTag}`
   const tag = await effects.github('GET', tagPath)
@@ -68,6 +70,23 @@ export async function publishRelease ({ plan, archive }, effects) {
   })
 }
 
+export async function githubRequest (method, suffix, body) {
+  const response = await fetch(`https://api.github.com/repos/ciqol/resenv${suffix}`, {
+    method, headers: { authorization: `Bearer ${process.env.GITHUB_TOKEN}`, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28', 'content-type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined, redirect: 'error', signal: AbortSignal.timeout(30000)
+  })
+  if (response.status === 404 && method === 'GET' && /^\/(git\/ref\/tags|releases\/tags)\//.test(suffix)) return null
+  assert.ok(response.ok, `GitHub ${method} ${suffix || 'repository'} failed (${response.status})`)
+  return response.json()
+}
+
+export async function registryMetadata () {
+  const response = await fetch('https://registry.npmjs.org/@ciqol%2fresenv', { redirect: 'error', signal: AbortSignal.timeout(30000) })
+  if (response.ok) return response.json()
+  assert.equal(response.status, 404, `Registry lookup failed (${response.status})`)
+  return null
+}
+
 async function main () {
   assert.equal(process.argv.length, 3, 'Usage: node scripts/publish.mjs <candidate-directory>')
   const policy = JSON.parse(readFileSync(new URL('../docs/security-exceptions.json', import.meta.url), 'utf8'))
@@ -78,21 +97,8 @@ async function main () {
     for (const name of ['user.npmrc', 'global.npmrc']) writeFileSync(join(temporary, name), '')
     const npmEnv = npmEnvironment(process.env, temporary)
     const effects = {
-      async github (method, suffix, body) {
-        const response = await fetch(`https://api.github.com/repos/ciqol/resenv${suffix}`, {
-          method, headers: { authorization: `Bearer ${process.env.GITHUB_TOKEN}`, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28', 'content-type': 'application/json' },
-          body: body ? JSON.stringify(body) : undefined, redirect: 'error', signal: AbortSignal.timeout(30000)
-        })
-        if (response.status === 404 && method === 'GET' && /^\/(git\/ref\/tags|releases\/tags)\//.test(suffix)) return null
-        assert.ok(response.ok, `GitHub ${method} ${suffix || 'repository'} failed (${response.status})`)
-        return response.json()
-      },
-      async registry () {
-        const response = await fetch('https://registry.npmjs.org/@ciqol%2fresenv', { redirect: 'error', signal: AbortSignal.timeout(30000) })
-        if (response.ok) return response.json()
-        assert.equal(response.status, 404, `Registry lookup failed (${response.status})`)
-        return null
-      },
+      github: githubRequest,
+      registry: registryMetadata,
       npm (archive, plan) {
         const version = spawnSync('npm', ['--version'], { env: npmEnv, encoding: 'utf8', timeout: 10000 })
         assert.equal(version.status, 0)
@@ -108,7 +114,7 @@ async function main () {
     const release = await publishRelease(candidate, effects)
     if (release.staged) {
       writeFileSync(join(resolve(process.argv[2]), 'stage.json'), `${JSON.stringify(release, null, 2)}\n`)
-      const message = `Staged @ciqol/resenv@${release.version} on beta.\n\nApprove with npm stage approve ${release.stageId}. After public availability, run npm dist-tag add @ciqol/resenv@${release.version} latest, then rerun this release job to verify publication and both npm tags before recording the release.\n`
+      const message = `Staged @ciqol/resenv@${release.version} on beta.\n\nApprove with npm stage approve ${release.stageId}. After public availability, run npm dist-tag add @ciqol/resenv@${release.version} latest. The Finalize release workflow checks every 15 minutes and records the verified GitHub prerelease automatically; no CI rerun is needed. Keep beta at this commit until recording completes.\n`
       console.log(message)
       if (process.env.GITHUB_STEP_SUMMARY) writeFileSync(process.env.GITHUB_STEP_SUMMARY, message, { flag: 'a' })
     } else console.log(`Published @ciqol/resenv@${candidate.plan.version} on beta; ${release.html_url}`)

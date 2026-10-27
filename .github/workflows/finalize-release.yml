@@ -1,0 +1,65 @@
+name: Finalize release
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: ['beta']
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  record:
+    if: vars.RELEASE_ENABLED == 'true' && github.ref == 'refs/heads/beta' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: release
+    concurrency:
+      group: resenv-npm-release
+      cancel-in-progress: false
+    permissions:
+      actions: read # Read the original successful CI run and its retained artifacts.
+      contents: write # Record the verified tag and GitHub prerelease after npm approval.
+    steps:
+      - uses: actions/checkout@v6.1.0
+        with:
+          ref: '${{ github.sha }}'
+          persist-credentials: false
+      - uses: actions/setup-node@v6.5.0
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+      - name: Find a trusted staging candidate
+        id: candidate
+        run: node scripts/finalize-release.mjs find
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
+      # Download as data outside the checkout; never execute candidate contents.
+      - uses: actions/download-artifact@v8.0.1
+        if: steps.candidate.outputs.run_id != ''
+        with:
+          name: 'resenv-package'
+          path: '${{ runner.temp }}/resenv-candidate'
+          run-id: '${{ steps.candidate.outputs.run_id }}'
+          github-token: '${{ github.token }}'
+          digest-mismatch: 'error'
+      - uses: actions/download-artifact@v8.0.1
+        if: steps.candidate.outputs.run_id != ''
+        with:
+          name: 'resenv-stage'
+          path: '${{ runner.temp }}/resenv-candidate'
+          run-id: '${{ steps.candidate.outputs.run_id }}'
+          github-token: '${{ github.token }}'
+          digest-mismatch: 'error'
+      - name: Record the approved release when npm is ready
+        if: steps.candidate.outputs.run_id != ''
+        run: node scripts/finalize-release.mjs record "$CANDIDATE_DIRECTORY"
+        env:
+          CANDIDATE_DIRECTORY: '${{ runner.temp }}/resenv-candidate'
+          SOURCE_RUN_ID: '${{ steps.candidate.outputs.run_id }}'
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}

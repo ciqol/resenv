@@ -18,6 +18,18 @@ function fixture () {
 }
 
 describe('publication ordering and recovery', () => {
+  it('waits for approval and tags in record-only mode without ever staging', async () => {
+    const { candidate, effects, published } = fixture()
+    expect((await publishRelease(candidate, effects, { recordOnly: true })).pending).toBe(true)
+    effects.registry.mockResolvedValue({ ...published, 'dist-tags': { beta: candidate.plan.version, latest: '0.1.0-beta.0' } })
+    expect((await publishRelease(candidate, effects, { recordOnly: true })).pending).toBe(true)
+    expect(effects.npm).not.toHaveBeenCalled()
+    expect(effects.github.mock.calls.every(([method]) => method === 'GET')).toBe(true)
+    effects.registry.mockResolvedValue(published)
+    await publishRelease(candidate, effects, { recordOnly: true })
+    expect(effects.npm).not.toHaveBeenCalled()
+    expect(effects.github).toHaveBeenCalledWith('POST', '/releases', expect.objectContaining({ tag_name: candidate.plan.gitTag }))
+  })
   it('stages the exact archive without recording a tag or public release', async () => {
     const { candidate, effects } = fixture()
     const result = await publishRelease(candidate, effects)
