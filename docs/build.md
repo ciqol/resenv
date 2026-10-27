@@ -124,8 +124,9 @@ is cancelled.
 The `smoke` matrix downloads that same archive and runs the installed-package and
 process checks on Linux Node 20 and 22 and macOS with the pinned Node version.
 It never rebuilds the package. The separate `coverage` job uploads the source
-report to GitHub without giving project scripts a write token. Fork PRs retain
-the local coverage gate and artifact but skip that upload.
+report to GitHub without giving project scripts a write token. Only
+same-repository PRs and `beta` runs upload reports. Fork PRs and manual runs on
+other branches retain the local coverage gate and artifact but skip the upload.
 
 The protected `release` job runs only for an explicitly enabled manual dispatch
 from `beta`, after `ci`, `smoke` and `coverage` pass. It consumes the tested

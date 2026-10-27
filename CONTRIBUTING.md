@@ -82,9 +82,10 @@ functions and lines. Worker and preload entry files stay in the denominator;
 the CLI is checked separately by process and packed-package tests. CI retains
 LCOV and Cobertura reports for seven days in the `resenv-coverage` artifact.
 The official `actions/upload-code-coverage` action uploads Cobertura in a separate
-job; fork PRs retain the local gate and reports but cannot upload. The main `ci`
-job groups audits, lint, types, coverage, build and packed-package/process checks
-on the pinned Node version. CLI lookup checks use injected helpers and temporary
+job for same-repository PRs and `beta` runs; other runs retain the local gate and
+report artifacts. The main `ci` job groups audits, lint, types, coverage, build
+and packed-package/process checks on the pinned Node version. CLI lookup checks
+use injected helpers and temporary
 dummy executables; they never access a developer credential store or
 authenticated provider session.
 The `smoke` matrix checks that same archive on Linux Node 20 and 22 and macOS

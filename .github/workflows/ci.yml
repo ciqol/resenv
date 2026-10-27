@@ -135,7 +135,8 @@ jobs:
 
   coverage:
     needs: 'ci'
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # GitHub accepts reports for same-repository PRs or the default branch.
+    if: (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || github.ref == 'refs/heads/beta'
     runs-on: 'ubuntu-24.04'
     timeout-minutes: 5
     permissions:
