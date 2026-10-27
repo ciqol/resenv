@@ -26,6 +26,14 @@ npm ci
 npm run verify
 ```
 
+The committed `.npmrc` omits automatically installed peer dependencies. The
+release planner calls the two official plugins directly, so their full engine
+peer and its publisher dependencies are intentionally not installed. Audit and
+planning enforce that absence. `npm ls` still reports the declared missing
+engine peers; standalone plugin behavior is covered directly by the release
+specs. Keep this install policy when refreshing the lockfile; do not use force
+or legacy peer resolution. See [the dependency review](docs/dependencies.md).
+
 `npm run verify` is the complete local check: lint, strict source/spec type
 checks, build, unit/process tests and installed-package checks. To build without
 running the checks, use `npm run build`.
@@ -66,8 +74,8 @@ npm run test:integration  # process checks, requires a build
 ```
 
 `npm test` runs unit and process tests. Mock or inject provider calls, credential
-helpers, browser launchers and process control in unit tests. Keep checks that
-spawn actual commands or temporary applications in `test/`. The unit coverage
+lookup and process control in unit tests. Keep checks that spawn actual commands
+or temporary applications in `test/`. The unit coverage
 report measures source and is separate from packed-package and process checks.
 `npm run verify` enforces a 90% global floor for source statements, branches,
 functions and lines. Worker and preload entry files stay in the denominator;
@@ -76,9 +84,9 @@ LCOV and Cobertura reports for seven days in the `resenv-coverage` artifact.
 The official `actions/upload-code-coverage` action uploads Cobertura in a separate
 job; fork PRs retain the local gate and reports but cannot upload. The main `ci`
 job groups audits, lint, types, coverage, build and packed-package/process checks
-on the pinned Node version. It also checks real Secret Service storage with dummy
-tokens in an isolated D-Bus session and temporary keyring, never a developer
-credential store.
+on the pinned Node version. CLI lookup checks use injected helpers and temporary
+dummy executables; they never access a developer credential store or
+authenticated provider session.
 The `smoke` matrix checks that same archive on Linux Node 20 and 22 and macOS
 with the pinned Node version; it does not build or rerun source unit specs.
 
@@ -142,22 +150,20 @@ local. Leave its manifest, lockfile and CI configuration unchanged.
 
 Rebuild resenv after source, metadata or documentation changes and restart the
 application. An application `npm ci` can remove the link; recreate it when needed.
-If you only created the package link, run its CLI directly:
+Authenticate with the official Doppler CLI from the application's directory:
 
 ```sh
-node node_modules/@ciqol/resenv/bin/resenv.cjs login doppler
+doppler login
 ```
 
-For login from the resenv checkout, use
-`node dist/bin/resenv.cjs login doppler`. Real login is a manual integration
-check; automated tests must use injected or mocked credentials.
+resenv reuses that login at runtime. Automated tests use injected or mocked
+credentials; real login is a manual integration check owned by Doppler's CLI.
 
 ## Optional integration checks
 
 `npm run bench` measures fresh-process startup, a plain 200-variable environment,
 and a mocked provider with eight distinct lookups. It needs a build first and
 does not contact a provider. Timings are observations, not CI pass/fail thresholds.
-See [the review](docs/security-performance-review.md) for the recorded comparison.
 
 With an existing Nx installation:
 
@@ -183,7 +189,8 @@ enable that option; the CLI passes the returned copy to its child process.
 
 Add regression tests for changed behavior and avoid real provider calls. Use
 Conventional Commit subjects, for example `fix(resolver): preserve empty values`.
-Dependency changes require an updated [review record](docs/dependencies.md).
+Review dependency changes under the [dependency policy](docs/dependencies.md)
+and put the evidence in the PR. Update the guide when a lasting choice changes.
 
 CODEOWNERS identifies the maintainer. Keep bug reports and pull requests focused
 on observable behavior and include the checks run. Weekly dependency updates are
@@ -192,6 +199,8 @@ grouped, with major version updates reviewed separately; bots cannot merge them.
 Keep the README focused on installation, authentication, application integration,
 API behavior and troubleshooting. Put contributor tooling, test commands and
 local development instructions here; detailed internals belong in `docs/`.
+Keep docs current rather than appending session logs, dated audit reports or
+test transcripts. Record run results in PRs and CI.
 
 Security reports follow [SECURITY.md](SECURITY.md). Publication and repository
 visibility changes require a separate maintainer decision; see the

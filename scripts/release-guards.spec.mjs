@@ -1,11 +1,26 @@
 import { describe, expect, it } from 'vitest'
 import { spawnSync } from 'node:child_process'
-import { checkAudit } from './release-guards.mjs'
+import { assertReleaseToolIsolation, checkAudit } from './release-guards.mjs'
 
 const url = 'https://github.com/advisories/GHSA-dummy'
 const fixture = () => ({
   report: { metadata: {}, vulnerabilities: { sample: { severity: 'high', via: [{ url, name: 'sample', severity: 'high' }], nodes: ['node_modules/sample'] } } },
   options: { now: Date.parse('2026-10-10'), policy: { expires: '2026-11-09', exceptions: [{ advisory: url, package: 'sample', nodes: ['node_modules/sample'], versions: ['1.0.0'] }] }, lock: { packages: { 'node_modules/sample': { dev: true, version: '1.0.0' } } } }
+})
+
+describe('standalone plugin installation', () => {
+  const absent = () => { throw Object.assign(new Error('Dummy missing module'), { code: 'MODULE_NOT_FOUND' }) }
+  it('accepts missing engine and publishing dependencies', () => {
+    expect(() => assertReleaseToolIsolation([absent])).not.toThrow()
+  })
+  it.each(['semantic-release', '@semantic-release/npm', '@semantic-release/github', 'npm'])('rejects an installed %s from any plugin resolver', installed => {
+    const resolve = name => name === installed ? '/dummy/package.js' : absent()
+    expect(() => assertReleaseToolIsolation([absent, resolve])).toThrow(/must not be installed/)
+  })
+  it('does not mistake other resolver errors for an absent tool', () => {
+    const resolve = () => { throw Object.assign(new Error('Dummy resolution error'), { code: 'ERR_PACKAGE_PATH_NOT_EXPORTED' }) }
+    expect(() => assertReleaseToolIsolation([resolve])).toThrow()
+  })
 })
 
 describe('bounded development audit review', () => {
@@ -34,7 +49,7 @@ it('blocks unused publishing modules and braces, while real adversarial commit a
     const require = createRequire(import.meta.url);
     assert.throws(() => require('braces')('a{b,c}'), /must not execute braces/);
     assert.throws(() => require('braces').parse('a{b,c}'), /must not execute braces/);
-    for (const name of ['@semantic-release/npm', '@semantic-release/github']) {
+    for (const name of ['semantic-release', '@semantic-release/npm', '@semantic-release/github', 'npm']) {
       await assert.rejects(import(name), /must not load/);
     }
     const { analyzeCommits } = await import('@semantic-release/commit-analyzer');

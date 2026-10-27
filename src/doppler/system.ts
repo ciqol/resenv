@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process'
 import type { SpawnSyncOptionsWithStringEncoding, SpawnSyncReturns } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { userInfo } from 'node:os'
+import { join, win32 } from 'node:path'
 import { ResenvError } from '../errors.js'
 import { assertSafeDiagnostics } from '../assert-safe-diagnostics.js'
 import type { Environment } from '../types.js'
@@ -14,93 +15,49 @@ export type SyncRunner = (file: string, args: readonly string[], options: SyncOp
 
 type SystemOptions = {
   readonly platform?: NodeJS.Platform
+  readonly home?: string
   readonly run?: SyncRunner
   readonly exists?: typeof existsSync
 }
 
 export type CredentialSystem = ReturnType<typeof createSystem>
 
-// Preserve saved logins from before the package rename.
-const SERVICE = 'ciqol.envref.doppler'
-const ACCOUNT = 'default'
-
-// Do not pass application secrets, NODE_OPTIONS, loader variables or a
-// repository's PATH to credential helpers. No helper is invoked via a shell.
-function helperEnvironment (): Environment {
-  const env: Environment = { HOME: userInfo().homedir, PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' }
-  for (const key of ['SystemRoot', 'USERPROFILE', 'DBUS_SESSION_BUS_ADDRESS', 'XDG_RUNTIME_DIR', 'DISPLAY', 'WAYLAND_DISPLAY']) {
+// Do not pass application secrets, loader variables or a repository's PATH to
+// the worker or CLI. Keep only the OS session needed by Doppler's own storage.
+function helperEnvironment ({ platform = process.platform, home = userInfo().homedir }: Pick<SystemOptions, 'platform' | 'home'> = {}): Environment {
+  const env: Environment = { HOME: home, PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' }
+  for (const key of ['SystemRoot', 'DBUS_SESSION_BUS_ADDRESS', 'XDG_RUNTIME_DIR', 'DISPLAY', 'WAYLAND_DISPLAY']) {
     if (process.env[key]) env[key] = process.env[key]
+  }
+  if (platform === 'win32') {
+    env.USERPROFILE = home
+    env.APPDATA = win32.join(home, 'AppData', 'Roaming')
+    env.LOCALAPPDATA = win32.join(home, 'AppData', 'Local')
+    env.PATH = win32.join(process.env.SystemRoot || 'C:\\Windows', 'System32')
   }
   return env
 }
 
-function createSystem ({ platform = process.platform, run = spawnSync, exists = existsSync }: SystemOptions = {}) {
-  const invoke = (file: string, args: readonly string[], options: Pick<SpawnSyncOptionsWithStringEncoding, 'input' | 'stdio' | 'timeout'> = {}) => {
-    assertSafeDiagnostics()
-
-    return run(file, args, {
-      env: helperEnvironment(), encoding: 'utf8', timeout: 15000,
-      maxBuffer: 16384, stdio: ['pipe', 'pipe', 'pipe'], shell: false, ...options
-    })
-  }
-  const mac = platform === 'darwin' && exists('/usr/bin/security')
-  const linux = platform === 'linux' && exists('/usr/bin/secret-tool')
-  const cli = ['/opt/homebrew/bin/doppler', '/usr/local/bin/doppler', '/usr/bin/doppler'].find(exists)
-  const unavailable = () => new ResenvError('DOPPLER_KEYRING_UNAVAILABLE', 'The OS credential store is unavailable. Use the Doppler CLI or supply DOPPLER_TOKEN.')
-
-  function read () {
-    if (!mac && !linux) return undefined
-    const result = mac
-      ? invoke('/usr/bin/security', ['find-generic-password', '-s', SERVICE, '-a', ACCOUNT, '-w'])
-      : invoke('/usr/bin/secret-tool', ['lookup', 'service', SERVICE, 'account', ACCOUNT])
-    if (!result.error && result.status === 0) return validateToken(result.stdout.trim())
-    if (!result.error && ((mac && result.status === 44) || (linux && result.status === 1 && !result.stderr))) return undefined
-    throw unavailable()
-  }
-
-  function write (token: string): void {
-    validateToken(token)
-    if (!mac && !linux) throw unavailable()
-    // security's interactive interpreter receives the token on stdin, never
-    // the OS process argument list. The token alphabet excludes separators.
-    const result = mac
-      ? invoke('/usr/bin/security', ['-i'], { input: `add-generic-password -U -s ${SERVICE} -a ${ACCOUNT} -w ${token}\n` })
-      : invoke('/usr/bin/secret-tool', ['store', '--label=resenv Doppler', 'service', SERVICE, 'account', ACCOUNT], { input: token })
-    if (result.error || result.status !== 0) throw unavailable()
-    // security -i may report a subcommand failure with a zero process status.
-    if (read() !== token) throw unavailable()
-  }
-
-  function remove () {
-    if (!mac && !linux) throw unavailable()
-    const result = mac
-      ? invoke('/usr/bin/security', ['delete-generic-password', '-s', SERVICE, '-a', ACCOUNT])
-      : invoke('/usr/bin/secret-tool', ['clear', 'service', SERVICE, 'account', ACCOUNT])
-    if (result.error || (result.status !== 0 && !(mac && result.status === 44))) throw unavailable()
-  }
+function createSystem ({ platform = process.platform, home = userInfo().homedir, run = spawnSync, exists = existsSync }: SystemOptions = {}) {
+  // Use standard installation locations so npm's repository-local PATH cannot
+  // substitute a credential helper. Windows locations cover WinGet and Scoop.
+  const paths = platform === 'win32'
+    ? [win32.join(home, 'AppData', 'Local', 'Microsoft', 'WinGet', 'Links', 'doppler.exe'), win32.join(home, 'scoop', 'apps', 'doppler', 'current', 'doppler.exe')]
+    : ['/opt/homebrew/bin/doppler', '/usr/local/bin/doppler', '/usr/bin/doppler', join(home, '.local', 'bin', 'doppler'), join(home, 'bin', 'doppler')]
 
   function cliToken () {
-    if (!cli) return undefined
-    const result = invoke(cli, ['configure', 'get', 'token', '--plain'])
+    assertSafeDiagnostics()
+    const cli = paths.find(exists)
+    if (!cli) throw new ResenvError('DOPPLER_CLI_UNAVAILABLE', 'Install the Doppler CLI in a standard location and run doppler login, or supply DOPPLER_TOKEN. See https://docs.doppler.com/docs/cli.')
+    const result = run(cli, ['configure', 'get', 'token', '--plain', '--no-check-version', '--no-read-env'], {
+      env: helperEnvironment({ platform, home }), encoding: 'utf8', timeout: 15000,
+      maxBuffer: 16384, stdio: ['pipe', 'pipe', 'pipe'], shell: false
+    })
     if (result.error || result.status !== 0 || !result.stdout.trim()) return undefined
     return validateToken(result.stdout.trim())
   }
 
-  function cliLogin () {
-    if (!cli) throw new ResenvError('DOPPLER_CLI_UNAVAILABLE', 'Doppler CLI fallback is unavailable. Install Doppler or supply DOPPLER_TOKEN.')
-    const result = invoke(cli, ['login'], { stdio: 'inherit', timeout: 300000 })
-    if (result.error || result.status !== 0) throw new ResenvError('DOPPLER_LOGIN_FAILED', 'Doppler CLI login did not complete.')
-    if (!cliToken()) throw new ResenvError('DOPPLER_LOGIN_FAILED', 'Doppler CLI login did not provide a credential.')
-  }
-
-  function openBrowser (url: string): boolean {
-    const file = mac ? '/usr/bin/open' : '/usr/bin/xdg-open'
-    if (!exists(file)) return false
-    const result = invoke(file, [url])
-    return !result.error && result.status === 0
-  }
-
-  return { read, write, remove, cliToken, cliLogin, openBrowser, canStore: mac || linux }
+  return { cliToken }
 }
 
 export { createSystem, helperEnvironment }

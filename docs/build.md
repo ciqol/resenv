@@ -71,7 +71,7 @@ Public options use type aliases and readonly properties. `Environment` stays
 mutable for optional in-place replacement. `resolve()` always returns a new
 `Environment`, with input replacement enabled only by `{ replace: true }`. It
 does not preserve a generic input type: resolved strings cannot retain a
-literal reference type. This intentionally tightens the unpublished API.
+literal reference type.
 ESLint uses type information and enforces the selected style rules. The compiler
 checks all library/CLI source, colocated unit specs and both consumer formats with `strict` and
 `noUncheckedIndexedAccess`. Provider responses and parsed worker input start as
@@ -92,9 +92,9 @@ and docs are copied into the distribution and included in the archive.
 
 Ordinary local builds retain `private: true`. The CI build accepts a validated
 release plan and sets its computed version, removing `private` before the final
-archive is packed and tested. The development root stays private. Earlier
-builds kept both manifests private while the package was an unpublished
-prototype. There is no publishing workflow.
+archive is packed and tested. The development root stays private. Only the
+manual release workflow stages that tested archive for npm approval; see
+[releasing](releasing.md).
 
 `npm run pack:local` packs the generated directory. `npm run test:package`
 instead packs into a temporary directory and installs it offline into a clean
@@ -117,7 +117,7 @@ consumer artifact is rebuilt in place by these tests.
 The main `ci` job installs the locked dependencies, checks advisories and registry
 signatures, runs lint, type checks and source coverage, then plans, builds and packs
 one candidate. It tests the packed package and processes on the pinned Node
-version and checks the native Linux keyring before uploading the archive.
+version before uploading the archive.
 Coverage reports are retained even when the coverage gate fails, unless the run
 is cancelled.
 
@@ -141,7 +141,6 @@ Official GitHub actions use exact release tags under the repository's reviewed
 publisher exception; other remote actions require full commit SHAs. Installs use
 normal npm lifecycle behavior, and dependency updates require an install-hook
 review. Build commands run explicitly.
-See the [maturity evaluation](maturity.md) for the static catalog results.
 
 Adopting this layout requires a coordinated update to `beta`'s required checks:
 replace `build` with `ci`, replace the three remaining `test (...)` contexts
