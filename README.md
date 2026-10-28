@@ -23,6 +23,8 @@ resenv, and dotenv files are never rewritten.
 Requires Node.js 20 or later. This is an experimental beta, published on npm's
 `beta` channel.
 
+Background: [A new Git worktree shouldn't mean another copy of your secrets](https://dev.to/titanron/a-new-git-worktree-shouldnt-mean-another-copy-of-your-secrets-424).
+
 ## Install
 
 Install the beta in your application project:
