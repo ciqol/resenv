@@ -114,21 +114,25 @@ consumer artifact is rebuilt in place by these tests.
 
 ## CI
 
-The `build` job uses normal npm lifecycle behavior, checks dependency advisories and
-signatures, runs typed lint, implementation/spec checks and Vitest source coverage,
-builds once and uploads the packed
-archive. The `test` matrix downloads that artifact, verifies the installed
-package, extracts the same build
-for the process tests, and never recompiles it. The matrix checks Node 20
-and 22 on Linux plus the `.nvmrc` version on Linux and macOS.
+The main `ci` job installs the locked dependencies, checks advisories and registry
+signatures, runs lint, type checks and source coverage, then plans, builds and packs
+one candidate. It tests the packed package and processes on the pinned Node
+version before uploading the archive.
+Coverage reports are retained even when the coverage gate fails, unless the run
+is cancelled.
 
-Build and test jobs have read-only repository permissions and receive no application or
-registry secrets. Missing artifacts and digest mismatches fail the run. The
-archive is retained for seven days for maintainer review. A separate release
-job runs automatically for pushes to `beta` with releasable changes, or an explicit
-publishing dispatch on `beta`. It requires the protected `release` environment and
-all candidate checks. Hosted results must be observed before treating the workflow definition
-as a passing CI run.
+The `smoke` matrix downloads that same archive and runs the installed-package and
+process checks on Linux Node 20 and 22 and macOS with the pinned Node version.
+It never rebuilds the package. The separate `coverage` job uploads the source
+report to GitHub without giving project scripts a write token. Only
+same-repository PRs and `beta` runs upload reports. Fork PRs and manual runs on
+other branches retain the local coverage gate and artifact but skip the upload.
+
+The protected `release` job runs automatically for releasable pushes to `beta`
+or an explicit publishing dispatch from `beta`, after `ci`, `smoke` and
+`coverage` pass and when releases are enabled. It consumes the tested
+archive, installs no project dependencies and stages through npm OIDC. See
+[releasing](releasing.md) for approval and recovery.
 
 `finalize-release.yml` checks completed trusted beta CI runs and polls every
 15 minutes for npm publication and matching `beta`/`latest` tags. It downloads
@@ -136,7 +140,19 @@ the original staging receipt and tested archive, verifies their producer and
 integrity, and records the GitHub prerelease without rebuilding or running npm.
 It shares release serialization and uses the existing protected environment.
 
-Official `actions/*` and `github/*` actions use exact release tags under the
-repository's GitHub publisher trust policy. Other remote actions require full
-commit SHAs. Installs use normal npm lifecycle behavior, and dependency updates
-require an install-hook review. Build commands run explicitly.
+Validation jobs have read-only repository permissions and receive no application
+or registry secrets. Missing artifacts and digest mismatches fail the run.
+Archives and coverage reports are retained for seven days. Hosted results must
+be observed before treating a workflow definition as a passing CI run.
+
+Official GitHub actions use exact release tags under the repository's reviewed
+publisher exception; other remote actions require full commit SHAs. Installs use
+normal npm lifecycle behavior, and dependency updates require an install-hook
+review. Build commands run explicitly.
+
+Adopting this layout requires a coordinated update to `beta`'s required checks:
+replace `build` with `ci`, replace the three remaining `test (...)` contexts
+with `smoke (...)`, and remove `test (ubuntu-24.04)` because its checks now run
+inside `ci`. Keep `coverage` and `Analyze (javascript-typescript)` required.
+The workflow change does not apply repository settings; that migration needs
+maintainer approval and a retained ruleset snapshot for rollback.

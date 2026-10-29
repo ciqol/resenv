@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { runInNewContext } from 'node:vm'
 import { npmEnvironment, publishRelease, validatePublisher, validateStageReceipt } from './publish.mjs'
 
 function fixture () {
@@ -18,6 +20,26 @@ function fixture () {
 }
 
 describe('publication ordering and recovery', () => {
+  it('gates staging on trusted beta events and the consolidated CI outputs', () => {
+    const workflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8')
+    const condition = workflow.match(/^    if: (vars.RELEASE_ENABLED.+)$/m)[1]
+    const approved = workflow.match(/RELEASE_APPROVED:.*\$\{\{ (.*?) \}\}/)[1]
+    for (const event of ['push', 'workflow_dispatch', 'pull_request', 'pull_request_target', 'workflow_run', 'schedule']) {
+      for (const ref of ['refs/heads/beta', 'refs/heads/main', 'refs/heads/titan/test', 'refs/tags/v0.1.0-beta.1']) {
+        for (const enabled of ['true', 'false']) {
+          for (const publish of [true, false, undefined]) {
+            for (const candidate of ['true', 'false']) {
+              const context = { vars: { RELEASE_ENABLED: enabled }, github: { event_name: event, ref }, inputs: { publish }, needs: { ci: { outputs: { publish: candidate } } } }
+              const expected = enabled === 'true' && ref === 'refs/heads/beta' && candidate === 'true' && (event === 'push' || (event === 'workflow_dispatch' && publish === true))
+              const actual = Boolean(runInNewContext(condition, context))
+              expect(actual).toBe(expected)
+              if (actual) expect(runInNewContext(approved, context)).toBe(true)
+            }
+          }
+        }
+      }
+    }
+  })
   it('waits for approval and tags in record-only mode without ever staging', async () => {
     const { candidate, effects, published } = fixture()
     expect((await publishRelease(candidate, effects, { recordOnly: true })).pending).toBe(true)

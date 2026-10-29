@@ -25,18 +25,22 @@ Never edit a generated manifest or overwrite a previously shared archive.
 
 The [CI workflow](https://github.com/ciqol/resenv/blob/beta/.github/workflows/ci.yml) builds one archive:
 
-1. **Build:** normal npm installation, runtime/development audits, registry
+1. **CI:** normal npm installation, runtime/development audits, registry
    signatures, lint, strict types and colocated Vitest specs. The read-only
    planner generates the beta version and notes from Git history. Rollup builds
-   it once; npm packs it and records SHA-256 and SHA-512 integrity.
-2. **Consumers:** Linux Node 20, 22 and the pinned Node 24, plus macOS Node 24,
-   install and test the same archive. Checks cover ESM, CJS, types, preloads,
-   CLI, literal secret output and failure boundaries. Nothing is rebuilt.
+   it once; npm packs it and records SHA-256 and SHA-512 integrity. This same
+   job checks the packed package and processes on the pinned Node 24 runtime.
+2. **Compatibility and coverage:** the `smoke` matrix checks the same archive
+   on Linux Node 20 and 22 and macOS Node 24. Checks cover ESM, CJS, types,
+   preloads, CLI, literal secret output and failure boundaries. Nothing is
+   rebuilt. The separate `coverage` job reports source coverage without sharing
+   its write token with project scripts.
 3. **Release:** pushes to `beta`, including merged PRs, automatically stage a
-   releasable candidate after every check passes. A manual dispatch from `beta`
-   with `publish: true` can also stage or recover a release. The protected job
-   verifies hashes, workflow identity and the current branch head. It installs
-   no project dependencies and runs no package code. `npm stage publish` submits the exact archive through OIDC with
+   releasable candidate after `ci`, `smoke` and `coverage` pass. A manual dispatch
+   from `beta` with `publish: true` can also stage or recover a release. The
+   protected job verifies hashes, workflow identity and the current branch head.
+   It installs no project dependencies and runs no package code.
+   `npm stage publish` submits the exact archive through OIDC with
    provenance and the explicit `beta` tag. The job validates and saves npm's
    staging receipt; no Git tag or GitHub release is created yet.
 4. **Approval and recording:** the maintainer reviews and approves the staged
