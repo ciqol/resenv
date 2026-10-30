@@ -1,12 +1,12 @@
 {
   "name": "@ciqol/resenv",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0",
   "private": true,
   "description": "Replace environment references with their resolved values at application startup",
   "license": "MIT",
   "publishConfig": {
     "access": "public",
-    "tag": "beta",
+    "tag": "latest",
     "registry": "https://registry.npmjs.org/"
   },
   "repository": {
@@ -76,7 +76,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "audit": "npm audit --omit=dev --audit-level=high && node scripts/audit.mjs",
+    "audit": "node scripts/patch-npm.mjs --check && npm audit --audit-level=moderate",
     "build": "node scripts/build.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -91,21 +91,33 @@
     "test:nx": "node test/nx-interop.mjs",
     "verify": "npm run lint && npm run typecheck && npm run build && npm run test:coverage && npm run test:integration && npm run test:package",
     "release:check": "npm run verify && npm pack ./dist --dry-run",
-    "pack:local": "npm pack ./dist"
+    "pack:local": "npm pack ./dist",
+    "release": "semantic-release",
+    "postinstall": "node scripts/patch-npm.mjs"
   },
   "dependencies": {},
   "devDependencies": {
     "@rollup/plugin-typescript": "12.3.0",
     "@semantic-release/commit-analyzer": "13.0.1",
+    "@semantic-release/github": "12.0.10",
+    "@semantic-release/npm": "13.2.0",
     "@semantic-release/release-notes-generator": "14.1.1",
     "@types/node": "24.19.1",
     "@vitest/coverage-v8": "4.1.12",
     "eslint": "10.12.0",
+    "npm-ip-address-patch": "npm:ip-address@10.7.5",
+    "npm-undici-patch": "npm:undici@6.29.1",
     "rollup": "4.63.5",
+    "semantic-release": "25.0.9",
     "tslib": "2.8.1",
     "typescript": "6.0.3",
     "typescript-eslint": "8.71.1",
     "vitest": "4.1.12"
   },
-  "type": "module"
+  "type": "module",
+  "overrides": {
+    "@semantic-release/npm": {
+      "npm": "11.21.1"
+    }
+  }
 }

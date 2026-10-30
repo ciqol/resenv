@@ -20,21 +20,21 @@ Resolution happens once at startup. It does not watch the provider for changes;
 restart the application to fetch updated values. No filename is passed to
 resenv, and dotenv files are never rewritten.
 
-Requires Node.js 20 or later. This is an experimental beta, published on npm's
-`beta` channel.
+Requires Node.js 20 or later. The package is experimental and remains in initial
+development; its API may change between 0.x releases.
 
 Background: [A new Git worktree shouldn't mean another copy of your secrets](https://dev.to/titanron/a-new-git-worktree-shouldnt-mean-another-copy-of-your-secrets-424).
 
 ## Install
 
-Install the beta in your application project:
+Install in your application project:
 
 ```sh
-npm install --save-exact @ciqol/resenv@beta
+npm install --save-exact @ciqol/resenv
 ```
 
-This records the selected beta version in your project's manifest and lockfile.
-The `latest` tag points to the same beta; omitting `@beta` installs it too.
+This records the version selected by npm's `latest` tag in your project's
+manifest and lockfile.
 
 The CLI examples below use `npx --no-install` to run the copy installed in your
 project. In an npm script, use `resenv` directly.
