@@ -28,9 +28,8 @@ it('plans the first release, no change, and the next beta from real history with
     expect(first.publish).toBe(true)
     expect(first.channel).toBe('beta')
     expect(first.version).toBe('0.1.0-beta.1')
-    expect(calculate('reserved', { schema: 1, reserved: 3, pending: false }).version).toBe('0.1.0-beta.4')
-    expect(calculate('pending', { schema: 1, reserved: 3, pending: true }).publish).toBe(false)
-    expect(() => calculate('invalid-reservation', { schema: 1, reserved: -1, pending: false })).toThrow()
+    expect(calculate('reserved', ['v0.1.0-beta.2', '0.1.0-beta.3']).version).toBe('0.1.0-beta.4')
+    expect(() => calculate('invalid-reservation', { invalid: true })).toThrow()
     expect(run('git', ['tag'])).toBe('v1.0.0')
     // Tags exist only in this disposable fixture; no synthetic commits or identities.
     run('git', ['tag', first.gitTag])

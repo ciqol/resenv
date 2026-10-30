@@ -9,12 +9,12 @@ changing resenv itself and verifying those changes.
 Releases start at `0.1.0-beta.1` on the sole branch `beta`, using npm tags
 `beta` and `latest` for the same tested version. Semantic-release's official
 commit-analysis and release-notes plugins select releasable changes and generate
-notes; actual beta tags supply the next
+notes; beta tags, preserved drafts and public npm versions bound the next
 prerelease counter. The root and ordinary local builds remain private prototypes.
 CI generates the publishable manifest before packing and testing it, then stages
 the exact archive through npm OIDC for maintainer approval. A private draft
-retains the tested candidate and version reservation; merges can continue while
-approval is pending, and recording uses the original commit and archive. See
+retains the tested candidate; after npm approval the maintainer runs the same
+workflow with `finalize` and the version to record its original commit. See
 [releasing](docs/releasing.md) and the bounded [release-tool review](docs/release-security.md).
 The source uses the [MIT license](LICENSE), copyright ciqol contributors.
 

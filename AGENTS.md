@@ -10,21 +10,20 @@ release version before packing,
 using semantic-release's official commit-analysis and release-notes plugins.
 The release branch is `beta`; npm tags `beta` and `latest` point to the same tested
 beta release. The first version is
-`0.1.0-beta.1`; real release tags, durable draft reservations and public npm
+`0.1.0-beta.1`; real release tags, preserved draft versions and public npm
 versions bound subsequent counters. The full
 semantic-release engine is not installed or used while there is no stable
 release branch. Keep `.npmrc` peer omission enabled; the official plugins are
 called standalone, and audit/planning enforce absence of the unused engine and
 publisher modules.
 
-Publish only through GitHub Actions, automatically after pushes to `beta` or an
-explicit publishing dispatch, after all candidate checks. Stage the tested
-archive through npm OIDC; maintainer npm approval publishes it. A private draft
-reserves the version and retains the original source, CI evidence and tested
-archive before staging. The finalizer records the verified tag and GitHub
-prerelease automatically after public availability, independent of channel
-promotion or whether beta has advanced. Only one candidate may be pending;
-merges continue and accumulated changes are tested/staged after completion.
+Publish only through GitHub Actions, automatically after releasable pushes to
+`beta` or a manual `release` action, after all candidate checks. Preserve the
+exact tested archive and plan in a private draft before staging through npm
+OIDC. The maintainer approves in npm, promotes `latest`, then runs the same CI
+workflow's manual `finalize` action for that version. Finalize verifies the
+public archive and records its original commit even after beta advances.
+Keep this flow explicit: no scheduled polling, queue or lifecycle controller.
 Never publish from a developer machine or request local npm
 login. The user manages npm-side ownership and authentication. The OIDC path
 requires an existing package and a matching trusted publisher; do not assume it
@@ -102,15 +101,16 @@ Source unit specs run before the CI build; matrix jobs run only higher-level
 tests against that archive and never recompile the source.
 Use `npm run release:check` for non-publishing local verification. Hosted
 checks plan a version and test the final archive; pushes to `beta` automatically
-stage releasable candidates. Manual dispatch retains an explicit publishing input.
+stage releasable candidates. Manual dispatch selects `check`, `release` or
+`finalize`; `check` is the default.
 CI's push filter is `beta`.
 Stage with the `beta` npm dist-tag. After npm approval and public availability,
-the maintainer updates `latest` to that version. Channel promotion does not
-block immutable GitHub release recording. The finalizer has no npm/OIDC
-credentials and must never stage a package. It follows durable managed draft
-records and verifies original source ancestry and CI evidence; Actions artifact
-retention and current branch-head equality are not release-completion gates.
-Rejected versions stay reserved, and ambiguous staging calls must never repeat.
+the maintainer updates `latest` to that version. Manual Finalize records the
+preserved candidate; channel pointers do not gate immutable release recording.
+It has no npm/OIDC credentials and never stages or rebuilds a package. Keep
+failed/rejected drafts to reserve their versions. An ambiguous stage attempt
+must be inspected in npm, never blindly retried; use a fresh checked version
+when replacing a failed or rejected candidate.
 
 README documents how application users install and use resenv. Contributor setup,
 tests, local linking and release preparation belong in CONTRIBUTING.md and docs/.

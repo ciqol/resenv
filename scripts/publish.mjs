@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { resumeCandidate, stageCandidate } from './release-lifecycle.mjs'
+import { stageRelease } from './release-candidate.mjs'
 import { githubRequest, registryMetadata, listReleases, uploadAsset, downloadAsset } from './release-services.mjs'
 
 export function validatePublisher (env, expires, now = Date.now()) {
@@ -17,14 +17,8 @@ export function validatePublisher (env, expires, now = Date.now()) {
   assert.equal(env.RELEASE_APPROVED, 'true')
   assert.equal(env.RELEASE_ENABLED, 'true')
   assert.match(env.GITHUB_SHA ?? '', /^[a-f0-9]{40}$/)
-  for (const key of ['GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT']) assert.match(env[key] ?? '', /^[1-9]\d*$/)
   for (const key of ['GITHUB_TOKEN', 'ACTIONS_ID_TOKEN_REQUEST_URL', 'ACTIONS_ID_TOKEN_REQUEST_TOKEN']) assert.ok(env[key], `Missing ${key}`)
-  if (env.RELEASE_RESUME === 'true') {
-    assert.equal(env.GITHUB_EVENT_NAME, 'workflow_dispatch')
-    assert.match(env.RESUME_VERSION ?? '', /^0\.1\.0-beta\.[1-9]\d*$/)
-  } else {
-    for (const key of ['PLAN_SHA256', 'ARCHIVE_SHA256']) assert.match(env[key] ?? '', /^[a-f0-9]{64}$/)
-  }
+  for (const key of ['PLAN_SHA256', 'ARCHIVE_SHA256']) assert.match(env[key] ?? '', /^[a-f0-9]{64}$/)
 }
 
 export function npmEnvironment (env, directory) {
@@ -43,11 +37,10 @@ export function validateStageReceipt (output, plan) {
 }
 
 async function main () {
-  const resuming = process.env.RELEASE_RESUME === 'true'
-  assert.equal(process.argv.length, resuming ? 2 : 3, 'Usage: node scripts/publish.mjs [candidate-directory]')
+  assert.equal(process.argv.length, 3, 'Usage: node scripts/publish.mjs <candidate-directory>')
   const policy = JSON.parse(readFileSync(new URL('../docs/security-exceptions.json', import.meta.url), 'utf8'))
   validatePublisher(process.env, policy.expires)
-  const identity = { head: process.env.GITHUB_SHA, planHash: process.env.PLAN_SHA256, archiveHash: process.env.ARCHIVE_SHA256, runId: Number(process.env.GITHUB_RUN_ID), runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT) }
+  const identity = { head: process.env.GITHUB_SHA, planHash: process.env.PLAN_SHA256, archiveHash: process.env.ARCHIVE_SHA256 }
   const temporary = mkdtempSync(join(tmpdir(), 'resenv-publish-'))
   try {
     for (const name of ['user.npmrc', 'global.npmrc']) writeFileSync(join(temporary, name), '')
@@ -70,14 +63,12 @@ async function main () {
         return validateStageReceipt(result.stdout, plan)
       }
     }
-    const directory = resuming ? temporary : resolve(process.argv[2])
-    const release = resuming ? await resumeCandidate(process.env.RESUME_VERSION, directory, effects) : await stageCandidate(directory, identity, effects)
-    if (release.staged) {
-      writeFileSync(join(directory, 'stage.json'), `${JSON.stringify(release, null, 2)}\n`)
-      const message = `Staged @ciqol/resenv@${release.version} on beta.\n\nApprove with npm stage approve ${release.stageId}. After public availability, run npm dist-tag add @ciqol/resenv@${release.version} latest. The durable draft release retains the original tested candidate. GitHub recording follows npm publication automatically, even after beta advances. Promote latest separately after publication; it does not block recording.\n`
-      console.log(message)
-      if (process.env.GITHUB_STEP_SUMMARY) writeFileSync(process.env.GITHUB_STEP_SUMMARY, message, { flag: 'a' })
-    } else console.log(`Release lifecycle state: ${release.state}. Existing reservations are preserved; no package was restaged.`)
+    const directory = resolve(process.argv[2])
+    const release = await stageRelease(directory, identity, effects)
+    writeFileSync(join(directory, 'stage.json'), `${JSON.stringify(release, null, 2)}\n`)
+    const message = `Staged @ciqol/resenv@${release.version} on beta.\n\nApprove with npm stage approve ${release.stageId}. After public availability, run npm dist-tag add @ciqol/resenv@${release.version} latest. Then run CI with action finalize and this version to record its GitHub prerelease. The draft retains the original tested archive even after beta advances.\n`
+    console.log(message)
+    if (process.env.GITHUB_STEP_SUMMARY) writeFileSync(process.env.GITHUB_STEP_SUMMARY, message, { flag: 'a' })
   } finally { rmSync(temporary, { recursive: true, force: true }) }
 }
 

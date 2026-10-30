@@ -51,30 +51,23 @@ uses the protected workflow's OIDC identity. It accepts no login, shell,
 selector or arbitrary URL input. Registry and signing services remain trusted
 inputs. These controls bound exposure; they do not patch the platform CLI.
 
-The publisher verifies the original CI run/attempt, successful candidate checks,
-source ancestry and build-exported hashes. It reserves a private draft without
-a Git tag, preserves the tested archive and release plan as durable assets, and
-checks those bytes before saving staging intent and invoking npm. Intent is
-written before the external call; an ambiguous result must never be restaged.
-The receipt is persisted in the draft. Partial asset writes can resume safely.
+The protected staging job consumes the candidate hashes exported by successful
+CI and compatibility checks. Before calling npm, it verifies the archive and
+manifest, reserves a private draft without a Git tag, and preserves the tested
+archive and plan as draft assets. A duplicate draft or public version blocks
+restaging. Failed or ambiguous attempts are inspected by the maintainer; a new
+checked version is used for a replacement rather than a custom retry protocol.
 
-The finalizer follows managed records, not branch-head artifact searches. Its
-only write capabilities are contents and Actions (to dispatch current beta after
-a terminal release); it has no OIDC or npm credentials. Public npm integrity,
-durable asset hashes, manifest, original successful check evidence and source
-ancestry must match before the Git tag and prerelease are recorded. Advancing
-beta is allowed; divergent history, asset substitution or conflicting tags fail.
-Release assets are data and are never executed. Recording does not mutate npm
-channels or depend on their current pointers. The maintainer promotes latest.
-
-One pending draft prevents overlapping stage calls. Snapshot planning considers
-all permanent reservations and public npm versions; a fresh reservation check
-runs under the shared mutation concurrency group immediately before staging.
-Rejected drafts retain their counters. Explicit rejection requires a manual
-workflow dispatch and an unpublished version; npm rejection remains a separate
-maintainer action. Terminal records retain continuation state for idempotent
-queue resumption. The same review expiry remains enforced; durable assets do
-not expire with CI artifacts, but do not override the security review deadline.
+Manual Finalize verifies the preserved plan hash, archive, manifest, public
+npm integrity and original source ancestry before creating the tag and
+publishing the draft. It runs only from an explicit protected beta dispatch,
+with contents write permission and no npm/OIDC credentials. Assets are data,
+never executable inputs. Repeating finalization is idempotent. Advancing beta
+is allowed; divergent history or conflicting tags/assets stop the job.
+Channel promotion remains a maintainer action and cannot downgrade channels
+through finalization. There are no scheduled writers, Actions write tokens,
+automatic dispatches or background release controllers. The existing security
+review deadline and executable guards remain unchanged.
 
 ## Reviewing changes
 

@@ -12,10 +12,10 @@ describe('publication ordering and recovery', () => {
     for (const event of ['push', 'workflow_dispatch', 'pull_request', 'pull_request_target', 'workflow_run', 'schedule']) {
       for (const ref of ['refs/heads/beta', 'refs/heads/main', 'refs/heads/titan/test', 'refs/tags/v0.1.0-beta.1']) {
         for (const enabled of ['true', 'false']) {
-          for (const publish of [true, false, undefined]) {
+          for (const action of ['check', 'release', 'finalize', undefined]) {
             for (const candidate of ['true', 'false']) {
-              const context = { vars: { RELEASE_ENABLED: enabled }, github: { event_name: event, ref }, inputs: { publish }, needs: { ci: { outputs: { publish: candidate } } } }
-              const expected = enabled === 'true' && ref === 'refs/heads/beta' && candidate === 'true' && (event === 'push' || (event === 'workflow_dispatch' && publish === true))
+              const context = { vars: { RELEASE_ENABLED: enabled }, github: { event_name: event, ref }, inputs: { action }, needs: { ci: { outputs: { publish: candidate } } } }
+              const expected = enabled === 'true' && ref === 'refs/heads/beta' && candidate === 'true' && (event === 'push' || (event === 'workflow_dispatch' && action === 'release'))
               const actual = Boolean(runInNewContext(condition, context))
               expect(actual).toBe(expected)
               if (actual) expect(runInNewContext(approved, context)).toBe(true)
@@ -44,13 +44,6 @@ it.each(['push', 'workflow_dispatch'])('requires the exact trusted workflow and 
     ...['pull_request', 'pull_request_target', 'workflow_run', 'schedule', undefined].map(GITHUB_EVENT_NAME => ({ GITHUB_EVENT_NAME }))
   ]
   for (const change of rejected) expect(() => validatePublisher({ ...env, ...change }, '2026-11-09', now)).toThrow()
-})
-
-it('allows durable recovery only for an explicit manual publishing dispatch', () => {
-  const env = { GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REPOSITORY: 'ciqol/resenv', GITHUB_REF: 'refs/heads/beta', GITHUB_WORKFLOW_REF: 'ciqol/resenv/.github/workflows/ci.yml@refs/heads/beta', RELEASE_ENABLED: 'true', RELEASE_APPROVED: 'true', RELEASE_RESUME: 'true', RESUME_VERSION: '0.1.0-beta.3', GITHUB_SHA: 'a'.repeat(40), GITHUB_RUN_ID: '456', GITHUB_RUN_ATTEMPT: '1', GITHUB_TOKEN: 'dummy', ACTIONS_ID_TOKEN_REQUEST_URL: 'dummy', ACTIONS_ID_TOKEN_REQUEST_TOKEN: 'dummy' }
-  const now = Date.parse('2026-10-30')
-  expect(() => validatePublisher(env, '2026-11-09', now)).not.toThrow()
-  for (const change of [{ GITHUB_EVENT_NAME: 'push' }, { RELEASE_APPROVED: 'false' }, { RESUME_VERSION: '../archive' }, { GITHUB_REF: 'refs/heads/other' }]) expect(() => validatePublisher({ ...env, ...change }, '2026-11-09', now)).toThrow()
 })
 
 it('passes OIDC to npm but removes publishing tokens and inherited npm configuration', () => {

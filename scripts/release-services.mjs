@@ -7,7 +7,7 @@ export async function githubRequest (method, suffix, body) {
   })
   if (response.status === 404 && method === 'GET' && /^\/git\/ref\/tags\//.test(suffix)) return null
   assert.ok(response.ok, `GitHub ${method} ${suffix} failed (${response.status})`)
-  return response.status === 204 ? undefined : response.json()
+  return response.json()
 }
 
 export async function registryMetadata () {
