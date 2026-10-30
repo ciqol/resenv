@@ -1,61 +1,59 @@
 # Dependencies
 
-resenv has no runtime npm dependencies. Build, test and release tools are
-development-only and excluded from the consumer archive. Exact versions live
-in the [source manifest](https://github.com/ciqol/resenv/blob/beta/package.json);
-the lockfile pins their resolved artifacts.
-
-## Tool choices
+resenv has no runtime npm dependencies. All tools are development-only and
+excluded from the consumer package. Exact direct versions and archive integrity
+live in package.json and package-lock.json. Use the pinned Node version and
+normal `npm ci`; review install hooks instead of disabling them globally.
 
 | Packages | Purpose | License |
 | --- | --- | --- |
-| `rollup`, `@rollup/plugin-typescript` | Compile TypeScript, preserve the module graph and generate declarations | MIT |
-| `typescript` | Strict implementation, spec and consumer type checks | Apache-2.0 |
-| `tslib` | Helpers used by the TypeScript build plugin | 0BSD |
-| `@types/node` | Node platform types for the pinned development runtime | MIT |
-| `eslint`, `typescript-eslint` | Lint source and tooling, including rules that use type information | MIT |
-| `vitest`, `@vitest/coverage-v8` | Colocated unit tests and source coverage | MIT |
-| `@semantic-release/commit-analyzer`, `@semantic-release/release-notes-generator` | Official Conventional Commit classification and release notes | MIT |
+| `rollup`, `@rollup/plugin-typescript` | CommonJS, ESM facades and declarations | MIT |
+| `typescript` | Strict implementation and consumer checks | Apache-2.0 |
+| `tslib` | Build-time compiler helpers | 0BSD |
+| `@types/node` | Pinned runtime types | MIT |
+| `eslint`, `typescript-eslint` | Source and tooling lint | MIT |
+| `vitest`, `@vitest/coverage-v8` | Unit tests and coverage | MIT |
+| `semantic-release` | Standard version, tag and release orchestration | MIT |
+| `@semantic-release/commit-analyzer`, `@semantic-release/release-notes-generator` | Commit classification and release notes | MIT |
+| `@semantic-release/npm`, `@semantic-release/github` | Official npm/GitHub publishing | MIT |
 
-The [Doppler CLI](doppler.md) is a separately installed authentication helper,
-owned and updated by the user. resenv does not download or vendor it. Supplying
-`DOPPLER_TOKEN` avoids the CLI dependency.
+## Release tooling
 
-## Installation policy
+The user selected standard semantic-release on main instead of maintaining a
+custom staging/finalization lifecycle. The official engine and plugins provide
+the release conventions and integrations that would otherwise need custom code.
+They are pinned to 25.0.9 (engine), 13.2.0 (npm), and 12.0.10 (GitHub), alongside
+the existing analysis/notes plugins. npm is pinned transitively to 11.21.1 so its
+bundled implementation remains reviewable.
 
-Use the Node version in `.nvmrc`, `npm ci` and normal npm lifecycle behavior.
-Do not disable scripts globally. Review published install hooks and implicit
-native builds when dependencies change. Rollup uses platform-specific optional
-binaries; keep the Linux/macOS clean-install checks. The lockfile marks optional
-`fsevents` as having an install script, although its reviewed artifact has no
-install hook or `binding.gyp`; npm may warn about that metadata.
+Canonical sources are [semantic-release](https://github.com/semantic-release/semantic-release),
+[npm plugin](https://github.com/semantic-release/npm) and
+[GitHub plugin](https://github.com/semantic-release/github). Distributed artifacts
+declare MIT, have no install hooks, and expose npm provenance attestations.
+The packages share four listed maintainers and each receives over 12 million
+monthly npm downloads; published updates support the pinned Node runtime.
+Registry signatures and attestations must be verified on changes. Public npm
+metadata does not establish individual maintainer MFA or complete account
+ownership history; provenance and the existing official namespace are the
+available trust evidence.
 
-The committed `.npmrc` sets `omit=peer`. The two release plugins export the
-standalone functions the planner uses, but declare the full `semantic-release`
-engine as a peer for their usual integration. Omitting that unused peer also
-keeps its npm/GitHub publisher dependency graph off disk. Audit and planning
-guards require those modules to be unresolvable from the project and both
-plugins. See [release security](release-security.md).
+The engine/plugin tree invokes Git and npm, reads/writes repository/package
+files and contacts GitHub/npm. It runs with release authority only after the
+protected merge. The complete installed tree remains subject to the blocking
+audit; adoption does not authorize accepting an advisory. Bundled npm components
+must be reviewed on disk, not just through root overrides. See
+[release security](release-security.md).
 
-npm still resolves omitted peers into the lockfile. `npm ls` reports the
-deliberately missing engine peers; an audit with `--include=peer` can report
-vulnerabilities in those uninstalled entries. Do not conceal the peer warning
-with `--force`, `--legacy-peer-deps` or an alias package. Restoring the engine
-requires a dependency/security review and a deliberate guard change.
+Maintainer `titan-ron` owns updates, advisory review and removal. Replacing this
+toolchain means changing release.config.mjs and the trusted release job; it does
+not alter the library runtime. Use the previous explicit workflow only through
+a reviewed change if upstream becomes unsuitable. Keep review evidence in PRs.
 
-## Updating dependencies
+The Doppler CLI is separately installed and managed by the user. Rollup uses
+platform-specific optional binaries; preserve clean Linux/macOS install checks.
+The optional fsevents lock metadata can advertise an install script even when
+its reviewed archive contains neither an install hook nor binding.gyp.
 
-Maintainers own dependency admission and updates. Keep direct versions exact
-and review the manifest and lockfile diff, upstream source and release notes,
-distributed licenses, provenance, advisories and install hooks. Keep Vitest and
-its coverage provider compatible. Changes to release plugins also require
-reviewing their standalone exports and executable guards.
-
-Run `npm ci`, `npm run audit`, `npm audit signatures` and `npm run verify`.
-Review hosted matrix checks before release. Record review evidence and check
-results in the PR and CI; update this guide only when a lasting choice or
-installation requirement changes. Do not append dated intake or test logs.
-
-Official `actions/*` and `github/*` actions use exact release tags under the
-repository's GitHub publisher trust policy. Other remote actions require full
-commit SHAs. Review action source, permissions and license when updating them.
+Run `npm ci`, `npm run audit`, `npm audit signatures`, and `npm run verify`.
+Official GitHub actions use exact release tags under the repository publisher
+policy; other remote actions require full SHAs.

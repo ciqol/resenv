@@ -3,44 +3,32 @@
 Node.js package: `@ciqol/resenv`, MIT licensed, copyright ciqol contributors.
 Start each session with [the maintainer handoff](docs/maintainer-handoff.md),
 then inspect Git, GitHub and npm for current state; this chat is not required.
-The user approved public source and `beta` as the default and sole release
-branch. Open PRs only when asked, using temporary `titan/*` remote branches.
-Keep the development root and ordinary local builds private. CI generates the
-release version before packing,
-using semantic-release's official commit-analysis and release-notes plugins.
-The release branch is `beta`; npm tags `beta` and `latest` point to the same tested
-beta release. The first version is
-`0.1.0-beta.1`; real release tags, preserved draft versions and public npm
-versions bound subsequent counters. The full
-semantic-release engine is not installed or used while there is no stable
-release branch. Keep `.npmrc` peer omission enabled; the official plugins are
-called standalone, and audit/planning enforce absence of the unused engine and
-publisher modules.
+The user approved public source and `main` as the default and sole release
+branch. Merge is the release approval: require a PR, passing checks, resolved
+review threads and squash merging, with no direct-push bypass. Open PRs only
+when asked, using temporary `titan/*` branches. Never merge without explicit
+approval. No separate npm or GitHub environment approval is required.
 
-Publish only through GitHub Actions, automatically after releasable pushes to
-`beta` or a manual `release` action, after all candidate checks. Preserve the
-exact tested archive and plan in a private draft before staging through npm
-OIDC. The maintainer approves in npm, promotes `latest`, then runs the same CI
-workflow's manual `finalize` action for that version. Finalize verifies the
-public archive and records its original commit even after beta advances.
-Keep this flow explicit: no scheduled polling, queue or lifecycle controller.
-Never publish from a developer machine or request local npm
-login. The user manages npm-side ownership and authentication. The OIDC path
-requires an existing package and a matching trusted publisher; do not assume it
-bootstraps an unpublished package. No npm publishing tokens are configured.
-Keep the `release` environment restricted to the `beta` branch, without required
-GitHub reviewers. CI submits a staged package; npm approval is the publication
-gate. Environment creation or protection changes require explicit authorization.
-Keep `RELEASE_ENABLED` unset until its branch policy and npm setup are verified.
-Never create tags before successful publication of the tested archive.
-Remove obsolete npm versions only with explicit user authorization. Retain
-`0.0.0-stage` until a functional beta is public and verified; never unpublish
-the entire package. The maintainer has already removed the accidental `1.0.0`.
+Use standard semantic-release with its official commit-analysis, release-notes,
+npm and GitHub plugins. Publish regular `0.x.x` versions to npm `latest` while
+in initial development; `0.x.x` is not a SemVer prerelease. Breaking commits bump
+the minor version until a reviewed 1.0 transition. With no previous regular tag,
+CI publishes the real `0.1.0` baseline once; never invent a published version or
+seed a tag for an archive that was not published. Subsequent releases use the
+engine's normal tag-before-publish behavior. Keep local builds and the root private.
 
-Release planning uses bounded, expiring development advisory exceptions with
-executable guards. Read `docs/release-security.md` before changing release tools.
-Do not broaden the exceptions, bypass their expiry or pass release-tool modules
-to the privileged publisher. The platform npm CLI review is recorded separately.
+Publish only from GitHub Actions after pushes to protected `main` and all CI
+checks pass. Manual dispatch runs checks only. Use npm OIDC with direct publish
+permission, workflow `ci.yml`, environment `release`. Keep that environment
+restricted to `main`, without required reviewers. No npm tokens, local publishing
+or local npm login. The user manages npm ownership and authentication. Keep
+`RELEASE_ENABLED` disabled until protection and npm setup are verified.
+
+Read `docs/release-security.md` before changing release tools. Audit the complete
+installed tree at moderate severity and preserve the review expiry. Do not add
+advisory exceptions or bypass audit failures to make a release pass. Release
+tools run only in the trusted release job. Remove obsolete npm versions only
+with explicit authorization; never unpublish the entire package.
 
 ## Implementation
 
@@ -99,18 +87,11 @@ CI builds one archive and all matrix jobs test that same archive through
 `npm run test:package -- <archive.tgz>`.
 Source unit specs run before the CI build; matrix jobs run only higher-level
 tests against that archive and never recompile the source.
-Use `npm run release:check` for non-publishing local verification. Hosted
-checks plan a version and test the final archive; pushes to `beta` automatically
-stage releasable candidates. Manual dispatch selects `check`, `release` or
-`finalize`; `check` is the default.
-CI's push filter is `beta`.
-Stage with the `beta` npm dist-tag. After npm approval and public availability,
-the maintainer updates `latest` to that version. Manual Finalize records the
-preserved candidate; channel pointers do not gate immutable release recording.
-It has no npm/OIDC credentials and never stages or rebuilds a package. Keep
-failed/rejected drafts to reserve their versions. An ambiguous stage attempt
-must be inspected in npm, never blindly retried; use a fresh checked version
-when replacing a failed or rejected candidate.
+Use `npm run release:check` for non-publishing local verification. CI compiles
+once and matrix jobs test that private archive. The release job consumes this
+build, updates package metadata through the official npm plugin, and repeats
+package consumer checks for the final version without recompiling. No stage,
+finalizer, polling workflow or release queue is used.
 
 README documents how application users install and use resenv. Contributor setup,
 tests, local linking and release preparation belong in CONTRIBUTING.md and docs/.
@@ -139,13 +120,9 @@ that.
 - Commit on a `titan/*` branch, never `beta`, `main`, `master`, or the default
   branch. Use Conventional Commits and preserve signing. Add no co-author
   trailers or attribution footers.
-- Keep `beta` as the default and sole release branch. Temporary `titan/*` remote
-  branches are allowed for requested PRs; leave `beta` unchanged for PR review.
-  A pending release does not freeze beta: its original source must remain an
-  ancestor and its durable tested candidate must remain intact. Completed
-  commits from the local task branch may fast-forward `beta` when the user has
-  authorized delivery.
-  Do not force-push the default branch.
+- Keep `main` as the default and sole release branch. Temporary `titan/*` remote
+  branches are allowed for requested PRs. Deliver through protected PR merges;
+  never push task commits directly to `main` or force-push the default branch.
 - Open PRs only when asked. Do not merge, enable auto-merge, change visibility,
   collaborators, permissions or protections without explicit authorization.
 - Keep credentials, dotenv files, local consumer links and employer-specific

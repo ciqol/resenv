@@ -1,83 +1,42 @@
 # Release-tool security
 
-Maintainer: `titan-ron`. Runtime dependencies have no advisory exceptions.
-The executable development policy is [security-exceptions.json](security-exceptions.json).
-Its review expires **November 9, 2026 at 00:00 UTC**. This is a project review
-deadline, also enforced by the publisher for platform npm; removing unused
-development tools does not extend it.
+Maintainer: `titan-ron`. The complete installed tree must pass
+`npm audit --audit-level=moderate`; there are no advisory exceptions. The
+[review deadline](security-exceptions.json) remains **November 9, 2026 at
+00:00 UTC** and is enforced before publication. Do not extend it or suppress
+findings to unblock a release.
 
-## Release planning
+Standard semantic-release and the official npm/GitHub plugins replace the
+standalone planner and staging controller. Their dependencies are now installed
+and audited normally. The old peer-omission and module-blocking policy no longer
+applies to tools explicitly selected for this pipeline. No release tool ships
+to package consumers.
 
-The planner calls the official commit-analysis and release-notes plugins
-directly. It reads Git history and published beta tags without GitHub write,
-npm or OIDC credentials. The full `semantic-release` engine and its publishing
-plugins are unnecessary for this beta-only workflow.
+## Publishing authority
 
-The committed peer-omission policy keeps the engine, `@semantic-release/npm`,
-`@semantic-release/github` and their npm module off disk. Before auditing or
-planning, `scripts/release-guards.mjs` requires that none resolve from the
-project or either selected plugin. Its planner hook also rejects bare and
-resolved imports of those tools. An audit explicitly including omitted peers
-can still report their locked entries; see [installation policy](dependencies.md).
+PR merge is approval. Branch rules require the real CI/CodeQL checks and prevent
+direct pushes, force pushes, deletion and bypass. PRs and manual dispatches
+cannot publish. Only main pushes may enter the `release` environment, with
+contents write and OIDC permissions. There are no npm tokens or additional
+reviewers. The release token is exposed only to the release step, and checkout
+does not persist credentials.
 
-The guard pins both plugins, micromatch and braces. It replaces every callable
-braces export with a throwing guard before loading the plugins. The selected
-micromatch matching calls use picomatch; vulnerable brace expansion must never
-execute. Version drift fails until the guards are reviewed.
+The job consumes compiled output tested by CI. The npm plugin changes release
+metadata and packs it; the verification hook tests the final package. Publishing
+uses the prepared directory, whose manifest has no package lifecycle scripts.
+The source is not rebuilt. The bootstrap publishes its checked tarball directly.
+GitHub issue/PR comments and labels are disabled in the GitHub plugin so it
+needs no issue or pull-request write permission.
 
-`npm run audit` checks runtime dependencies without exceptions, then the
-installed development tree. Moderate/high/critical findings must match an exact
-advisory URL, development-only lockfile path, version and unexpired policy
-entry. New advisories, changed paths, runtime occurrences and expired
-exceptions fail. The retained exception entries do not authorize reinstalling
-the excluded tools. Prefer an upstream fix or removing unused dependencies;
-never broaden the policy to make a check pass.
+## Dependency review
 
-## Publishing platform
+Review actual installed artifacts, including npm's bundled dependencies.
+Overrides are not evidence that bundled files changed: inspect their manifests
+on disk. A failing dependency audit blocks merge and release; it is not a
+non-blocking report. Do not broaden exceptions or silently substitute an
+unreviewed npm version.
 
-The privileged publisher installs no release-tool dependencies and accepts only
-the archive described by the verified candidate plan. It checks source identity
-and hashes before invoking npm. Publication follows the [release runbook](releasing.md).
-
-The platform is pinned to Node.js 24.19.0 and its npm 11.17.0. Platform npm has
-separately reviewed bundled-component risks; omitting development peers does
-not fix those components. `scripts/publish.mjs` rejects platform version drift
-and an expired review, including on a failed-job retry.
-
-The staging command accepts a fixed tarball and HTTPS npm registry, with no
-package lifecycle scripts in the generated manifest. It runs with a fresh home,
-configuration and cache, strips proxy/token/arbitrary npm configuration, and
-uses the protected workflow's OIDC identity. It accepts no login, shell,
-selector or arbitrary URL input. Registry and signing services remain trusted
-inputs. These controls bound exposure; they do not patch the platform CLI.
-
-The protected staging job consumes the candidate hashes exported by successful
-CI and compatibility checks. Before calling npm, it verifies the archive and
-manifest, reserves a private draft without a Git tag, and preserves the tested
-archive and plan as draft assets. A duplicate draft or public version blocks
-restaging. Failed or ambiguous attempts are inspected by the maintainer; a new
-checked version is used for a replacement rather than a custom retry protocol.
-
-Manual Finalize verifies the preserved plan hash, archive, manifest, public
-npm integrity and original source ancestry before creating the tag and
-publishing the draft. It runs only from an explicit protected beta dispatch,
-with contents write permission and no npm/OIDC credentials. Assets are data,
-never executable inputs. Repeating finalization is idempotent. Advancing beta
-is allowed; divergent history or conflicting tags/assets stop the job.
-Channel promotion remains a maintainer action and cannot downgrade channels
-through finalization. There are no scheduled writers, Actions write tokens,
-automatic dispatches or background release controllers. The existing security
-review deadline and executable guards remain unchanged.
-
-## Reviewing changes
-
-Review the actual published artifacts, including bundled copies; patching a
-standalone package does not establish that npm's bundled copy is fixed.
-Recheck platform npm before the deadline and remove obsolete exception entries
-when upstream fixes or dependency removal make them unnecessary. Do not extend
-the deadline or bypass executable controls to unblock publication.
-
-Run `npm run audit`, `npm audit signatures` and `npm run verify`. Release tooling
-specs cover absence/version guards, policy scope and expiry, adversarial commit
-analysis, real Git release history and publisher isolation. Keep review evidence
-in the PR and CI, and maintain this document as the current policy.
+Use pinned versions and the lockfile. Validate normal installs, registry
+signatures/attestations, the full audit and the package tests. See
+[dependencies](dependencies.md) for tool choices. Record dated findings and
+per-run evidence in the PR, not in this document.

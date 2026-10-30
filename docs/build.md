@@ -90,10 +90,10 @@ overrides and a package-wide `type` field. Explicit `.mjs` and `.cjs` extensions
 select the output format. README, the MIT `LICENSE`, contributor/security guides
 and docs are copied into the distribution and included in the archive.
 
-Ordinary local builds retain `private: true`. The CI build accepts a validated
-release plan and sets its computed version, removing `private` before the final
-archive is packed and tested. The development root stays private. Only the
-release workflow stages that tested archive for npm approval; see
+Ordinary local and CI builds retain `private: true`. Only the protected release
+job makes the tested build publishable and lets the npm plugin set its version.
+The development root stays private. Release consumer checks validate the final
+versioned package before direct publication; see
 [releasing](releasing.md).
 
 `npm run pack:local` packs the generated directory. `npm run test:package`
@@ -114,49 +114,26 @@ consumer artifact is rebuilt in place by these tests.
 
 ## CI
 
-The main `ci` job installs the locked dependencies, checks advisories and registry
-signatures, runs lint, type checks and source coverage, then plans, builds and packs
-one candidate. It tests the packed package and processes on the pinned Node
-version before uploading the archive.
-Coverage reports are retained even when the coverage gate fails, unless the run
-is cancelled.
+The `ci` job checks advisories and registry signatures, lint, types and source
+coverage, then builds and packs once. It tests the private archive and processes
+on the pinned Node version. The `smoke` matrix tests that archive on Linux Node
+20/22 and macOS with pinned Node 24; it never recompiles source. Coverage runs
+once, with a separate job uploading the report on same-repository PRs and main.
+Required archives and coverage reports are retained for seven days.
 
-The `smoke` matrix downloads that same archive and runs the installed-package and
-process checks on Linux Node 20 and 22 and macOS with the pinned Node version.
-It never rebuilds the package. The separate `coverage` job uploads the source
-report to GitHub without giving project scripts a write token. Only
-same-repository PRs and `beta` runs upload reports. Fork PRs and manual runs on
-other branches retain the local coverage gate and artifact but skip the upload.
+After a merge to protected `main`, `release` downloads the tested build and runs
+semantic-release with the official npm/GitHub plugins. The npm plugin prepares
+version metadata and a tarball; the local verification hook checks the final
+package's consumer contract before publication. Source is never rebuilt in the
+release job. The official npm plugin publishes the prepared directory with no
+package lifecycle scripts. See [releasing](releasing.md) for the one-time 0.1.0
+bootstrap and failure handling.
 
-The protected `release` job runs automatically for releasable pushes to `beta`
-or an explicit publishing dispatch from `beta`, after `ci`, `smoke` and
-`coverage` pass and when releases are enabled. It consumes the tested
-archive, installs no project dependencies and stages through npm OIDC. See
-[releasing](releasing.md) for approval and recovery.
+PRs and manual dispatches cannot publish. Release permissions are limited to
+GitHub contents write and OIDC. Package and registry secrets are absent from
+validation jobs. Every checkout disables persisted credentials, and the release
+token is scoped to the release step. Official GitHub actions use exact release
+tags; other remote actions require commit SHAs.
 
-Trusted beta CI reads used draft/release/npm versions before planning, so a
-pending or rejected candidate's number is not reused. The protected release
-job preserves the final tested archive and plan in a private draft, then stages
-that exact archive through npm OIDC.
-
-After npm approval, the maintainer selects `finalize` and the version in the
-same workflow. It verifies the preserved bytes against public npm integrity
-and records the original source commit without rebuilding. There is no polling,
-release queue or automatic CI dispatch. See [releasing](releasing.md).
-
-Validation jobs have read-only repository permissions and receive no application
-or registry secrets. Missing artifacts and digest mismatches fail the run.
-Archives and coverage reports are retained for seven days. Hosted results must
-be observed before treating a workflow definition as a passing CI run.
-
-Official GitHub actions use exact release tags under the repository's reviewed
-publisher exception; other remote actions require full commit SHAs. Installs use
-normal npm lifecycle behavior, and dependency updates require an install-hook
-review. Build commands run explicitly.
-
-Adopting this layout requires a coordinated update to `beta`'s required checks:
-replace `build` with `ci`, replace the three remaining `test (...)` contexts
-with `smoke (...)`, and remove `test (ubuntu-24.04)` because its checks now run
-inside `ci`. Keep `coverage` and `Analyze (javascript-typescript)` required.
-The workflow change does not apply repository settings; that migration needs
-maintainer approval and a retained ruleset snapshot for rollback.
+The protected branch requires `ci`, `coverage`, all three `smoke` contexts and
+`Analyze (javascript-typescript)`. Keep these names stable when editing CI.

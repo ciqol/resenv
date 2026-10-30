@@ -2,19 +2,9 @@ name: CI
 
 on:
   push:
-    branches: ['beta']
+    branches: ['main']
   pull_request:
   workflow_dispatch:
-    inputs:
-      action:
-        description: 'Check, stage a tested candidate, or finalize an npm-approved version'
-        type: choice
-        options: ['check', 'release', 'finalize']
-        default: 'check'
-      version:
-        description: 'Approved version for finalize, for example 0.1.0-beta.3'
-        type: string
-        default: ''
 
 permissions: {}
 
@@ -24,16 +14,10 @@ concurrency:
 
 jobs:
   ci:
-    if: github.event_name != 'workflow_dispatch' || inputs.action != 'finalize'
     runs-on: 'ubuntu-24.04'
     timeout-minutes: 10
     permissions:
       contents: 'read'
-    outputs:
-      publish: ${{ steps.candidate.outputs.publish }}
-      version: ${{ steps.candidate.outputs.version }}
-      plan_sha256: ${{ steps.candidate.outputs.plan_sha256 }}
-      archive_sha256: ${{ steps.candidate.outputs.archive_sha256 }}
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v6.1.0
@@ -46,11 +30,6 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           package-manager-cache: false
-      - name: 'Read used release versions'
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/beta'
-        run: node scripts/release-context.mjs "$RUNNER_TEMP/resenv-versions.json"
-        env:
-          GITHUB_TOKEN: '${{ github.token }}'
       - name: 'Install'
         run: npm ci --no-audit --no-fund
       - name: 'Check dependencies, lint and types'
@@ -72,20 +51,14 @@ jobs:
             coverage/lcov.info
           if-no-files-found: 'error'
           retention-days: 7
-      - name: 'Build the candidate once'
-        id: candidate
+      - name: 'Build and pack once'
         run: |
-          if [ -f "$RUNNER_TEMP/resenv-versions.json" ]; then
-            node scripts/release-plan.mjs candidate "$RUNNER_TEMP/resenv-versions.json"
-          else
-            node scripts/release-plan.mjs candidate
-          fi
-          npm run build -- --release-plan candidate/release.json
+          npm run build
+          mkdir candidate
           npm pack ./dist --pack-destination candidate
-          node scripts/record-artifact.mjs candidate
       - name: 'Test the packed candidate'
         run: |
-          npm run test:package -- candidate/*.tgz candidate/release.json
+          npm run test:package -- candidate/*.tgz
           npm run test:integration
       - name: 'Upload package tarball'
         uses: actions/upload-artifact@v7.0.1
@@ -93,7 +66,6 @@ jobs:
           name: 'resenv-package'
           path: |
             candidate/*.tgz
-            candidate/release.json
           if-no-files-found: 'error'
           retention-days: 7
           include-hidden-files: false
@@ -135,7 +107,7 @@ jobs:
           path: 'artifacts'
           digest-mismatch: 'error'
       - name: 'Test packed package'
-        run: npm run test:package -- artifacts/*.tgz artifacts/release.json
+        run: npm run test:package -- artifacts/*.tgz
       - name: 'Load packed build'
         run: |
           mkdir dist
@@ -146,7 +118,7 @@ jobs:
   coverage:
     needs: 'ci'
     # GitHub accepts reports for same-repository PRs or the default branch.
-    if: (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || github.ref == 'refs/heads/beta'
+    if: (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || github.ref == 'refs/heads/main'
     runs-on: 'ubuntu-24.04'
     timeout-minutes: 5
     permissions:
@@ -170,72 +142,42 @@ jobs:
 
   release:
     needs: ['ci', 'smoke', 'coverage']
-    # Enable only after the protected environment and npm authentication exist.
-    if: vars.RELEASE_ENABLED == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'release')) && github.ref == 'refs/heads/beta' && needs.ci.outputs.publish == 'true'
+    if: vars.RELEASE_ENABLED == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: 'ubuntu-24.04'
     timeout-minutes: 10
     environment: 'release'
     concurrency:
-      group: 'resenv-npm-release'
+      group: 'resenv-release'
       cancel-in-progress: false
     permissions:
-      contents: 'write' # Preserve the tested candidate in a draft release.
-      id-token: 'write' # Stage the tested archive through npm OIDC.
+      contents: 'write' # semantic-release creates version tags and GitHub releases.
+      id-token: 'write' # The npm plugin publishes through trusted publishing.
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v6.1.0
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: 'Setup Node.js'
         uses: actions/setup-node@v6.5.0
         with:
           node-version-file: '.nvmrc'
           package-manager-cache: false
-      - name: 'Download package tarball'
+      - name: 'Install release tools'
+        run: npm ci --no-audit --no-fund
+      - name: 'Download tested package'
         uses: actions/download-artifact@v8.0.1
         with:
           name: 'resenv-package'
           path: 'artifacts'
           digest-mismatch: 'error'
-      # No dependency installation, build, repack or package execution here.
-      - name: 'Stage the tested package'
-        run: node scripts/publish.mjs artifacts
-        env:
-          GITHUB_TOKEN: '${{ github.token }}'
-          RELEASE_APPROVED: "${{ github.event_name == 'push' || inputs.action == 'release' }}"
-          RELEASE_ENABLED: '${{ vars.RELEASE_ENABLED }}'
-          PLAN_SHA256: '${{ needs.ci.outputs.plan_sha256 }}'
-          ARCHIVE_SHA256: '${{ needs.ci.outputs.archive_sha256 }}'
-      - name: 'Upload staging receipt'
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: 'resenv-stage'
-          path: 'artifacts/stage.json'
-          if-no-files-found: 'ignore'
-          retention-days: 7
-
-  finalize:
-    if: vars.RELEASE_ENABLED == 'true' && github.event_name == 'workflow_dispatch' && inputs.action == 'finalize' && github.ref == 'refs/heads/beta'
-    runs-on: 'ubuntu-24.04'
-    timeout-minutes: 5
-    environment: 'release'
-    concurrency:
-      group: 'resenv-npm-release'
-      cancel-in-progress: false
-    permissions:
-      contents: 'write' # Record the approved candidate's original tag and release.
-    steps:
-      - uses: actions/checkout@v6.1.0
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@v6.5.0
-        with:
-          node-version-file: '.nvmrc'
-          package-manager-cache: false
-      - name: 'Finalize the approved version'
-        run: node scripts/finalize-release.mjs
+      - name: 'Load tested build'
+        run: |
+          mkdir dist
+          tar -xzf artifacts/*.tgz -C dist --strip-components=1
+      - name: 'Release'
+        run: node scripts/release.mjs
         env:
           GITHUB_TOKEN: '${{ github.token }}'
           RELEASE_ENABLED: '${{ vars.RELEASE_ENABLED }}'
-          RELEASE_VERSION: '${{ inputs.version }}'
+          NPM_CONFIG_PROVENANCE: 'true'

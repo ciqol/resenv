@@ -1,21 +1,16 @@
 # Contributing
 
 Starting a new session? Read the [maintainer handoff](docs/maintainer-handoff.md)
-and [repository instructions](https://github.com/ciqol/resenv/blob/beta/AGENTS.md) before editing or releasing.
+and [repository instructions](https://github.com/ciqol/resenv/blob/main/AGENTS.md) before editing or releasing.
 
 The [README](README.md) covers using resenv in an application. This guide covers
 changing resenv itself and verifying those changes.
 
-Releases start at `0.1.0-beta.1` on the sole branch `beta`, using npm tags
-`beta` and `latest` for the same tested version. Semantic-release's official
-commit-analysis and release-notes plugins select releasable changes and generate
-notes; beta tags, preserved drafts and public npm versions bound the next
-prerelease counter. The root and ordinary local builds remain private prototypes.
-CI generates the publishable manifest before packing and testing it, then stages
-the exact archive through npm OIDC for maintainer approval. A private draft
-retains the tested candidate; after npm approval the maintainer runs the same
-workflow with `finalize` and the version to record its original commit. See
-[releasing](docs/releasing.md) and the bounded [release-tool review](docs/release-security.md).
+Merge to protected `main` approves release. CI uses standard semantic-release
+and the official npm/GitHub plugins to publish regular `0.x.x` versions to
+`latest`. The root and local builds stay private; only the protected release
+job makes the tested build publishable. See [releasing](docs/releasing.md)
+and [release security](docs/release-security.md).
 The source uses the [MIT license](LICENSE), copyright ciqol contributors.
 
 ## Local development
@@ -84,7 +79,7 @@ functions and lines. Worker and preload entry files stay in the denominator;
 the CLI is checked separately by process and packed-package tests. CI retains
 LCOV and Cobertura reports for seven days in the `resenv-coverage` artifact.
 The official `actions/upload-code-coverage` action uploads Cobertura in a separate
-job for same-repository PRs and `beta` runs; other runs retain the local gate and
+job for same-repository PRs and `main` runs; other runs retain the local gate and
 report artifacts. The main `ci` job groups audits, lint, types, coverage, build
 and packed-package/process checks on the pinned Node version. CLI lookup checks
 use injected helpers and temporary
@@ -112,7 +107,7 @@ Pass an existing archive to test the same build CI uses:
 also pass its `release.json` as the second argument. The supplied package's
 name, version, executable mode and manifest are checked before runtime probes.
 The README inside the archive must match the checkout, install from npm's
-`beta` channel and avoid unpublished or local-archive installation guidance.
+`latest` channel and avoid unpublished or local-archive installation guidance.
 `npm run verify` runs lint, typecheck, build and tests; `npm run release:check`
 also previews the package contents. Neither publishes or creates a tag.
 
@@ -135,7 +130,7 @@ npm run pack:local
 Install the resulting archive from the application's directory:
 
 ```sh
-npm install --save-exact /absolute/path/to/ciqol-resenv-0.1.0-beta.1.tgz
+npm install --save-exact /absolute/path/to/ciqol-resenv-0.1.0.tgz
 ```
 
 This changes the application's manifest and lockfile. The archive must exist

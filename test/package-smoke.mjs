@@ -6,13 +6,12 @@ import { homedir, tmpdir } from 'node:os'
 import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
-import { verifyArtifact } from '../scripts/release-artifact.mjs'
 
-assert.ok(process.argv.length <= 4, 'Usage: npm run test:package -- [package.tgz [release.json]]')
+assert.ok(process.argv.length <= 4, 'Usage: npm run test:package -- [package.tgz [release-version]]')
 const suppliedArchive = process.argv[2] ? resolve(process.argv[2]) : undefined
 const root = fileURLToPath(new URL('..', import.meta.url))
-const plan = process.argv[3] ? verifyArtifact(dirname(resolve(process.argv[3])), { head: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', timeout: 10000 }).trim() }).plan : undefined
-if (plan) assert.equal(suppliedArchive, resolve(dirname(process.argv[3]), plan.archive), 'Test the archive described by this release plan')
+const releaseVersion = process.argv[3]
+if (releaseVersion) assert.match(releaseVersion, /^0\.\d+\.\d+$/)
 const env = { PATH: `${dirname(process.execPath)}:${process.env.PATH}` }
 const source = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 const directory = mkdtempSync(join(tmpdir(), 'resenv-package-'))
@@ -39,7 +38,7 @@ try {
     : ['pack', './dist', '--json', '--pack-destination', directory]
   const packed = JSON.parse(run('npm', [...npmOptions, ...packArgs], root).stdout)[0]
   assert.equal(packed.name, source.name)
-  assert.equal(packed.version, plan?.version ?? source.version)
+  assert.equal(packed.version, releaseVersion ?? source.version)
   assert.ok(!packed.files.some(file => /\.spec\./.test(file.path)), 'Unit specs must not be packed')
   for (const path of ['index.cjs', 'index.mjs', 'index.d.cts', 'index.d.mts', 'resolve-commands.cjs', 'resolve-commands.mjs', 'resolve-doppler.cjs', 'resolve-doppler.mjs', 'doppler-worker.cjs', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/dependencies.md', 'docs/build.md', 'docs/release-security.md', 'docs/releasing.md', 'docs/doppler.md']) {
     assert.ok(packed.files.some(file => file.path === path), `Missing package file: ${path}`)
@@ -56,7 +55,7 @@ try {
   assert.equal(readme, readFileSync(join(root, 'README.md'), 'utf8'), 'Packed README must match the checked-out documentation')
   const install = readme.split(/^## /m).find(section => section.startsWith('Install\n'))
   assert.ok(install, 'README must include application installation instructions')
-  assert.match(install, /npm install --save-exact @ciqol\/resenv@beta/, 'Application installation must use the public npm beta')
+  assert.match(install, /npm install --save-exact @ciqol\/resenv(?:\s|$)/, 'Application installation must use the default npm channel')
   assert.doesNotMatch(install, /\.tgz\b|file:|\/path\/to\//, 'Local archive installation belongs in CONTRIBUTING.md')
   assert.doesNotMatch(readme, /not (?:yet )?published|has not been published|once .{0,40}published|currently distributed\s+as a package archive/i, 'README must not describe the public package as unpublished')
   const packedManifest = JSON.parse(run('tar', ['-xOf', archive, 'package/package.json'], root).stdout)
@@ -87,10 +86,10 @@ try {
   run('npm', [...npmOptions, 'ci'], directory)
   const packageRoot = join(directory, 'node_modules/@ciqol/resenv')
   const manifest = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'))
-  assert.equal(manifest.private, plan?.publish ? undefined : true)
+  assert.equal(manifest.private, releaseVersion ? undefined : true)
   assert.deepEqual(manifest.publishConfig, source.publishConfig)
   assert.equal(manifest.name, source.name)
-  assert.equal(manifest.version, plan?.version ?? source.version)
+  assert.equal(manifest.version, releaseVersion ?? source.version)
   assert.equal(manifest.license, source.license)
   assert.deepEqual(manifest.dependencies, {})
   assert.deepEqual(Object.keys(runtimePackages), [])
