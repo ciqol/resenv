@@ -76,7 +76,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "audit": "npm audit --audit-level=moderate",
+    "audit": "node scripts/patch-npm.mjs --check && npm audit --audit-level=moderate",
     "build": "node scripts/build.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -92,7 +92,8 @@
     "verify": "npm run lint && npm run typecheck && npm run build && npm run test:coverage && npm run test:integration && npm run test:package",
     "release:check": "npm run verify && npm pack ./dist --dry-run",
     "pack:local": "npm pack ./dist",
-    "release": "semantic-release"
+    "release": "semantic-release",
+    "postinstall": "node scripts/patch-npm.mjs"
   },
   "dependencies": {},
   "devDependencies": {
@@ -104,6 +105,8 @@
     "@types/node": "24.19.1",
     "@vitest/coverage-v8": "4.1.12",
     "eslint": "10.12.0",
+    "npm-ip-address-patch": "npm:ip-address@10.7.5",
+    "npm-undici-patch": "npm:undici@6.29.1",
     "rollup": "4.63.5",
     "semantic-release": "25.0.9",
     "tslib": "2.8.1",

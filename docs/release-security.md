@@ -36,6 +36,28 @@ on disk. A failing dependency audit blocks merge and release; it is not a
 non-blocking report. Do not broaden exceptions or silently substitute an
 unreviewed npm version.
 
+### Temporary npm bundle repair
+
+npm 11.21.1 bundles vulnerable `undici` and `ip-address` files that npm overrides
+do not replace. Until an upstream npm release includes the fixes, the reviewed
+root `postinstall` hook replaces those two directories with the exact registry
+packages `undici@6.29.1` and `ip-address@10.7.5`, installed under development-only
+aliases. Their integrity hashes are pinned in the lockfile, which also records
+the repaired bundle versions. This is an actual file replacement, not an audit
+exception or a metadata-only override.
+
+`npm run audit` first compares every installed bundle file with the corresponding
+locked upstream package. Missing, extra or modified files fail the check. The
+repair accepts only the reviewed npm and dependency versions and rejects patch
+packages with runtime dependencies. It does not fetch code or use credentials.
+Registry signatures verify the upstream packages; they do not attest the locally
+repaired npm bundle as an npm-maintained distribution.
+
+Remove the hook, repair script/tests, aliases and repaired lock entries together
+when upgrading to an npm release containing both fixes. Regenerate the lockfile
+and validate a clean install, on-disk versions, audit, signatures and package
+checks before removing the repair. The existing review deadline still applies.
+
 Use pinned versions and the lockfile. Validate normal installs, registry
 signatures/attestations, the full audit and the package tests. See
 [dependencies](dependencies.md) for tool choices. Record dated findings and

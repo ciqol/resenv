@@ -16,6 +16,7 @@ normal `npm ci`; review install hooks instead of disabling them globally.
 | `semantic-release` | Standard version, tag and release orchestration | MIT |
 | `@semantic-release/commit-analyzer`, `@semantic-release/release-notes-generator` | Commit classification and release notes | MIT |
 | `@semantic-release/npm`, `@semantic-release/github` | Official npm/GitHub publishing | MIT |
+| `npm-undici-patch`, `npm-ip-address-patch` | Exact upstream fixes for npm's bundled development dependencies | MIT |
 
 ## Release tooling
 
@@ -25,6 +26,14 @@ the release conventions and integrations that would otherwise need custom code.
 They are pinned to 25.0.9 (engine), 13.2.0 (npm), and 12.0.10 (GitHub), alongside
 the existing analysis/notes plugins. npm is pinned transitively to 11.21.1 so its
 bundled implementation remains reviewable.
+
+The temporary development aliases resolve to upstream `undici@6.29.1` and
+`ip-address@10.7.5`. Both have no runtime dependencies or registry install hooks
+and support the pinned Node runtime. The root postinstall hook copies their
+locked registry contents into npm's bundle; see the checks and removal procedure
+in [release security](release-security.md#temporary-npm-bundle-repair). Upstream
+sources are [Undici](https://github.com/nodejs/undici/releases/tag/v6.29.1) and
+[ip-address](https://github.com/beaugunderson/ip-address/releases/tag/v10.7.5).
 
 Canonical sources are [semantic-release](https://github.com/semantic-release/semantic-release),
 [npm plugin](https://github.com/semantic-release/npm) and
