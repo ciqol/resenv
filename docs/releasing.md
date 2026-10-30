@@ -40,6 +40,24 @@ and npm versions remain historical; the `beta` channel is not updated.
 - `RELEASE_ENABLED=true` only after protection, the npm publisher and dependency
   audit are verified. The maintainer manages the npm setting.
 
+On npmjs.com, open **@ciqol/resenv → Settings → Trusted publishing** and
+configure its GitHub Actions publisher with these exact values:
+
+| Field | Value |
+| --- | --- |
+| Organization or user | `ciqol` |
+| Repository | `resenv` |
+| Workflow filename | `ci.yml` (filename only) |
+| Environment name | `release` |
+| Allow npm publish | Enabled |
+| Allow npm dist-tag | Not needed for this single-branch release flow |
+
+Save the configuration and complete npm's confirmation if prompted. Staging is
+always allowed; enabling direct publishing is the required change. The branch
+restriction lives in GitHub's `release` environment, which already allows only
+`main`. Keep account 2FA and the existing token restrictions; no npm token is
+needed. See [npm's trusted-publishing guide](https://docs.npmjs.com/trusted-publishers/).
+
 Never publish from a developer machine, configure a permanent npm publishing
 token, or request local npm login. Local `npm run release:check` is read-only
 with respect to publication. Only the trusted main push can pass the release
