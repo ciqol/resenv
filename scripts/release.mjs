@@ -27,6 +27,6 @@ if (tags.some(tag => /^v\d+\.\d+\.\d+$/.test(tag))) {
   assert.equal(packed.version, version)
   assert.equal(packed.filename, `ciqol-resenv-${version}.tgz`)
   prepare({}, { nextRelease: { version } })
-  execFileSync('npm', ['publish', `release/${packed.filename}`, '--access', 'public', '--tag', 'latest', '--provenance'], { stdio: 'inherit' })
+  execFileSync('npm', ['publish', `./release/${packed.filename}`, '--access', 'public', '--tag', 'latest', '--provenance'], { stdio: 'inherit' })
   execFileSync('gh', ['release', 'create', `v${version}`, `release/${packed.filename}`, '--repo', 'ciqol/resenv', '--target', process.env.GITHUB_SHA, '--title', `v${version}`, '--generate-notes'], { stdio: 'inherit' })
 }
