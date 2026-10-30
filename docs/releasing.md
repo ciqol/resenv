@@ -23,6 +23,11 @@ Squash PR titles must follow that convention. `0.x.x` denotes initial
 development, not a SemVer prerelease; published versions have no beta suffix.
 A guard blocks 1.0 until that transition is reviewed explicitly.
 
+Release notes contain change summaries and linked squash-PR references, without
+author credits, contributor sections or commit-hash links. Breaking-change
+details remain included. The official release-notes plugin owns this format;
+do not append GitHub's automatically generated contributor notes.
+
 ## Initial 0.1.0 release
 
 semantic-release starts at 1.0.0 when no regular release tag exists. To preserve
