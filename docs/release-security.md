@@ -51,20 +51,30 @@ uses the protected workflow's OIDC identity. It accepts no login, shell,
 selector or arbitrary URL input. Registry and signing services remain trusted
 inputs. These controls bound exposure; they do not patch the platform CLI.
 
-The publisher validates the staging receipt's package name, version and
-integrity. npm approval publishes the stage. The scheduled finalizer verifies
-the public archive's integrity and both npm tags before recording the Git
-tag/release. No tag is created for a pending stage.
+The publisher verifies the original CI run/attempt, successful candidate checks,
+source ancestry and build-exported hashes. It reserves a private draft without
+a Git tag, preserves the tested archive and release plan as durable assets, and
+checks those bytes before saving staging intent and invoking npm. Intent is
+written before the external call; an ambiguous result must never be restaged.
+The receipt is persisted in the draft. Partial asset writes can resume safely.
 
-The finalizer checks after successful beta CI runs and every 15 minutes. It
-runs only trusted default-branch code in the existing `release` environment,
-with Actions read and contents write permissions, without OIDC or npm tokens.
-It selects only successful push/manual runs of `ci.yml` from this repository,
-at the current beta head, with retained package and staging artifacts. Artifacts
-are downloaded outside the checkout with digest checking; candidate contents
-are never executed. It verifies the archive, plan, staging receipt and registry
-integrity before recording. Its record-only path cannot invoke npm or restage.
-The same review expiry and release concurrency group still apply.
+The finalizer follows managed records, not branch-head artifact searches. Its
+only write capabilities are contents and Actions (to dispatch current beta after
+a terminal release); it has no OIDC or npm credentials. Public npm integrity,
+durable asset hashes, manifest, original successful check evidence and source
+ancestry must match before the Git tag and prerelease are recorded. Advancing
+beta is allowed; divergent history, asset substitution or conflicting tags fail.
+Release assets are data and are never executed. Recording does not mutate npm
+channels or depend on their current pointers. The maintainer promotes latest.
+
+One pending draft prevents overlapping stage calls. Snapshot planning considers
+all permanent reservations and public npm versions; a fresh reservation check
+runs under the shared mutation concurrency group immediately before staging.
+Rejected drafts retain their counters. Explicit rejection requires a manual
+workflow dispatch and an unpublished version; npm rejection remains a separate
+maintainer action. Terminal records retain continuation state for idempotent
+queue resumption. The same review expiry remains enforced; durable assets do
+not expire with CI artifacts, but do not override the security review deadline.
 
 ## Reviewing changes
 

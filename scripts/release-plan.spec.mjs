@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -13,8 +13,14 @@ it('plans the first release, no change, and the next beta from real history with
   const before = run('git', ['show-ref'], root)
   try {
     run('git', ['clone', '--no-hardlinks', '--no-tags', root, checkout], root)
-    const calculate = directory => {
-      run(process.execPath, [join(root, 'scripts/release-plan.mjs'), join(temporary, directory)])
+    const calculate = (directory, snapshot) => {
+      const args = [join(root, 'scripts/release-plan.mjs'), join(temporary, directory)]
+      if (snapshot) {
+        const path = join(temporary, `${directory}-state.json`)
+        writeFileSync(path, JSON.stringify(snapshot))
+        args.push(path)
+      }
+      run(process.execPath, args)
       return JSON.parse(readFileSync(join(temporary, directory, 'release.json'), 'utf8'))
     }
     run('git', ['tag', 'v1.0.0'])
@@ -22,6 +28,9 @@ it('plans the first release, no change, and the next beta from real history with
     expect(first.publish).toBe(true)
     expect(first.channel).toBe('beta')
     expect(first.version).toBe('0.1.0-beta.1')
+    expect(calculate('reserved', { schema: 1, reserved: 3, pending: false }).version).toBe('0.1.0-beta.4')
+    expect(calculate('pending', { schema: 1, reserved: 3, pending: true }).publish).toBe(false)
+    expect(() => calculate('invalid-reservation', { schema: 1, reserved: -1, pending: false })).toThrow()
     expect(run('git', ['tag'])).toBe('v1.0.0')
     // Tags exist only in this disposable fixture; no synthetic commits or identities.
     run('git', ['tag', first.gitTag])

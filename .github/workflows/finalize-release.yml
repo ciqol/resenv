@@ -8,6 +8,12 @@ on:
   schedule:
     - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
+    inputs:
+      reject:
+        description: 'Exact version already rejected in npm; retain its reservation and resume queued work'
+        type: string
+        default: ''
+        required: false
 
 permissions: {}
 
@@ -21,8 +27,8 @@ jobs:
       group: resenv-npm-release
       cancel-in-progress: false
     permissions:
-      actions: read # Read the original successful CI run and its retained artifacts.
-      contents: write # Record the verified tag and GitHub prerelease after npm approval.
+      actions: write # Verify source checks and dispatch current beta after a terminal release.
+      contents: write # Reconcile durable drafts and record the original approved source commit.
     steps:
       - uses: actions/checkout@v6.1.0
         with:
@@ -32,34 +38,10 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           package-manager-cache: false
-      - name: Find a trusted staging candidate
-        id: candidate
-        run: node scripts/finalize-release.mjs find
+      # Read durable release assets as data; never rebuild, restage or execute them.
+      - name: Reconcile the pending release and resume queued merges
+        run: node scripts/finalize-release.mjs
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
-      # Download as data outside the checkout; never execute candidate contents.
-      - uses: actions/download-artifact@v8.0.1
-        if: steps.candidate.outputs.run_id != ''
-        with:
-          name: 'resenv-package'
-          path: '${{ runner.temp }}/resenv-candidate'
-          run-id: '${{ steps.candidate.outputs.run_id }}'
-          github-token: '${{ github.token }}'
-          digest-mismatch: 'error'
-      - uses: actions/download-artifact@v8.0.1
-        if: steps.candidate.outputs.run_id != ''
-        with:
-          name: 'resenv-stage'
-          path: '${{ runner.temp }}/resenv-candidate'
-          run-id: '${{ steps.candidate.outputs.run_id }}'
-          github-token: '${{ github.token }}'
-          digest-mismatch: 'error'
-      - name: Record the approved release when npm is ready
-        if: steps.candidate.outputs.run_id != ''
-        run: node scripts/finalize-release.mjs record "$CANDIDATE_DIRECTORY"
-        env:
-          CANDIDATE_DIRECTORY: '${{ runner.temp }}/resenv-candidate'
-          SOURCE_RUN_ID: '${{ steps.candidate.outputs.run_id }}'
-          GITHUB_TOKEN: ${{ github.token }}
-          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
+          REJECT_VERSION: '${{ inputs.reject }}'

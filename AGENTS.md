@@ -10,7 +10,8 @@ release version before packing,
 using semantic-release's official commit-analysis and release-notes plugins.
 The release branch is `beta`; npm tags `beta` and `latest` point to the same tested
 beta release. The first version is
-`0.1.0-beta.1`; real beta release tags supply subsequent counters. The full
+`0.1.0-beta.1`; real release tags, durable draft reservations and public npm
+versions bound subsequent counters. The full
 semantic-release engine is not installed or used while there is no stable
 release branch. Keep `.npmrc` peer omission enabled; the official plugins are
 called standalone, and audit/planning enforce absence of the unused engine and
@@ -18,9 +19,12 @@ publisher modules.
 
 Publish only through GitHub Actions, automatically after pushes to `beta` or an
 explicit publishing dispatch, after all candidate checks. Stage the tested
-archive through npm OIDC; maintainer npm approval publishes it. After the
-maintainer promotes `latest`, the scheduled finalizer records the verified tag
-and GitHub prerelease automatically from the original CI artifacts.
+archive through npm OIDC; maintainer npm approval publishes it. A private draft
+reserves the version and retains the original source, CI evidence and tested
+archive before staging. The finalizer records the verified tag and GitHub
+prerelease automatically after public availability, independent of channel
+promotion or whether beta has advanced. Only one candidate may be pending;
+merges continue and accumulated changes are tested/staged after completion.
 Never publish from a developer machine or request local npm
 login. The user manages npm-side ownership and authentication. The OIDC path
 requires an existing package and a matching trusted publisher; do not assume it
@@ -101,8 +105,12 @@ checks plan a version and test the final archive; pushes to `beta` automatically
 stage releasable candidates. Manual dispatch retains an explicit publishing input.
 CI's push filter is `beta`.
 Stage with the `beta` npm dist-tag. After npm approval and public availability,
-the maintainer updates `latest` to that version before the finalizer records the
-release. The finalizer has no npm/OIDC credentials and must never stage a package.
+the maintainer updates `latest` to that version. Channel promotion does not
+block immutable GitHub release recording. The finalizer has no npm/OIDC
+credentials and must never stage a package. It follows durable managed draft
+records and verifies original source ancestry and CI evidence; Actions artifact
+retention and current branch-head equality are not release-completion gates.
+Rejected versions stay reserved, and ambiguous staging calls must never repeat.
 
 README documents how application users install and use resenv. Contributor setup,
 tests, local linking and release preparation belong in CONTRIBUTING.md and docs/.
@@ -133,9 +141,10 @@ that.
   trailers or attribution footers.
 - Keep `beta` as the default and sole release branch. Temporary `titan/*` remote
   branches are allowed for requested PRs; leave `beta` unchanged for PR review.
-  Once a pending release is recorded or explicitly rejected for replacement,
-  completed commits from the local task
-  branch may fast-forward `beta` when the user has authorized delivery.
+  A pending release does not freeze beta: its original source must remain an
+  ancestor and its durable tested candidate must remain intact. Completed
+  commits from the local task branch may fast-forward `beta` when the user has
+  authorized delivery.
   Do not force-push the default branch.
 - Open PRs only when asked. Do not merge, enable auto-merge, change visibility,
   collaborators, permissions or protections without explicit authorization.

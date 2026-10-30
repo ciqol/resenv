@@ -7,10 +7,15 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: 'Stage the tested beta candidate or finalize an approved release'
+        description: 'Stage a new tested beta candidate or resume a prepared version'
         type: boolean
         default: false
         required: true
+      resume:
+        description: 'Exact prepared version to resume from durable assets; never repeats a staging intent'
+        type: string
+        default: ''
+        required: false
 
 permissions: {}
 
@@ -20,6 +25,7 @@ concurrency:
 
 jobs:
   ci:
+    if: github.event_name != 'workflow_dispatch' || inputs.resume == ''
     runs-on: 'ubuntu-24.04'
     timeout-minutes: 10
     permissions:
@@ -41,6 +47,11 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           package-manager-cache: false
+      - name: 'Snapshot release reservations'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/beta'
+        run: node scripts/release-state.mjs "$RUNNER_TEMP/resenv-release-state.json"
+        env:
+          GITHUB_TOKEN: '${{ github.token }}'
       - name: 'Install'
         run: npm ci --no-audit --no-fund
       - name: 'Audit dependencies'
@@ -65,7 +76,12 @@ jobs:
           if-no-files-found: 'error'
           retention-days: 7
       - name: 'Plan candidate'
-        run: node scripts/release-plan.mjs candidate
+        run: |
+          if [ -f "$RUNNER_TEMP/resenv-release-state.json" ]; then
+            node scripts/release-plan.mjs candidate "$RUNNER_TEMP/resenv-release-state.json"
+          else
+            node scripts/release-plan.mjs candidate
+          fi
       - name: 'Build'
         run: npm run build -- --release-plan candidate/release.json
       - name: 'Pack tarball'
@@ -87,6 +103,35 @@ jobs:
           if-no-files-found: 'error'
           retention-days: 7
           include-hidden-files: false
+
+  resume:
+    if: vars.RELEASE_ENABLED == 'true' && github.event_name == 'workflow_dispatch' && inputs.publish && inputs.resume != '' && github.ref == 'refs/heads/beta'
+    runs-on: 'ubuntu-24.04'
+    timeout-minutes: 10
+    environment: 'release'
+    concurrency:
+      group: 'resenv-npm-release'
+      cancel-in-progress: false
+    permissions:
+      contents: 'write' # Resume the preserved candidate's durable state.
+      actions: 'read' # Verify its original successful checks, without rebuilding.
+      id-token: 'write' # Only a prepared candidate can make its first staging call.
+    steps:
+      - uses: actions/checkout@v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6.5.0
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+      - name: 'Resume the exact prepared archive'
+        run: node scripts/publish.mjs
+        env:
+          GITHUB_TOKEN: '${{ github.token }}'
+          RELEASE_ENABLED: '${{ vars.RELEASE_ENABLED }}'
+          RELEASE_APPROVED: '${{ inputs.publish }}'
+          RELEASE_RESUME: 'true'
+          RESUME_VERSION: '${{ inputs.resume }}'
 
   smoke:
     needs: 'ci'
@@ -169,7 +214,8 @@ jobs:
       group: 'resenv-npm-release'
       cancel-in-progress: false
     permissions:
-      contents: 'write' # Record verified release tags and prereleases.
+      contents: 'write' # Reserve a draft and preserve the exact tested archive.
+      actions: 'read' # Verify the original source run and its successful candidate checks.
       id-token: 'write' # Stage the tested archive through npm OIDC.
     steps:
       - name: 'Checkout'
@@ -188,7 +234,7 @@ jobs:
           path: 'artifacts'
           digest-mismatch: 'error'
       # No dependency installation, build, repack or package execution here.
-      - name: 'Stage or record release'
+      - name: 'Preserve and stage the tested candidate'
         run: node scripts/publish.mjs artifacts
         env:
           GITHUB_TOKEN: '${{ github.token }}'

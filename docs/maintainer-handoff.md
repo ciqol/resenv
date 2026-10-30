@@ -32,10 +32,11 @@ credentials between sessions.
 | `bin/resenv.ts` | Child-process CLI |
 | `rollup.config.mjs`, `scripts/build.mjs` | CJS implementation, ESM facades, types and manifest |
 | `scripts/release-plan.mjs` | Official release plugins and beta counter |
-| `scripts/publish.mjs` | Tested-archive staging and verified release recording |
-| `scripts/finalize-release.mjs` | Trusted staging-run discovery and recording after npm approval |
+| `scripts/publish.mjs` | Isolated OIDC staging of a preserved candidate |
+| `scripts/release-lifecycle.mjs`, `scripts/release-state.mjs` | Durable reservations, source verification and retry-safe transitions |
+| `scripts/finalize-release.mjs` | Durable-record reconciliation after npm approval |
 | `.github/workflows/ci.yml` | Build once, archive matrix tests and automatic beta staging |
-| `.github/workflows/finalize-release.yml` | Scheduled GitHub release recording from original CI artifacts |
+| `.github/workflows/finalize-release.yml` | Scheduled durable-release reconciliation and queue continuation |
 
 Keep docs focused on current contracts, decisions and procedures. Put per-run
 test results, benchmarks, audit snapshots and session history in PRs or CI.

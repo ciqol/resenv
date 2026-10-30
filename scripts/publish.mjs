@@ -4,7 +4,8 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { verifyArtifact } from './release-artifact.mjs'
+import { resumeCandidate, stageCandidate } from './release-lifecycle.mjs'
+import { githubRequest, registryMetadata, listReleases, uploadAsset, downloadAsset } from './release-services.mjs'
 
 export function validatePublisher (env, expires, now = Date.now()) {
   assert.ok(now < Date.parse(expires), 'Publishing platform security review has expired')
@@ -16,8 +17,14 @@ export function validatePublisher (env, expires, now = Date.now()) {
   assert.equal(env.RELEASE_APPROVED, 'true')
   assert.equal(env.RELEASE_ENABLED, 'true')
   assert.match(env.GITHUB_SHA ?? '', /^[a-f0-9]{40}$/)
+  for (const key of ['GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT']) assert.match(env[key] ?? '', /^[1-9]\d*$/)
   for (const key of ['GITHUB_TOKEN', 'ACTIONS_ID_TOKEN_REQUEST_URL', 'ACTIONS_ID_TOKEN_REQUEST_TOKEN']) assert.ok(env[key], `Missing ${key}`)
-  for (const key of ['PLAN_SHA256', 'ARCHIVE_SHA256']) assert.match(env[key] ?? '', /^[a-f0-9]{64}$/)
+  if (env.RELEASE_RESUME === 'true') {
+    assert.equal(env.GITHUB_EVENT_NAME, 'workflow_dispatch')
+    assert.match(env.RESUME_VERSION ?? '', /^0\.1\.0-beta\.[1-9]\d*$/)
+  } else {
+    for (const key of ['PLAN_SHA256', 'ARCHIVE_SHA256']) assert.match(env[key] ?? '', /^[a-f0-9]{64}$/)
+  }
 }
 
 export function npmEnvironment (env, directory) {
@@ -35,75 +42,27 @@ export function validateStageReceipt (output, plan) {
   return { staged: true, stageId: receipt.stageId, version: plan.version, integrity: plan.integrity }
 }
 
-// Effects are injected so failure ordering and idempotent recovery can be tested.
-export async function publishRelease ({ plan, archive }, effects, { recordOnly = false } = {}) {
-  assert.equal(plan.publish, true, 'No release was planned')
-  const repository = await effects.github('GET', '')
-  assert.equal(repository.private, false, 'Public source is required for provenance')
-  assert.equal(repository.default_branch, 'beta')
-  const branch = await effects.github('GET', '/git/ref/heads/beta')
-  assert.equal(branch.object.sha, plan.gitHead, 'The beta branch has changed; review the newer candidate')
-  const metadata = await effects.registry()
-  const published = metadata?.versions?.[plan.version]
-  if (!published) {
-    if (recordOnly) return { pending: true, reason: 'Waiting for npm approval and public availability' }
-    return effects.npm(archive, plan)
-  }
-  assert.equal(published?.dist?.integrity, plan.integrity, 'Registry archive differs from the tested candidate; refusing tag/release')
-  if (recordOnly && (metadata['dist-tags']?.beta !== plan.version || metadata['dist-tags']?.latest !== plan.version)) return { pending: true, reason: 'Waiting for npm beta and latest tags to match the approved candidate' }
-  assert.deepEqual(metadata['dist-tags'], { beta: plan.version, latest: plan.version }, 'Registry channels must contain beta and latest pointing to the tested version; correct npm dist-tags before recording this release')
-  const tagPath = `/git/ref/tags/${plan.gitTag}`
-  const tag = await effects.github('GET', tagPath)
-  if (tag) assert.equal(tag.object.sha, plan.gitHead, 'Existing tag points to another commit')
-  else await effects.github('POST', '/git/refs', { ref: `refs/tags/${plan.gitTag}`, sha: plan.gitHead })
-  const existing = await effects.github('GET', `/releases/tags/${plan.gitTag}`)
-  if (existing) {
-    assert.equal(existing.tag_name, plan.gitTag)
-    assert.equal(existing.draft, false)
-    assert.equal(existing.prerelease, true)
-    return existing
-  }
-  return effects.github('POST', '/releases', {
-    tag_name: plan.gitTag, target_commitish: plan.gitHead, name: plan.gitTag,
-    body: `${plan.notes}\n\nExperimental beta channel.\n\nArchive SHA-256: \`${plan.sha256}\`\n`,
-    prerelease: true, make_latest: 'false', draft: false
-  })
-}
-
-export async function githubRequest (method, suffix, body) {
-  const response = await fetch(`https://api.github.com/repos/ciqol/resenv${suffix}`, {
-    method, headers: { authorization: `Bearer ${process.env.GITHUB_TOKEN}`, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28', 'content-type': 'application/json' },
-    body: body ? JSON.stringify(body) : undefined, redirect: 'error', signal: AbortSignal.timeout(30000)
-  })
-  if (response.status === 404 && method === 'GET' && /^\/(git\/ref\/tags|releases\/tags)\//.test(suffix)) return null
-  assert.ok(response.ok, `GitHub ${method} ${suffix || 'repository'} failed (${response.status})`)
-  return response.json()
-}
-
-export async function registryMetadata () {
-  const response = await fetch('https://registry.npmjs.org/@ciqol%2fresenv', { redirect: 'error', signal: AbortSignal.timeout(30000) })
-  if (response.ok) return response.json()
-  assert.equal(response.status, 404, `Registry lookup failed (${response.status})`)
-  return null
-}
-
 async function main () {
-  assert.equal(process.argv.length, 3, 'Usage: node scripts/publish.mjs <candidate-directory>')
+  const resuming = process.env.RELEASE_RESUME === 'true'
+  assert.equal(process.argv.length, resuming ? 2 : 3, 'Usage: node scripts/publish.mjs [candidate-directory]')
   const policy = JSON.parse(readFileSync(new URL('../docs/security-exceptions.json', import.meta.url), 'utf8'))
   validatePublisher(process.env, policy.expires)
-  const candidate = verifyArtifact(resolve(process.argv[2]), { head: process.env.GITHUB_SHA, planHash: process.env.PLAN_SHA256, archiveHash: process.env.ARCHIVE_SHA256 })
+  const identity = { head: process.env.GITHUB_SHA, planHash: process.env.PLAN_SHA256, archiveHash: process.env.ARCHIVE_SHA256, runId: Number(process.env.GITHUB_RUN_ID), runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT) }
   const temporary = mkdtempSync(join(tmpdir(), 'resenv-publish-'))
   try {
     for (const name of ['user.npmrc', 'global.npmrc']) writeFileSync(join(temporary, name), '')
     const npmEnv = npmEnvironment(process.env, temporary)
+    const version = spawnSync('npm', ['--version'], { env: npmEnv, encoding: 'utf8', timeout: 10000 })
+    assert.equal(version.status, 0)
+    assert.equal(process.version, 'v24.19.0', 'Re-review the publishing platform before changing Node.js')
+    assert.equal(version.stdout.trim(), '11.17.0', 'Re-review the publishing platform before changing npm')
     const effects = {
       github: githubRequest,
       registry: registryMetadata,
+      releases: listReleases,
+      upload: uploadAsset,
+      download: downloadAsset,
       npm (archive, plan) {
-        const version = spawnSync('npm', ['--version'], { env: npmEnv, encoding: 'utf8', timeout: 10000 })
-        assert.equal(version.status, 0)
-        assert.equal(process.version, 'v24.19.0', 'Re-review the publishing platform before changing Node.js')
-        assert.equal(version.stdout.trim(), '11.17.0', 'Re-review the publishing platform before changing npm')
         const result = spawnSync('npm', ['stage', 'publish', archive, '--access', 'public', '--tag', 'beta', '--provenance', '--json'], { cwd: temporary, env: npmEnv, encoding: 'utf8', timeout: 180000, maxBuffer: 4 * 1024 * 1024 })
         assert.equal(result.error, undefined)
         // npm may authenticate only during publish. Do not use whoami as an OIDC probe.
@@ -111,13 +70,14 @@ async function main () {
         return validateStageReceipt(result.stdout, plan)
       }
     }
-    const release = await publishRelease(candidate, effects)
+    const directory = resuming ? temporary : resolve(process.argv[2])
+    const release = resuming ? await resumeCandidate(process.env.RESUME_VERSION, directory, effects) : await stageCandidate(directory, identity, effects)
     if (release.staged) {
-      writeFileSync(join(resolve(process.argv[2]), 'stage.json'), `${JSON.stringify(release, null, 2)}\n`)
-      const message = `Staged @ciqol/resenv@${release.version} on beta.\n\nApprove with npm stage approve ${release.stageId}. After public availability, run npm dist-tag add @ciqol/resenv@${release.version} latest. The Finalize release workflow checks every 15 minutes and records the verified GitHub prerelease automatically; no CI rerun is needed. Keep beta at this commit until recording completes.\n`
+      writeFileSync(join(directory, 'stage.json'), `${JSON.stringify(release, null, 2)}\n`)
+      const message = `Staged @ciqol/resenv@${release.version} on beta.\n\nApprove with npm stage approve ${release.stageId}. After public availability, run npm dist-tag add @ciqol/resenv@${release.version} latest. The durable draft release retains the original tested candidate. GitHub recording follows npm publication automatically, even after beta advances. Promote latest separately after publication; it does not block recording.\n`
       console.log(message)
       if (process.env.GITHUB_STEP_SUMMARY) writeFileSync(process.env.GITHUB_STEP_SUMMARY, message, { flag: 'a' })
-    } else console.log(`Published @ciqol/resenv@${candidate.plan.version} on beta; ${release.html_url}`)
+    } else console.log(`Release lifecycle state: ${release.state}. Existing reservations are preserved; no package was restaged.`)
   } finally { rmSync(temporary, { recursive: true, force: true }) }
 }
 

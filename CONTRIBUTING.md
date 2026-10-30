@@ -12,7 +12,9 @@ commit-analysis and release-notes plugins select releasable changes and generate
 notes; actual beta tags supply the next
 prerelease counter. The root and ordinary local builds remain private prototypes.
 CI generates the publishable manifest before packing and testing it, then stages
-the exact archive through npm OIDC for maintainer approval. See
+the exact archive through npm OIDC for maintainer approval. A private draft
+retains the tested candidate and version reservation; merges can continue while
+approval is pending, and recording uses the original commit and archive. See
 [releasing](docs/releasing.md) and the bounded [release-tool review](docs/release-security.md).
 The source uses the [MIT license](LICENSE), copyright ciqol contributors.
 

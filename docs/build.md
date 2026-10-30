@@ -134,11 +134,17 @@ or an explicit publishing dispatch from `beta`, after `ci`, `smoke` and
 archive, installs no project dependencies and stages through npm OIDC. See
 [releasing](releasing.md) for approval and recovery.
 
-`finalize-release.yml` checks completed trusted beta CI runs and polls every
-15 minutes for npm publication and matching `beta`/`latest` tags. It downloads
-the original staging receipt and tested archive, verifies their producer and
-integrity, and records the GitHub prerelease without rebuilding or running npm.
-It shares release serialization and uses the existing protected environment.
+Trusted beta CI loads a read-only snapshot of durable GitHub reservations and
+public npm versions before planning. A pending candidate defers staging while
+all validation still runs. The protected staging job preserves the exact tested
+archive and plan in a private draft before calling npm; it rechecks reservations
+and the original successful CI evidence under release serialization.
+
+`finalize-release.yml` reconciles that durable record after CI completions and
+every 15 minutes. It can record the original source commit after beta advances,
+without CI artifact downloads, npm credentials or package execution. It verifies
+publication, original assets and source evidence, then resumes CI against current
+beta after completion/rejection. Channel promotion is a separate maintainer step.
 
 Validation jobs have read-only repository permissions and receive no application
 or registry secrets. Missing artifacts and digest mismatches fail the run.
