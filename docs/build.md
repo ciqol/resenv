@@ -123,14 +123,15 @@ Required archives and coverage reports are retained for seven days.
 
 After a merge to protected `main`, `release` downloads the tested build and runs
 semantic-release with the official npm/GitHub plugins. The npm plugin prepares
-version metadata and a tarball; the local verification hook checks the final
-package's consumer contract before publication. Source is never rebuilt in the
-release job. The official npm plugin publishes the prepared directory with no
-package lifecycle scripts. See [releasing](releasing.md) for the one-time 0.1.0
-bootstrap and failure handling.
+version metadata and a tarball. Package-consumer checks run in CI; source is
+never rebuilt in the release job. The official npm plugin publishes the prepared
+directory with no package lifecycle scripts. See [releasing](releasing.md) for
+versioning and failure handling.
 
 PRs and manual dispatches cannot publish. Release permissions are limited to
-GitHub contents write and OIDC. Package and registry secrets are absent from
+GitHub contents, issues and pull-requests write plus OIDC, supporting the official
+GitHub plugin's default release comments, labels and failure issues.
+Package and registry secrets are absent from
 validation jobs. Every checkout disables persisted credentials, and the release
 token is scoped to the release step. Official GitHub actions use exact release
 tags; other remote actions require commit SHAs.

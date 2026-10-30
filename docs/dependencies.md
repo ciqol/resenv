@@ -55,8 +55,8 @@ must be reviewed on disk, not just through root overrides. See
 
 Maintainer `titan-ron` owns updates, advisory review and removal. Replacing this
 toolchain means changing release.config.mjs and the trusted release job; it does
-not alter the library runtime. Use the previous explicit workflow only through
-a reviewed change if upstream becomes unsuitable. Keep review evidence in PRs.
+not alter the library runtime. Review any replacement if upstream becomes
+unsuitable. Keep review evidence in PRs.
 
 The Doppler CLI is separately installed and managed by the user. Rollup uses
 platform-specific optional binaries; preserve clean Linux/macOS install checks.

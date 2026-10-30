@@ -23,13 +23,11 @@ npm ci
 npm run verify
 ```
 
-The committed `.npmrc` omits automatically installed peer dependencies. The
-release planner calls the two official plugins directly, so their full engine
-peer and its publisher dependencies are intentionally not installed. Audit and
-planning enforce that absence. `npm ls` still reports the declared missing
-engine peers; standalone plugin behavior is covered directly by the release
-specs. Keep this install policy when refreshing the lockfile; do not use force
-or legacy peer resolution. See [the dependency review](docs/dependencies.md).
+The committed `.npmrc` uses exact versions and a lockfile. Normal `npm ci`
+installs the full semantic-release toolchain, including its peer dependencies.
+The reviewed postinstall hook repairs npm's bundled vulnerable dependencies;
+see [the dependency review](docs/dependencies.md). Do not use force or legacy
+peer resolution.
 
 `npm run verify` is the complete local check: lint, strict source/spec type
 checks, build, unit/process tests and installed-package checks. To build without
@@ -43,8 +41,9 @@ node dist/bin/resenv.cjs --help
 
 Author library and CLI code as `.ts`; Rollup's TypeScript plugin produces both
 module formats and declarations from that implementation. Colocate Vitest unit
-specs as `*.spec.ts` beside each tested module and import its source. Build and
-release scripts have colocated `*.spec.mjs` Vitest specs. Keep
+specs as `*.spec.ts` beside each tested module and import its source. Tests of
+repository-owned tooling use colocated `*.spec.mjs` files; do not test the
+semantic-release engine or duplicate its upstream tests. Keep
 process, package and integration checks in `test/` as `.mjs`; they exercise
 compiled output and installed packages. Tests use dummy credentials and commands.
 Never use real secrets in fixtures, terminal output, screenshots, issues, or
@@ -103,8 +102,8 @@ exercises both module formats, CLI and preloads, shared error identity, single
 preload execution and `.cts`/`.mts` consumer types.
 
 Pass an existing archive to test the same build CI uses:
-`npm run test:package -- /absolute/path/to/package.tgz`. For a final CI candidate,
-also pass its `release.json` as the second argument. The supplied package's
+`npm run test:package -- /absolute/path/to/package.tgz`. To check a public release
+archive, pass its version as the second argument. The supplied package's
 name, version, executable mode and manifest are checked before runtime probes.
 The README inside the archive must match the checkout, install from npm's
 `latest` channel and avoid unpublished or local-archive installation guidance.
@@ -113,8 +112,8 @@ also previews the package contents. Neither publishes or creates a tag.
 
 Rebuild after source, declarations, metadata or documentation changes. The build
 cleans `dist/` first and generates its manifest from the root package. See
-[docs/build.md](docs/build.md). Ordinary local builds remain private. Only a validated CI release plan removes
-that guard from the distribution manifest; never edit it by hand.
+[docs/build.md](docs/build.md). Ordinary local builds remain private. Only the
+protected release job removes that guard from the tested distribution manifest.
 
 ## Try changes in an application
 

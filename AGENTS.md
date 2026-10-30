@@ -12,10 +12,10 @@ approval. No separate npm or GitHub environment approval is required.
 Use standard semantic-release with its official commit-analysis, release-notes,
 npm and GitHub plugins. Publish regular `0.x.x` versions to npm `latest` while
 in initial development; `0.x.x` is not a SemVer prerelease. Breaking commits bump
-the minor version until a reviewed 1.0 transition. With no previous regular tag,
-CI publishes the real `0.1.0` baseline once; never invent a published version or
-seed a tag for an archive that was not published. Subsequent releases use the
-engine's normal tag-before-publish behavior. Keep local builds and the root private.
+the minor version until a reviewed 1.0 transition. The real `v0.1.0` release is
+the baseline; use the engine's normal versioning and tag-before-publish behavior.
+Keep local builds and the root private. Prefer the official plugin defaults;
+do not add release wrappers, formatting overrides or tests of the release engine.
 
 Publish only from GitHub Actions after pushes to protected `main` and all CI
 checks pass. Manual dispatch runs checks only. Use npm OIDC with direct publish

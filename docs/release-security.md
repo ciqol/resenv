@@ -17,16 +17,17 @@ to package consumers.
 PR merge is approval. Branch rules require the real CI/CodeQL checks and prevent
 direct pushes, force pushes, deletion and bypass. PRs and manual dispatches
 cannot publish. Only main pushes may enter the `release` environment, with
-contents write and OIDC permissions. There are no npm tokens or additional
-reviewers. The release token is exposed only to the release step, and checkout
-does not persist credentials.
+contents, issues and pull-requests write permissions and OIDC. The issue/PR
+permissions support the official GitHub plugin's default comments, labels and
+failure issues. There are no npm tokens or additional reviewers. The release
+token is exposed only to the release step, and checkout does not persist credentials.
 
-The job consumes compiled output tested by CI. The npm plugin changes release
-metadata and packs it; the verification hook tests the final package. Publishing
-uses the prepared directory, whose manifest has no package lifecycle scripts.
-The source is not rebuilt. The bootstrap publishes its checked tarball directly.
-GitHub issue/PR comments and labels are disabled in the GitHub plugin so it
-needs no issue or pull-request write permission.
+The job consumes compiled output tested by CI, removes its private marker and
+runs `npm run release` directly. The official npm plugin changes release metadata,
+packs and publishes the prepared directory, whose manifest has no package
+lifecycle scripts. The source is not rebuilt. CI owns package-consumer testing;
+there is no custom release hook or second test pass in the privileged release job.
+The workflow enforces the existing security review deadline before publication.
 
 ## Dependency review
 
