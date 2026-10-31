@@ -88,6 +88,8 @@ try {
   assert.equal(manifest.version, releaseVersion ?? source.version)
   assert.equal(manifest.license, source.license)
   assert.deepEqual(manifest.dependencies, {})
+  for (const field of ['optionalDependencies', 'peerDependencies']) assert.deepEqual(manifest[field] ?? {}, {})
+  for (const field of ['bundleDependencies', 'bundledDependencies']) assert.ok(manifest[field] === undefined || manifest[field] === false || (Array.isArray(manifest[field]) && manifest[field].length === 0), `${field} must not add runtime dependencies`)
   assert.deepEqual(Object.keys(runtimePackages), [])
   for (const field of ['scripts', 'devDependencies', 'type', 'overrides']) assert.equal(manifest[field], undefined)
   assert.equal(existsSync(join(directory, 'node_modules/rollup')), false)

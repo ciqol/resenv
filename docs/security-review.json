@@ -1,0 +1,5 @@
+{
+  "expires": "2026-11-09T00:00:00.000Z",
+  "owner": "titan-ron",
+  "scope": "Runtime advisories at moderate severity block CI. Development and release-tool findings require documented exposure review before merge; findings affecting credentials or artifact integrity block publication."
+}

@@ -8,7 +8,8 @@ maintainer approves by merging; no second reviewer is required.
 
 ## Normal flow
 
-CI audits dependencies, checks signatures, lint, types and coverage, builds
+CI gates runtime dependency advisories, reports toolchain advisories for review,
+checks signatures, lint, types and coverage, builds
 once, and tests the packed build across Linux Node 20/22/24/26 and macOS Node 26.
 After a merge, the protected release job downloads that build, removes its
 private marker and calls `npm run release` (`semantic-release`). The official
@@ -63,7 +64,9 @@ needed. See [npm's trusted-publishing guide](https://docs.npmjs.com/trusted-publ
 
 Never publish from a developer machine, configure a permanent npm publishing
 token, or request local npm login. Local `npm run release:check` is read-only
-with respect to publication. Only an enabled main push can enter the protected release job. A merge does not waive a failing audit or the security review expiry.
+with respect to publication. Only an enabled main push can enter the protected
+release job. A merge does not waive the runtime audit, an unresolved release-risk
+review or the security review expiry.
 
 ## Failures
 

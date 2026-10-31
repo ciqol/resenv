@@ -25,9 +25,11 @@ npm run verify
 
 The committed `.npmrc` uses exact versions and a lockfile. Normal `npm ci`
 installs the full semantic-release toolchain, including its peer dependencies.
-The reviewed postinstall hook repairs npm's bundled vulnerable dependencies;
-see [the dependency review](docs/dependencies.md). Do not use force or legacy
-peer resolution.
+Dependencies are installed unchanged from their registry archives; there are no
+custom repair hooks. Do not use force or legacy peer resolution.
+Run `npm run audit` for the blocking runtime check and `npm run audit:tooling`
+for the full advisory report. Development and publishing findings require the
+risk review described in [release security](docs/release-security.md).
 
 `npm run verify` is the complete local check: lint, strict source/spec type
 checks, build, unit/process tests and installed-package checks. To build without

@@ -119,7 +119,8 @@ consumer artifact is rebuilt in place by these tests.
 
 ## CI
 
-The `ci` job checks advisories and registry signatures, lint, types and source
+The `ci` job gates runtime advisories and registry signatures, reports the full
+toolchain audit for risk review, and checks lint, types and source
 coverage, then builds and packs once. It tests the private archive and processes
 on the pinned Node version. The `smoke` matrix tests that archive on Linux Node
 20/22/24 and macOS with pinned Node 26; it never recompiles source. Coverage runs

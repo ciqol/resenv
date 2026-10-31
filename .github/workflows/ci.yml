@@ -32,6 +32,15 @@ jobs:
           package-manager-cache: false
       - name: 'Install'
         run: npm ci --no-audit --no-fund
+      - name: 'Report development and release-tool advisories'
+        run: |
+          npm run audit:tooling > toolchain-audit.txt
+          cat toolchain-audit.txt
+          {
+            printf '### Development and release-tool audit\n\nFindings require risk review; this report does not block solely on severity. Runtime audit remains required.\n\n```text\n'
+            cat toolchain-audit.txt
+            printf '\n```\n'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: 'Check dependencies, lint and types'
         run: |
           npm run audit
@@ -174,7 +183,7 @@ jobs:
           node --input-type=module <<'NODE'
           import assert from 'node:assert/strict'
           import { readFileSync } from 'node:fs'
-          const { expires } = JSON.parse(readFileSync('docs/security-exceptions.json', 'utf8'))
+          const { expires } = JSON.parse(readFileSync('docs/security-review.json', 'utf8'))
           assert.ok(Date.now() < Date.parse(expires), 'Release-tool security review has expired')
           NODE
       - name: 'Download tested package'
