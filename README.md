@@ -23,6 +23,10 @@ resenv, and dotenv files are never rewritten.
 Requires Node.js 20 or later. The package is experimental and remains in initial
 development; its API may change between 0.x releases.
 
+Each npm package includes this README for the version you installed. The
+[repository README](https://github.com/ciqol/resenv#readme) and linked online
+guides follow current development and may describe newer versions.
+
 Background: [A new Git worktree shouldn't mean another copy of your secrets](https://dev.to/titanron/a-new-git-worktree-shouldnt-mean-another-copy-of-your-secrets-424).
 
 ## Install
@@ -68,7 +72,7 @@ access stop startup without opening a browser or prompting for login.
 
 For CI and other unattended environments, supply `DOPPLER_TOKEN` through your
 runner's secret facility; the CLI is not needed in that mode. See
-[Doppler authentication and platform details](docs/doppler.md), including
+[Doppler authentication and platform details](https://github.com/ciqol/resenv/blob/main/docs/doppler.md), including
 migration from the earlier resenv-managed login.
 
 Need another secrets provider, operating system or CLI installation method?
@@ -159,8 +163,8 @@ its environment is loaded; values embedded in build output remain in that output
 - Application code can read its resolved environment. Access to the same
   credentials also permits other code or sessions to retrieve those secrets.
 
-See [Doppler limits](docs/doppler.md#resolution-and-security-boundaries) and
-[security guidance](SECURITY.md).
+See the current [Doppler limits](https://github.com/ciqol/resenv/blob/main/docs/doppler.md#resolution-and-security-boundaries)
+and [security guidance](https://github.com/ciqol/resenv/blob/main/SECURITY.md).
 
 ## Library API
 
@@ -252,7 +256,7 @@ with `{ commands: true }`.
 ## Contributing
 
 For checkout setup, building, testing, trying local changes in another project
-and submitting fixes, see [CONTRIBUTING.md](CONTRIBUTING.md).
+and submitting fixes, see [CONTRIBUTING.md](https://github.com/ciqol/resenv/blob/main/CONTRIBUTING.md).
 
 ## License
 

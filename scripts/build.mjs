@@ -42,7 +42,7 @@ try {
       writeFileSync(target, declaration)
     }
   }
-  cpSync('README.npm.md', resolve(directory, 'README.md'))
+  cpSync('README.md', resolve(directory, 'README.md'))
   cpSync('LICENSE', resolve(directory, 'LICENSE'))
   chmodSync(resolve(directory, manifest.bin.resenv), 0o755)
   process.stdout.write(`Built CommonJS, ESM facades, declarations and ${manifest.private ? 'private prototype' : 'release candidate'} manifest in dist/.\n`)

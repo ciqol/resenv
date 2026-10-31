@@ -88,9 +88,10 @@ The build removes stale output first. It derives `dist/package.json` from the
 root manifest, rebases entry paths, and omits development dependencies, scripts,
 overrides and a package-wide `type` field. Explicit `.mjs` and `.cjs` extensions
 select the output format. The archive contains runtime modules, declarations,
-package metadata, the MIT `LICENSE` and a short README copied from `README.npm.md`.
-That README links to the latest repository documentation; the full README,
-contributor/security guides and `docs/` stay in the repository. npm automatically
+package metadata, the MIT `LICENSE` and a copy of the consumer-facing `README.md`
+from the same source revision. Users get installation and API guidance for the
+installed version. Links to supplementary online guides use absolute repository
+URLs; contributor/security guides and `docs/` are not bundled. npm automatically
 includes the package manifest, README and license alongside the `files` allowlist.
 
 Ordinary local and CI builds retain `private: true`. Only the protected release

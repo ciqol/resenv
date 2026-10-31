@@ -105,9 +105,10 @@ Pass an existing archive to test the same build CI uses:
 `npm run test:package -- /absolute/path/to/package.tgz`. To check a public release
 archive, pass its version as the second argument. The supplied package's
 name, version, executable mode and manifest are checked before runtime probes.
-The README inside the archive comes from `README.npm.md` and links to the latest
-repository documentation. Full guides and contributor/security documents are
-not distributed in the npm package.
+The README inside the archive is copied from this revision's `README.md`, so it
+documents the installed package's behavior. Keep it focused on application
+users and use absolute repository links for supplementary guides that are not
+bundled. Contributor/security documents and `docs/` stay in the repository.
 `npm run verify` runs lint, typecheck, build and tests; `npm run release:check`
 also previews the package contents. Neither publishes or creates a tag.
 

@@ -44,7 +44,7 @@ try {
     assert.ok(packed.files.some(file => file.path === path), `Missing package file: ${path}`)
   }
   assert.ok(packed.files.every(file => !/^(src|test|scripts|node_modules)\//.test(file.path) && !file.path.split('/').some(part => part.startsWith('.env'))))
-  assert.ok(packed.files.every(file => !/^(docs\/|CONTRIBUTING\.md$|SECURITY\.md$|README\.npm\.md$)/.test(file.path)), 'Repository documentation must not ship in the package')
+  assert.ok(packed.files.every(file => !/^(docs\/|CONTRIBUTING\.md$|SECURITY\.md$)/.test(file.path)), 'Supplementary repository guides must not ship in the package')
   assert.ok(packed.files.every(file => !file.path.endsWith('.ts') || file.path.endsWith('.d.ts')), 'TypeScript implementation must not ship')
   for (const path of ['types/src/index.d.ts', 'types/src/types.d.ts', 'types/src/errors.d.ts']) {
     assert.ok(packed.files.some(file => file.path === path), `Missing generated declaration: ${path}`)
@@ -53,8 +53,7 @@ try {
   assert.ok(packed.files.find(file => file.path === 'bin/resenv.cjs').mode & 0o111, 'CLI must remain executable')
   const archive = suppliedArchive ?? join(directory, packed.filename)
   const readme = run('tar', ['-xOf', archive, 'package/README.md'], root).stdout
-  assert.equal(readme, readFileSync(join(root, 'README.npm.md'), 'utf8'), 'Packed README must use the short npm introduction')
-  assert.ok(readme.includes('https://github.com/ciqol/resenv#readme'), 'Packed README must link to the latest repository documentation')
+  assert.equal(readme, readFileSync(join(root, 'README.md'), 'utf8'), 'Packed README must match this version of the user guide')
   const packedManifest = JSON.parse(run('tar', ['-xOf', archive, 'package/package.json'], root).stdout)
   const dependency = `file:${archive}`
   const dependencies = { [source.name]: dependency }
