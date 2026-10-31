@@ -87,14 +87,16 @@ remains necessary to detect use of APIs absent from the oldest supported Node.
 The build removes stale output first. It derives `dist/package.json` from the
 root manifest, rebases entry paths, and omits development dependencies, scripts,
 overrides and a package-wide `type` field. Explicit `.mjs` and `.cjs` extensions
-select the output format. README, the MIT `LICENSE`, contributor/security guides
-and docs are copied into the distribution and included in the archive.
+select the output format. The archive contains runtime modules, declarations,
+package metadata, the MIT `LICENSE` and a short README copied from `README.npm.md`.
+That README links to the latest repository documentation; the full README,
+contributor/security guides and `docs/` stay in the repository. npm automatically
+includes the package manifest, README and license alongside the `files` allowlist.
 
 Ordinary local and CI builds retain `private: true`. Only the protected release
 job makes the tested build publishable and lets the npm plugin set its version.
-The development root stays private. Release consumer checks validate the final
-versioned package before direct publication; see
-[releasing](releasing.md).
+The development root stays private. CI checks the packed build's consumer
+contract before publication; see [releasing](releasing.md).
 
 `npm run pack:local` packs the generated directory. `npm run test:package`
 instead packs into a temporary directory and installs it offline into a clean

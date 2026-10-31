@@ -28,7 +28,7 @@ try {
     return Object.fromEntries(Object.entries(value).map(([name, entry]) => [name, rebase(entry)]))
   }
   for (const field of ['main', 'module', 'types', 'exports', 'bin']) manifest[field] = rebase(source[field])
-  manifest.files = ['*.cjs', '*.mjs', '*.d.cts', '*.d.mts', 'doppler', 'bin', 'types', 'README.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md', 'docs']
+  manifest.files = ['*.cjs', '*.mjs', '*.d.cts', '*.d.mts', 'doppler', 'bin', 'types']
   writeFileSync(resolve(directory, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`)
 
   for (const [entry, paths] of Object.entries(manifest.exports)) {
@@ -42,9 +42,8 @@ try {
       writeFileSync(target, declaration)
     }
   }
-  for (const file of ['README.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md', 'docs']) {
-    if (existsSync(file)) cpSync(file, resolve(directory, file), { recursive: true })
-  }
+  cpSync('README.npm.md', resolve(directory, 'README.md'))
+  cpSync('LICENSE', resolve(directory, 'LICENSE'))
   chmodSync(resolve(directory, manifest.bin.resenv), 0o755)
   process.stdout.write(`Built CommonJS, ESM facades, declarations and ${manifest.private ? 'private prototype' : 'release candidate'} manifest in dist/.\n`)
 } catch (err) {

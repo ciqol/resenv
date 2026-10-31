@@ -3,7 +3,7 @@ export default {
   plugins: [
     ['@semantic-release/commit-analyzer', { releaseRules: [{ breaking: true, release: 'minor' }] }],
     '@semantic-release/release-notes-generator',
-    ['@semantic-release/npm', { pkgRoot: 'dist', tarballDir: 'release' }],
-    ['@semantic-release/github', { assets: 'release/*.tgz' }]
+    ['@semantic-release/npm', { pkgRoot: 'dist' }],
+    '@semantic-release/github'
   ]
 }

@@ -13,7 +13,8 @@ once, and tests the packed build across Linux Node 20/22/24 and macOS Node 24.
 After a merge, the protected release job downloads that build, removes its
 private marker and calls `npm run release` (`semantic-release`). The official
 plugins analyze commits, generate notes, version and publish the package to npm
-`latest`, and create the GitHub release with its archive attached. The source
+`latest`, and create the GitHub release. No extra package archive is attached to
+GitHub; npm distributes the package. The source
 is not rebuilt and package-consumer tests stay in CI.
 
 Use the official plugin defaults for release notes, success comments, failure

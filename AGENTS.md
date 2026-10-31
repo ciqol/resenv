@@ -95,6 +95,9 @@ finalizer, polling workflow or release queue is used.
 
 README documents how application users install and use resenv. Contributor setup,
 tests, local linking and release preparation belong in CONTRIBUTING.md and docs/.
+Keep these guides in the repository. The npm package ships runtime modules,
+declarations, metadata, LICENSE and a short README from README.npm.md linking to
+the latest repository docs. Do not attach an additional npm archive to GitHub releases.
 Use normal npm lifecycle behavior; review required dependency hooks rather than
 globally disabling scripts in setup, package checks or CI.
 
