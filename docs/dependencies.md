@@ -16,7 +16,6 @@ normal `npm ci`; review install hooks instead of disabling them globally.
 | `semantic-release` | Standard version, tag and release orchestration | MIT |
 | `@semantic-release/commit-analyzer`, `@semantic-release/release-notes-generator` | Commit classification and release notes | MIT |
 | `@semantic-release/npm`, `@semantic-release/github` | Official npm/GitHub publishing | MIT |
-| `npm-undici-patch`, `npm-ip-address-patch` | Exact upstream fixes for npm's bundled development dependencies | MIT |
 
 ## Release tooling
 
@@ -27,13 +26,9 @@ They are pinned to 25.0.9 (engine), 13.2.0 (npm), and 12.0.10 (GitHub), alongsid
 the existing analysis/notes plugins. npm is pinned transitively to 11.21.1 so its
 bundled implementation remains reviewable.
 
-The temporary development aliases resolve to upstream `undici@6.29.1` and
-`ip-address@10.7.5`. Both have no runtime dependencies or registry install hooks
-and support the pinned Node runtime. The root postinstall hook copies their
-locked registry contents into npm's bundle; see the checks and removal procedure
-in [release security](release-security.md#temporary-npm-bundle-repair). Upstream
-sources are [Undici](https://github.com/nodejs/undici/releases/tag/v6.29.1) and
-[ip-address](https://github.com/beaugunderson/ip-address/releases/tag/v10.7.5).
+Use npm's official bundle unchanged. The lockfile describes the original registry
+artifact, without development aliases or postinstall file replacements. Upgrade
+through published upstream releases and inspect the bundled versions on disk.
 
 Canonical sources are [semantic-release](https://github.com/semantic-release/semantic-release),
 [npm plugin](https://github.com/semantic-release/npm) and
@@ -48,21 +43,23 @@ available trust evidence.
 
 The engine/plugin tree invokes Git and npm, reads/writes repository/package
 files and contacts GitHub/npm. It runs with release authority only after the
-protected merge. The complete installed tree remains subject to the blocking
-audit; adoption does not authorize accepting an advisory. Bundled npm components
+protected merge. Runtime advisories block CI; the full development/release-tool
+audit remains visible and requires exposure review before merge. Findings that
+threaten credentials or artifact integrity block publication. Bundled npm components
 must be reviewed on disk, not just through root overrides. See
 [release security](release-security.md).
 
 Maintainer `titan-ron` owns updates, advisory review and removal. Replacing this
 toolchain means changing release.config.mjs and the trusted release job; it does
-not alter the library runtime. Use the previous explicit workflow only through
-a reviewed change if upstream becomes unsuitable. Keep review evidence in PRs.
+not alter the library runtime. Review any replacement if upstream becomes
+unsuitable. Keep review evidence in PRs.
 
 The Doppler CLI is separately installed and managed by the user. Rollup uses
 platform-specific optional binaries; preserve clean Linux/macOS install checks.
 The optional fsevents lock metadata can advertise an install script even when
 its reviewed archive contains neither an install hook nor binding.gyp.
 
-Run `npm ci`, `npm run audit`, `npm audit signatures`, and `npm run verify`.
+Run `npm ci`, `npm run audit`, `npm run audit:tooling`, `npm audit signatures`,
+and `npm run verify`.
 Official GitHub actions use exact release tags under the repository publisher
 policy; other remote actions require full SHAs.

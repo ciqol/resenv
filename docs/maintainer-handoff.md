@@ -32,8 +32,6 @@ credentials between sessions.
 | `bin/resenv.ts` | Child-process CLI |
 | `rollup.config.mjs`, `scripts/build.mjs` | CJS implementation, ESM facades, types and manifest |
 | `release.config.mjs` | Standard semantic-release plugins and main/0.x policy |
-| `scripts/release.mjs` | One-time 0.1.0 bootstrap, then the standard release command |
-| `scripts/verify-release.mjs` | Trusted event, review expiry, 0.x and final package checks |
 | `.github/workflows/ci.yml` | Checks, one compiled build and publication on main merges |
 
 Keep docs focused on current contracts, decisions and procedures. Put per-run

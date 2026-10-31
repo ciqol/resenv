@@ -23,13 +23,13 @@ npm ci
 npm run verify
 ```
 
-The committed `.npmrc` omits automatically installed peer dependencies. The
-release planner calls the two official plugins directly, so their full engine
-peer and its publisher dependencies are intentionally not installed. Audit and
-planning enforce that absence. `npm ls` still reports the declared missing
-engine peers; standalone plugin behavior is covered directly by the release
-specs. Keep this install policy when refreshing the lockfile; do not use force
-or legacy peer resolution. See [the dependency review](docs/dependencies.md).
+The committed `.npmrc` uses exact versions and a lockfile. Normal `npm ci`
+installs the full semantic-release toolchain, including its peer dependencies.
+Dependencies are installed unchanged from their registry archives; there are no
+custom repair hooks. Do not use force or legacy peer resolution.
+Run `npm run audit` for the blocking runtime check and `npm run audit:tooling`
+for the full advisory report. Development and publishing findings require the
+risk review described in [release security](docs/release-security.md).
 
 `npm run verify` is the complete local check: lint, strict source/spec type
 checks, build, unit/process tests and installed-package checks. To build without
@@ -43,8 +43,9 @@ node dist/bin/resenv.cjs --help
 
 Author library and CLI code as `.ts`; Rollup's TypeScript plugin produces both
 module formats and declarations from that implementation. Colocate Vitest unit
-specs as `*.spec.ts` beside each tested module and import its source. Build and
-release scripts have colocated `*.spec.mjs` Vitest specs. Keep
+specs as `*.spec.ts` beside each tested module and import its source. Tests of
+repository-owned tooling use colocated `*.spec.mjs` files; do not test the
+semantic-release engine or duplicate its upstream tests. Keep
 process, package and integration checks in `test/` as `.mjs`; they exercise
 compiled output and installed packages. Tests use dummy credentials and commands.
 Never use real secrets in fixtures, terminal output, screenshots, issues, or
@@ -85,7 +86,7 @@ and packed-package/process checks on the pinned Node version. CLI lookup checks
 use injected helpers and temporary
 dummy executables; they never access a developer credential store or
 authenticated provider session.
-The `smoke` matrix checks that same archive on Linux Node 20 and 22 and macOS
+The `smoke` matrix checks that same archive on Linux Node 20, 22 and 24 and macOS
 with the pinned Node version; it does not build or rerun source unit specs.
 
 Use normal npm lifecycle behavior locally and in CI. Review install hooks,
@@ -103,18 +104,20 @@ exercises both module formats, CLI and preloads, shared error identity, single
 preload execution and `.cts`/`.mts` consumer types.
 
 Pass an existing archive to test the same build CI uses:
-`npm run test:package -- /absolute/path/to/package.tgz`. For a final CI candidate,
-also pass its `release.json` as the second argument. The supplied package's
+`npm run test:package -- /absolute/path/to/package.tgz`. To check a public release
+archive, pass its version as the second argument. The supplied package's
 name, version, executable mode and manifest are checked before runtime probes.
-The README inside the archive must match the checkout, install from npm's
-`latest` channel and avoid unpublished or local-archive installation guidance.
+The README inside the archive is copied from this revision's `README.md`, so it
+documents the installed package's behavior. Keep it focused on application
+users and use absolute repository links for supplementary guides that are not
+bundled. Contributor/security documents and `docs/` stay in the repository.
 `npm run verify` runs lint, typecheck, build and tests; `npm run release:check`
 also previews the package contents. Neither publishes or creates a tag.
 
 Rebuild after source, declarations, metadata or documentation changes. The build
 cleans `dist/` first and generates its manifest from the root package. See
-[docs/build.md](docs/build.md). Ordinary local builds remain private. Only a validated CI release plan removes
-that guard from the distribution manifest; never edit it by hand.
+[docs/build.md](docs/build.md). Ordinary local builds remain private. Only the
+protected release job removes that guard from the tested distribution manifest.
 
 ## Try changes in an application
 

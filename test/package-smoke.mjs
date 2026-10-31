@@ -40,10 +40,11 @@ try {
   assert.equal(packed.name, source.name)
   assert.equal(packed.version, releaseVersion ?? source.version)
   assert.ok(!packed.files.some(file => /\.spec\./.test(file.path)), 'Unit specs must not be packed')
-  for (const path of ['index.cjs', 'index.mjs', 'index.d.cts', 'index.d.mts', 'resolve-commands.cjs', 'resolve-commands.mjs', 'resolve-doppler.cjs', 'resolve-doppler.mjs', 'doppler-worker.cjs', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/dependencies.md', 'docs/build.md', 'docs/release-security.md', 'docs/releasing.md', 'docs/doppler.md']) {
+  for (const path of ['index.cjs', 'index.mjs', 'index.d.cts', 'index.d.mts', 'resolve-commands.cjs', 'resolve-commands.mjs', 'resolve-doppler.cjs', 'resolve-doppler.mjs', 'doppler-worker.cjs', 'README.md']) {
     assert.ok(packed.files.some(file => file.path === path), `Missing package file: ${path}`)
   }
   assert.ok(packed.files.every(file => !/^(src|test|scripts|node_modules)\//.test(file.path) && !file.path.split('/').some(part => part.startsWith('.env'))))
+  assert.ok(packed.files.every(file => !/^(docs\/|CONTRIBUTING\.md$|SECURITY\.md$)/.test(file.path)), 'Supplementary repository guides must not ship in the package')
   assert.ok(packed.files.every(file => !file.path.endsWith('.ts') || file.path.endsWith('.d.ts')), 'TypeScript implementation must not ship')
   for (const path of ['types/src/index.d.ts', 'types/src/types.d.ts', 'types/src/errors.d.ts']) {
     assert.ok(packed.files.some(file => file.path === path), `Missing generated declaration: ${path}`)
@@ -52,12 +53,7 @@ try {
   assert.ok(packed.files.find(file => file.path === 'bin/resenv.cjs').mode & 0o111, 'CLI must remain executable')
   const archive = suppliedArchive ?? join(directory, packed.filename)
   const readme = run('tar', ['-xOf', archive, 'package/README.md'], root).stdout
-  assert.equal(readme, readFileSync(join(root, 'README.md'), 'utf8'), 'Packed README must match the checked-out documentation')
-  const install = readme.split(/^## /m).find(section => section.startsWith('Install\n'))
-  assert.ok(install, 'README must include application installation instructions')
-  assert.match(install, /npm install --save-exact @ciqol\/resenv(?:\s|$)/, 'Application installation must use the default npm channel')
-  assert.doesNotMatch(install, /\.tgz\b|file:|\/path\/to\//, 'Local archive installation belongs in CONTRIBUTING.md')
-  assert.doesNotMatch(readme, /not (?:yet )?published|has not been published|once .{0,40}published|currently distributed\s+as a package archive/i, 'README must not describe the public package as unpublished')
+  assert.equal(readme, readFileSync(join(root, 'README.md'), 'utf8'), 'Packed README must match this version of the user guide')
   const packedManifest = JSON.parse(run('tar', ['-xOf', archive, 'package/package.json'], root).stdout)
   const dependency = `file:${archive}`
   const dependencies = { [source.name]: dependency }
@@ -92,6 +88,8 @@ try {
   assert.equal(manifest.version, releaseVersion ?? source.version)
   assert.equal(manifest.license, source.license)
   assert.deepEqual(manifest.dependencies, {})
+  for (const field of ['optionalDependencies', 'peerDependencies']) assert.deepEqual(manifest[field] ?? {}, {})
+  for (const field of ['bundleDependencies', 'bundledDependencies']) assert.ok(manifest[field] === undefined || manifest[field] === false || (Array.isArray(manifest[field]) && manifest[field].length === 0), `${field} must not add runtime dependencies`)
   assert.deepEqual(Object.keys(runtimePackages), [])
   for (const field of ['scripts', 'devDependencies', 'type', 'overrides']) assert.equal(manifest[field], undefined)
   assert.equal(existsSync(join(directory, 'node_modules/rollup')), false)

@@ -12,10 +12,10 @@ approval. No separate npm or GitHub environment approval is required.
 Use standard semantic-release with its official commit-analysis, release-notes,
 npm and GitHub plugins. Publish regular `0.x.x` versions to npm `latest` while
 in initial development; `0.x.x` is not a SemVer prerelease. Breaking commits bump
-the minor version until a reviewed 1.0 transition. With no previous regular tag,
-CI publishes the real `0.1.0` baseline once; never invent a published version or
-seed a tag for an archive that was not published. Subsequent releases use the
-engine's normal tag-before-publish behavior. Keep local builds and the root private.
+the minor version until a reviewed 1.0 transition. The real `v0.1.0` release is
+the baseline; use the engine's normal versioning and tag-before-publish behavior.
+Keep local builds and the root private. Prefer the official plugin defaults;
+do not add release wrappers, formatting overrides or tests of the release engine.
 
 Publish only from GitHub Actions after pushes to protected `main` and all CI
 checks pass. Manual dispatch runs checks only. Use npm OIDC with direct publish
@@ -24,10 +24,13 @@ restricted to `main`, without required reviewers. No npm tokens, local publishin
 or local npm login. The user manages npm ownership and authentication. Keep
 `RELEASE_ENABLED` disabled until protection and npm setup are verified.
 
-Read `docs/release-security.md` before changing release tools. Audit the complete
-installed tree at moderate severity and preserve the review expiry. Do not add
-advisory exceptions or bypass audit failures to make a release pass. Release
-tools run only in the trusted release job. Remove obsolete npm versions only
+Read `docs/release-security.md` before changing release tools. Runtime dependency
+audit findings at moderate severity or above block CI. Report the full toolchain
+audit without filtering findings; review development/release-tool exposure before
+merge rather than blocking on severity alone. Preserve the review expiry and
+block publication for risks to credentials or artifact integrity. Do not patch
+installed dependencies or disguise accepted findings as fixed. Release
+tools run with publishing authority only in the trusted release job. Remove obsolete npm versions only
 with explicit authorization; never unpublish the entire package.
 
 ## Implementation
@@ -95,6 +98,11 @@ finalizer, polling workflow or release queue is used.
 
 README documents how application users install and use resenv. Contributor setup,
 tests, local linking and release preparation belong in CONTRIBUTING.md and docs/.
+Keep supplementary guides in the repository. The npm package ships runtime modules,
+declarations, metadata, LICENSE and this revision's consumer-facing README.md.
+Use absolute repository links for guides outside the package, distinguishing
+current online docs from the installed version's README. Do not attach an
+additional npm archive to GitHub releases.
 Use normal npm lifecycle behavior; review required dependency hooks rather than
 globally disabling scripts in setup, package checks or CI.
 

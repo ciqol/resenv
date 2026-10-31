@@ -78,23 +78,28 @@ checks all library/CLI source, colocated unit specs and both consumer formats wi
 `unknown` and are validated before use. Compiler failures stop the build.
 
 The source target is ES2023. `ES2024.String` supplies the declaration for
-`isWellFormed()`, whose availability is also checked by the Node 20/22/24 runtime
-tests. Node types match the Node 24 development toolchain; the runtime matrix
-remains necessary to detect use of APIs absent from the oldest supported Node.
+`isWellFormed()`, whose availability is also checked by the Node 20/22/24/26 runtime
+tests. Development and release jobs use Node 26 LTS, pinned in `.nvmrc`.
+Node types remain on Node 24 to avoid widening the API surface during this runtime
+upgrade; the runtime matrix remains necessary to detect use of APIs absent from
+the oldest supported Node.
 
 ## Generated manifest and packing
 
 The build removes stale output first. It derives `dist/package.json` from the
 root manifest, rebases entry paths, and omits development dependencies, scripts,
 overrides and a package-wide `type` field. Explicit `.mjs` and `.cjs` extensions
-select the output format. README, the MIT `LICENSE`, contributor/security guides
-and docs are copied into the distribution and included in the archive.
+select the output format. The archive contains runtime modules, declarations,
+package metadata, the MIT `LICENSE` and a copy of the consumer-facing `README.md`
+from the same source revision. Users get installation and API guidance for the
+installed version. Links to supplementary online guides use absolute repository
+URLs; contributor/security guides and `docs/` are not bundled. npm automatically
+includes the package manifest, README and license alongside the `files` allowlist.
 
 Ordinary local and CI builds retain `private: true`. Only the protected release
 job makes the tested build publishable and lets the npm plugin set its version.
-The development root stays private. Release consumer checks validate the final
-versioned package before direct publication; see
-[releasing](releasing.md).
+The development root stays private. CI checks the packed build's consumer
+contract before publication; see [releasing](releasing.md).
 
 `npm run pack:local` packs the generated directory. `npm run test:package`
 instead packs into a temporary directory and installs it offline into a clean
@@ -114,23 +119,25 @@ consumer artifact is rebuilt in place by these tests.
 
 ## CI
 
-The `ci` job checks advisories and registry signatures, lint, types and source
+The `ci` job gates runtime advisories and registry signatures, reports the full
+toolchain audit for risk review, and checks lint, types and source
 coverage, then builds and packs once. It tests the private archive and processes
 on the pinned Node version. The `smoke` matrix tests that archive on Linux Node
-20/22 and macOS with pinned Node 24; it never recompiles source. Coverage runs
+20/22/24 and macOS with pinned Node 26; it never recompiles source. Coverage runs
 once, with a separate job uploading the report on same-repository PRs and main.
 Required archives and coverage reports are retained for seven days.
 
 After a merge to protected `main`, `release` downloads the tested build and runs
 semantic-release with the official npm/GitHub plugins. The npm plugin prepares
-version metadata and a tarball; the local verification hook checks the final
-package's consumer contract before publication. Source is never rebuilt in the
-release job. The official npm plugin publishes the prepared directory with no
-package lifecycle scripts. See [releasing](releasing.md) for the one-time 0.1.0
-bootstrap and failure handling.
+version metadata and a tarball. Package-consumer checks run in CI; source is
+never rebuilt in the release job. The official npm plugin publishes the prepared
+directory with no package lifecycle scripts. See [releasing](releasing.md) for
+versioning and failure handling.
 
 PRs and manual dispatches cannot publish. Release permissions are limited to
-GitHub contents write and OIDC. Package and registry secrets are absent from
+GitHub contents, issues and pull-requests write plus OIDC, supporting the official
+GitHub plugin's default release comments, labels and failure issues.
+Package and registry secrets are absent from
 validation jobs. Every checkout disables persisted credentials, and the release
 token is scoped to the release step. Official GitHub actions use exact release
 tags; other remote actions require commit SHAs.

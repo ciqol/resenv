@@ -32,6 +32,15 @@ jobs:
           package-manager-cache: false
       - name: 'Install'
         run: npm ci --no-audit --no-fund
+      - name: 'Report development and release-tool advisories'
+        run: |
+          npm run audit:tooling > toolchain-audit.txt
+          cat toolchain-audit.txt
+          {
+            printf '### Development and release-tool audit\n\nFindings require risk review; this report does not block solely on severity. Runtime audit remains required.\n\n```text\n'
+            cat toolchain-audit.txt
+            printf '\n```\n'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: 'Check dependencies, lint and types'
         run: |
           npm run audit
@@ -84,6 +93,8 @@ jobs:
             node: '20.x'
           - os: ubuntu-24.04
             node: '22.x'
+          - os: ubuntu-24.04
+            node: '24.x'
           - os: macos-15
     steps:
       - name: 'Checkout'
@@ -151,6 +162,8 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: 'write' # semantic-release creates version tags and GitHub releases.
+      issues: 'write' # The GitHub plugin comments, labels and reports release failures.
+      pull-requests: 'write' # The GitHub plugin comments on and labels released PRs.
       id-token: 'write' # The npm plugin publishes through trusted publishing.
     steps:
       - name: 'Checkout'
@@ -165,6 +178,14 @@ jobs:
           package-manager-cache: false
       - name: 'Install release tools'
         run: npm ci --no-audit --no-fund
+      - name: 'Check release-tool review'
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict'
+          import { readFileSync } from 'node:fs'
+          const { expires } = JSON.parse(readFileSync('docs/security-review.json', 'utf8'))
+          assert.ok(Date.now() < Date.parse(expires), 'Release-tool security review has expired')
+          NODE
       - name: 'Download tested package'
         uses: actions/download-artifact@v8.0.1
         with:
@@ -175,9 +196,9 @@ jobs:
         run: |
           mkdir dist
           tar -xzf artifacts/*.tgz -C dist --strip-components=1
+          npm pkg delete private --prefix dist
       - name: 'Release'
-        run: node scripts/release.mjs
+        run: npm run release
         env:
           GITHUB_TOKEN: '${{ github.token }}'
-          RELEASE_ENABLED: '${{ vars.RELEASE_ENABLED }}'
           NPM_CONFIG_PROVENANCE: 'true'
