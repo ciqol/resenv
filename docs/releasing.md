@@ -9,7 +9,7 @@ maintainer approves by merging; no second reviewer is required.
 ## Normal flow
 
 CI audits dependencies, checks signatures, lint, types and coverage, builds
-once, and tests the packed build across Linux Node 20/22/24 and macOS Node 24.
+once, and tests the packed build across Linux Node 20/22/24/26 and macOS Node 26.
 After a merge, the protected release job downloads that build, removes its
 private marker and calls `npm run release` (`semantic-release`). The official
 plugins analyze commits, generate notes, version and publish the package to npm

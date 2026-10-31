@@ -84,6 +84,8 @@ jobs:
             node: '20.x'
           - os: ubuntu-24.04
             node: '22.x'
+          - os: ubuntu-24.04
+            node: '24.x'
           - os: macos-15
     steps:
       - name: 'Checkout'

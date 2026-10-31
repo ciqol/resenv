@@ -78,9 +78,11 @@ checks all library/CLI source, colocated unit specs and both consumer formats wi
 `unknown` and are validated before use. Compiler failures stop the build.
 
 The source target is ES2023. `ES2024.String` supplies the declaration for
-`isWellFormed()`, whose availability is also checked by the Node 20/22/24 runtime
-tests. Node types match the Node 24 development toolchain; the runtime matrix
-remains necessary to detect use of APIs absent from the oldest supported Node.
+`isWellFormed()`, whose availability is also checked by the Node 20/22/24/26 runtime
+tests. Development and release jobs use Node 26 LTS, pinned in `.nvmrc`.
+Node types remain on Node 24 to avoid widening the API surface during this runtime
+upgrade; the runtime matrix remains necessary to detect use of APIs absent from
+the oldest supported Node.
 
 ## Generated manifest and packing
 
@@ -120,7 +122,7 @@ consumer artifact is rebuilt in place by these tests.
 The `ci` job checks advisories and registry signatures, lint, types and source
 coverage, then builds and packs once. It tests the private archive and processes
 on the pinned Node version. The `smoke` matrix tests that archive on Linux Node
-20/22 and macOS with pinned Node 24; it never recompiles source. Coverage runs
+20/22/24 and macOS with pinned Node 26; it never recompiles source. Coverage runs
 once, with a separate job uploading the report on same-repository PRs and main.
 Required archives and coverage reports are retained for seven days.
 

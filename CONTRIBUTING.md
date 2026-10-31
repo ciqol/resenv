@@ -84,7 +84,7 @@ and packed-package/process checks on the pinned Node version. CLI lookup checks
 use injected helpers and temporary
 dummy executables; they never access a developer credential store or
 authenticated provider session.
-The `smoke` matrix checks that same archive on Linux Node 20 and 22 and macOS
+The `smoke` matrix checks that same archive on Linux Node 20, 22 and 24 and macOS
 with the pinned Node version; it does not build or rerun source unit specs.
 
 Use normal npm lifecycle behavior locally and in CI. Review install hooks,
