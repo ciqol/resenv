@@ -63,3 +63,28 @@ Run `npm ci`, `npm run audit`, `npm run audit:tooling`, `npm audit signatures`,
 and `npm run verify`.
 Official GitHub actions use exact release tags under the repository publisher
 policy; other remote actions require full SHAs.
+
+## Lint glob matching
+
+Scoped overrides pin the `minimatch` used by ESLint, `@eslint/config-array` and
+`@typescript-eslint/typescript-estree` to 11.0.1 for the
+[glob preprocessing denial of service fix](https://github.com/isaacs/minimatch/security/advisories/GHSA-g3hv-75wg-m249).
+These consumers use `Minimatch` construction, `match()` and `minimatch()`, which
+remain available. Version 11 removes `makeRe()`, regular-expression entries in
+`Minimatch.set` and other APIs, so do not apply this override globally or to
+npm's bundled `glob`. Remove the scoped overrides when the parent packages
+support the fixed major themselves.
+
+[minimatch](https://github.com/isaacs/minimatch) retains its existing maintainer
+and BlueOak-1.0.0 license. Its new matcher,
+[`@isaacs/nonrecursive-glob-match`](https://github.com/isaacs/nonrecursive-glob-match),
+comes from the same maintainer under the same permissive license; the lockfile
+pins its registry archive and integrity. Both run in the lint process, have no
+registry-install lifecycle hooks, and stay outside the consumer archive. Neither
+package provides an npm provenance attestation; verify registry signatures and
+review source and distributed artifacts on updates. The normal lint, strict
+type, build and package checks validate the toolchain with these overrides.
+
+These overrides do not fix npm's bundled dependencies. Keep their advisories
+visible and follow the release-tool exposure review and deadline; do not treat a
+clean runtime audit as resolution of development or release-tool findings.
