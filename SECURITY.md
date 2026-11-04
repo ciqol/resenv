@@ -28,11 +28,36 @@ the application environment. Tokens, captured CLI output and provider response
 bodies are not logged. The Node preload's private worker exchanges credentials
 and results over captured pipes, never process arguments or dotenv files.
 
+## Command execution
+
 Command mode executes trusted configuration with the current user's
 permissions. Enable it only for configuration you have reviewed. Commands can
 access files and the network; failed resolution cannot undo their external
 effects. Commands are bounded by timeout and output limits, and their output
 is not included in resenv diagnostics.
+
+Only complete `$(command)` values are supported; embedded forms such as
+`prefix$(command)suffix` fail. Execution requires POSIX `/bin/sh`, has closed
+stdin, a default 30-second timeout and a 64 KiB combined output limit. The
+library's `commandTimeoutMs` option sets the per-command timeout. Trailing LF
+characters are removed from output; the result stays literal. The canonical
+`/resolve` preload never enables commands, including when `RESENV_COMMANDS` is
+set. Use `/resolve-commands`, `run --commands` or `{ commands: true }` explicitly.
+
+## Diagnostics
+
+Enable `NODE_DEBUG=ciqol:resenv` when launching Node, before dotenv loading.
+Diagnostics use `node:util`'s `debuglog`, are off by default and create no log
+files. Successful resolution reports variable names and a count:
+
+```text
+CIQOL:RESENV 12345: Replaced secret value for "API_TOKEN".
+CIQOL:RESENV 12345: Done: replaced 1 secret value(s).
+```
+
+Without references, the message is `Nothing to handle.` Failures report a safe
+error and completion summary. Values, tokens, command text and provider
+responses are omitted.
 
 Node's `child_process` debug category prints spawn options, including stdin
 and environment values. resenv refuses its own subprocess and credential-helper
@@ -40,6 +65,8 @@ operations when that category is enabled, including through `NODE_DEBUG=*`.
 Use `NODE_DEBUG=ciqol:resenv` for diagnostics that omit values. This guard does not
 control application logs, other instrumentation, or a debugger attached to the
 process.
+
+## Environment integrity
 
 All values are resolved before resenv updates the caller's environment or
 starts the application. Provider failures, command failures and invalid

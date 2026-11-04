@@ -6,12 +6,8 @@ package and integration checks and build orchestration use `.mjs`. Rollup's offi
 TypeScript plugin compiles the implementation; consumers need no TypeScript
 loader or compiler.
 
-```sh
-npm ci
-npm run build
-npm test
-npm run test:package
-```
+See [contributor setup and verification](../CONTRIBUTING.md#local-development)
+for build and test commands.
 
 ## Output
 
@@ -26,16 +22,25 @@ These paths are relative to `dist/`. The executable points to
 `bin/resenv.cjs`; Rollup also emits its ESM wrapper. The command's user-facing
 name stays `resenv`.
 
-`resolve` reads the inherited environment and replaces Doppler references with
-their fetched values before application code starts. Doppler is the only
-built-in cloud provider. Original `encrypted:` values remain literal.
-`resolve-doppler` imports that same preload, so loading both names does not resolve fetched output again. Arbitrary commands require the
-separate `resolve-commands` entry or `run --commands`.
+`resolve-doppler` imports the canonical `resolve` preload; loading both names
+does not resolve fetched output again. See the [README](../README.md) for public
+usage and [Doppler compatibility](doppler.md#compatibility-and-migration)
+for older entry points.
+
+## Runtime integration
 
 The private `doppler-worker.cjs` entry lets synchronous preloads wait for HTTPS
 without turning the public CommonJS API into a promise. The worker is packed
 alongside the entries but is not a public export. It is located through package
 self-resolution, so the installed tarball does not depend on source paths.
+
+The CLI passes the resolved environment to its child, inherits stdin/stdout/stderr
+and preserves exit status. It forwards SIGINT, SIGTERM and SIGHUP. On POSIX, the
+child runs in its own session so terminal signals reach it through the wrapper
+only; forwarded signals target its process group. Command-mode limits and
+diagnostics are documented in [security guidance](../SECURITY.md).
+
+## Module and type architecture
 
 The root exports map defines the public entries. The build compiles their
 source with Rollup and its TypeScript plugin, then generates ESM facades from the exported
@@ -122,25 +127,13 @@ consumer artifact is rebuilt in place by these tests.
 The `ci` job gates runtime advisories and registry signatures, reports the full
 toolchain audit for risk review, and checks lint, types and source
 coverage, then builds and packs once. It tests the private archive and processes
-on the pinned Node version. The `smoke` matrix tests that archive on Linux Node
-20/22/24 and macOS with pinned Node 26; it never recompiles source. Coverage runs
+on the pinned Node version. The four `smoke` matrix entries test that archive on
+Linux Node 20/22/24 and macOS with pinned Node 26; they never recompile source. Coverage runs
 once, with a separate job uploading the report on same-repository PRs and main.
 Required archives and coverage reports are retained for seven days.
 
-After a merge to protected `main`, `release` downloads the tested build and runs
-semantic-release with the official npm/GitHub plugins. The npm plugin prepares
-version metadata and a tarball. Package-consumer checks run in CI; source is
-never rebuilt in the release job. The official npm plugin publishes the prepared
-directory with no package lifecycle scripts. See [releasing](releasing.md) for
-versioning and failure handling.
+Keep check names stable when editing CI and keep branch requirements aligned
+with the actual CI/CodeQL contexts.
 
-PRs and manual dispatches cannot publish. Release permissions are limited to
-GitHub contents, issues and pull-requests write plus OIDC, supporting the official
-GitHub plugin's default release comments, labels and failure issues.
-Package and registry secrets are absent from
-validation jobs. Every checkout disables persisted credentials, and the release
-token is scoped to the release step. Official GitHub actions use exact release
-tags; other remote actions require commit SHAs.
-
-The protected branch requires `ci`, `coverage`, all three `smoke` contexts and
-`Analyze (javascript-typescript)`. Keep these names stable when editing CI.
+See [releasing](releasing.md) for versioning, publication and recovery, and
+[release security](release-security.md) for publishing authority and audit policy.
