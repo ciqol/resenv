@@ -12,6 +12,7 @@ normal `npm ci`; review install hooks instead of disabling them globally.
 | `tslib` | Build-time compiler helpers | 0BSD |
 | `@types/node` | Pinned runtime types | MIT |
 | `eslint`, `typescript-eslint` | Source and tooling lint | MIT |
+| `minimatch`, `@isaacs/nonrecursive-glob-match` | Transitive lint file-pattern matching | BlueOak-1.0.0 |
 | `vitest`, `@vitest/coverage-v8` | Unit tests and coverage | MIT |
 | `semantic-release` | Standard version, tag and release orchestration | MIT |
 | `@semantic-release/commit-analyzer`, `@semantic-release/release-notes-generator` | Commit classification and release notes | MIT |
@@ -40,6 +41,32 @@ Registry signatures and attestations must be verified on changes. Public npm
 metadata does not establish individual maintainer MFA or complete account
 ownership history; provenance and the existing official namespace are the
 available trust evidence.
+
+## Lint pattern matching
+
+Scoped overrides pin the `minimatch` dependency of `eslint`,
+`@eslint/config-array` and `@typescript-eslint/typescript-estree` to the official
+11.0.4 release. This fixes pattern amplification
+([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249))
+without replacing files inside npm's published bundle. Remove the overrides
+when these callers declare a fixed compatible version themselves.
+
+Minimatch 11 replaces its regular-expression matcher and removes `makeRe`,
+`matchOne` and `AST`. These lint callers use the retained `Minimatch` constructor,
+`match` method and `minimatch` function; they do not use those removed APIs.
+The supported Node versions include the repository's Node 20/22/24/26 matrix.
+Its new transitive matcher is pinned to 1.0.3 by the lockfile. Both packages use
+BlueOak-1.0.0, have no install hooks, and come from the existing upstream
+maintainer's [minimatch](https://github.com/isaacs/minimatch) and
+[matcher](https://github.com/isaacs/nonrecursive-glob-match) repositories.
+
+Keep the npm-plugin override independent: npm's bundled minimatch and other
+components still require an official npm release containing their fixes.
+An override for a lint caller must not rewrite bundled-package lock metadata or
+make an unresolved npm advisory appear fixed. Verify registry signatures,
+unchanged lint file coverage and the full package checks after updates.
+
+## Toolchain boundaries
 
 The engine/plugin tree invokes Git and npm, reads/writes repository/package
 files and contacts GitHub/npm. It runs with release authority only after the
