@@ -1,21 +1,42 @@
 # Contributing
 
-Starting a new session? Read the [maintainer handoff](docs/maintainer-handoff.md)
-and [repository instructions](https://github.com/ciqol/resenv/blob/main/AGENTS.md) before editing or releasing.
+This guide covers changing resenv. Application installation and usage belong
+in the [README](README.md). Read [repository instructions](AGENTS.md) before
+editing or releasing, and work in an isolated task worktree on a `titan/*`
+branch. Authenticate as `titan-ron` for [ciqol/resenv](https://github.com/ciqol/resenv).
 
-The [README](README.md) covers using resenv in an application. This guide covers
-changing resenv itself and verifying those changes.
+Inspect Git status, branches, the push remote and recent commits before editing.
+Check live GitHub checks, releases and npm metadata before release work; old chat
+messages and check results are not authoritative. Never copy credentials between
+sessions. `main` is the default and sole release branch; merge to protected
+`main` approves publication. See [releasing](docs/releasing.md).
 
-Merge to protected `main` approves release. CI uses standard semantic-release
-and the official npm/GitHub plugins to publish regular `0.x.x` versions to
-`latest`. The root and local builds stay private; only the protected release
-job makes the tested build publishable. See [releasing](docs/releasing.md)
-and [release security](docs/release-security.md).
-The source uses the [MIT license](LICENSE), copyright ciqol contributors.
+## Guides and code map
+
+| Guide | Maintained information |
+| --- | --- |
+| [README](README.md) | Application installation, API and CLI usage |
+| [Contributing](CONTRIBUTING.md) | Setup, tests, local consumers and dependency policy |
+| [Security](SECURITY.md) | Trust boundaries, command limits, diagnostics and private reporting |
+| [Doppler](docs/doppler.md) | Authentication, reference syntax, platforms and migration |
+| [Build](docs/build.md) | Module formats, declarations, packaging and CI contract |
+| [Releasing](docs/releasing.md) | Versioning, publishing setup and recovery |
+| [Release security](docs/release-security.md) | Audit policy and release-tool review requirement |
+
+| Path | Responsibility |
+| --- | --- |
+| `src/index.ts` | Resolution API and atomic environment replacement |
+| `src/preload.ts`, `src/resolve*.ts` | Startup integration and shared preload state |
+| `src/doppler/` | References, HTTPS, concurrency and CLI credential lookup |
+| `src/commands.ts` | Explicit shell substitution and process limits |
+| `bin/resenv.ts` | Child-process CLI |
+| `rollup.config.mjs`, `scripts/build.mjs` | CJS implementation, ESM facades, types and manifest |
+| `release.config.mjs` | Standard semantic-release plugins and main/0.x policy |
+| `.github/workflows/ci.yml` | Checks, one compiled build and publication on main merges |
 
 ## Local development
 
-Use the Node version in `.nvmrc` and npm:
+Use the Node version in `.nvmrc` and the pinned lockfile:
 
 ```sh
 nvm use
@@ -23,192 +44,164 @@ npm ci
 npm run verify
 ```
 
-The committed `.npmrc` uses exact versions and a lockfile. Normal `npm ci`
-installs the full semantic-release toolchain, including its peer dependencies.
-Dependencies are installed unchanged from their registry archives; there are no
-custom repair hooks. Do not use force or legacy peer resolution.
-Run `npm run audit` for the blocking runtime check and `npm run audit:tooling`
-for the full advisory report. Development and publishing findings require the
-risk review described in [release security](docs/release-security.md).
+`npm run verify` runs lint, strict implementation/spec type checks, the build,
+source coverage, process tests and installed-package checks. `npm run build`
+builds without the other checks; after building, try
+`node dist/bin/resenv.cjs --help`. The root and ordinary builds stay private.
 
-`npm run verify` is the complete local check: lint, strict source/spec type
-checks, build, unit/process tests and installed-package checks. To build without
-running the checks, use `npm run build`.
-
-After building, try the CLI from this checkout:
-
-```sh
-node dist/bin/resenv.cjs --help
-```
-
-Author library and CLI code as `.ts`; Rollup's TypeScript plugin produces both
-module formats and declarations from that implementation. Colocate Vitest unit
-specs as `*.spec.ts` beside each tested module and import its source. Tests of
-repository-owned tooling use colocated `*.spec.mjs` files; do not test the
-semantic-release engine or duplicate its upstream tests. Keep
-process, package and integration checks in `test/` as `.mjs`; they exercise
-compiled output and installed packages. Tests use dummy credentials and commands.
-Never use real secrets in fixtures, terminal output, screenshots, issues, or
-pull requests.
-
-Provider detection belongs to the original environment values, including library
-calls without options. Keep shell execution behind `commands: true`, preserve
-literal fetched output, and validate references before any command runs.
-
-ESLint applies rules that use type information to the TypeScript implementation and specs
-and checks the JavaScript build tooling.
-Use `npm run lint:fix` for available automatic fixes; preserve the repository's
-existing compact formatting. Public object shapes use `type` with `readonly`
-properties. `Environment` is intentionally mutable because in-place resolution
-updates it. `npm run typecheck` checks the entire library and CLI with `strict`
-and `noUncheckedIndexedAccess`. A separate spec configuration checks tests without
-shipping them in JavaScript or declarations. Do not maintain separate handwritten declarations.
+Author library and CLI code as `.ts`. Colocate Vitest unit specs as `*.spec.ts`
+beside the module they test and import source. Mock or inject provider calls,
+credential lookup and process control. Keep process, package and integration
+checks in `test/` as `.mjs`, exercising compiled output or installed packages.
+Tests of repository-owned tooling use colocated `*.spec.mjs` files; do not
+duplicate upstream semantic-release tests. Use dummy credentials and temporary
+fixtures; never access a developer's credential store or authenticated provider.
 
 ```sh
-npm run test:unit         # colocated Vitest specs, no build required
-npm run test:watch        # watch unit specs while editing
-npm run test:coverage     # source unit coverage, text, lcov and Cobertura output
+npm run test:unit         # source unit specs, no build required
+npm run test:watch        # watch unit specs
+npm run test:coverage     # source coverage; 90% global floor
 npm run test:integration  # process checks, requires a build
 ```
 
-`npm test` runs unit and process tests. Mock or inject provider calls, credential
-lookup and process control in unit tests. Keep checks that spawn actual commands
-or temporary applications in `test/`. The unit coverage
-report measures source and is separate from packed-package and process checks.
-`npm run verify` enforces a 90% global floor for source statements, branches,
-functions and lines. Worker and preload entry files stay in the denominator;
-the CLI is checked separately by process and packed-package tests. CI retains
-LCOV and Cobertura reports for seven days in the `resenv-coverage` artifact.
-The official `actions/upload-code-coverage` action uploads Cobertura in a separate
-job for same-repository PRs and `main` runs; other runs retain the local gate and
-report artifacts. The main `ci` job groups audits, lint, types, coverage, build
-and packed-package/process checks on the pinned Node version. CLI lookup checks
-use injected helpers and temporary
-dummy executables; they never access a developer credential store or
-authenticated provider session.
-The `smoke` matrix checks that same archive on Linux Node 20, 22 and 24 and macOS
-with the pinned Node version; it does not build or rerun source unit specs.
+`npm test` runs unit and process tests. Coverage includes worker and preload
+entry files; the CLI is checked by process and package tests. See the
+[build guide](docs/build.md#ci) for CI platforms and coverage artifacts.
 
-Use normal npm lifecycle behavior locally and in CI. Review install hooks,
-including implicit native builds, when changing dependencies; record any
-required setup in [the dependency review](docs/dependencies.md). Suppressing
-lifecycle hooks can skip required setup, so it is not part of the standard
-installation commands. The explicit build/check commands remain required.
+ESLint checks TypeScript with type information and the JavaScript build tooling.
+Run `npm run lint:fix` for available fixes and preserve existing formatting.
+Public object shapes use `type` and `readonly` properties; `Environment` remains
+mutable for optional replacement. `npm run typecheck` checks implementation and
+specs separately with `strict` and `noUncheckedIndexedAccess`. Rollup generates
+module formats and declarations; do not maintain handwritten declarations.
 
-The package check packs `dist/` and installs that tarball into a temporary
-consumer outside the repository. The install is offline, uses npm's existing
-cache and the repository's reviewed runtime lock entries. It installs with
-`npm ci` without needing cached registry metadata. It does not link the source
-tree or publish. Run `npm ci` first to populate the archive cache. The check
-exercises both module formats, CLI and preloads, shared error identity, single
-preload execution and `.cts`/`.mts` consumer types.
+### Package checks
 
-Pass an existing archive to test the same build CI uses:
-`npm run test:package -- /absolute/path/to/package.tgz`. To check a public release
-archive, pass its version as the second argument. The supplied package's
-name, version, executable mode and manifest are checked before runtime probes.
-The README inside the archive is copied from this revision's `README.md`, so it
-documents the installed package's behavior. Keep it focused on application
-users and use absolute repository links for supplementary guides that are not
-bundled. Contributor/security documents and `docs/` stay in the repository.
-`npm run verify` runs lint, typecheck, build and tests; `npm run release:check`
-also previews the package contents. Neither publishes or creates a tag.
+`npm run test:package` packs `dist/` and installs the archive into a temporary
+consumer outside the repository. It uses offline `npm ci` with the existing
+cache and reviewed lock entries, so run `npm ci` first. It checks both module
+formats, CLI, preloads, shared error identity and `.cts`/`.mts` consumer types.
+It does not link source or publish.
 
-Rebuild after source, declarations, metadata or documentation changes. The build
-cleans `dist/` first and generates its manifest from the root package. See
-[docs/build.md](docs/build.md). Ordinary local builds remain private. Only the
-protected release job removes that guard from the tested distribution manifest.
+To inspect an existing archive without rebuilding:
+
+```sh
+npm run test:package -- /absolute/path/to/package.tgz
+```
+
+Pass a public archive's version as the second argument when checking a release.
+The check verifies metadata, executable mode and the consumer contract, including
+that the bundled README matches this source revision. Supplementary guides stay
+in the repository and use absolute links from the README.
+
+Rebuild after source, declarations, metadata or README changes. The build cleans
+`dist/` and generates its manifest from the root package. `npm run release:check`
+runs verification and previews package contents without publishing or tagging.
+See the [build contract](docs/build.md) for output and archive details.
 
 ## Try changes in an application
 
-### Install a local archive
-
-From the resenv checkout:
+To create a local archive:
 
 ```sh
 npm run build
 npm run pack:local
 ```
 
-Install the resulting archive from the application's directory:
+Install it from the application's directory:
 
 ```sh
 npm install --save-exact /absolute/path/to/ciqol-resenv-0.1.0.tgz
 ```
 
-This changes the application's manifest and lockfile. The archive must exist
-wherever it installs dependencies. Use a new archive version for changes to an
-already shared build; never overwrite an archive another project uses. Root
-package overrides do not propagate to consumers; inspect the installed tree
-against [the dependency review](docs/dependencies.md).
+This changes that application's manifest and lockfile; the archive must exist
+wherever dependencies are installed. Keep distributed archives immutable and
+use a new archive version for changed behavior. Inspect the installed runtime
+tree against the [dependency policy](#dependencies).
 
-### Try local changes without changing the application's CI
+To try changes without altering application CI, retain its existing installation
+and link this checkout's built `dist/` at the application's ignored
+`node_modules/@ciqol/resenv`. Keep references in an ignored `.env.serve.local`
+and target edits local. Leave its manifest, lockfile and CI unchanged. Rebuild
+resenv and restart the application after changes; application `npm ci` can
+remove the link. Authenticate with `doppler login` from the application directory.
+Real login is a manual integration check owned by the Doppler CLI.
 
-Link this checkout's built `dist/` directory at the application's ignored
-`node_modules/@ciqol/resenv`, retaining any existing installation first. Keep
-references in an ignored `.env.serve.local` and the application's target edit
-local. Leave its manifest, lockfile and CI configuration unchanged.
+### Optional integration checks
 
-Rebuild resenv after source, metadata or documentation changes and restart the
-application. An application `npm ci` can remove the link; recreate it when needed.
-Authenticate with the official Doppler CLI from the application's directory:
+`npm run bench` measures fresh-process startup, a plain environment and mocked
+provider lookups. It needs a build, contacts no provider and has no timing gate.
 
-```sh
-doppler login
-```
-
-resenv reuses that login at runtime. Automated tests use injected or mocked
-credentials; real login is a manual integration check owned by Doppler's CLI.
-
-## Optional integration checks
-
-`npm run bench` measures fresh-process startup, a plain 200-variable environment,
-and a mocked provider with eight distinct lookups. It needs a build first and
-does not contact a provider. Timings are observations, not CI pass/fail thresholds.
-
-With an existing Nx installation:
+With an existing, reviewed Nx installation:
 
 ```sh
 npm run test:nx -- /absolute/path/to/workspace/node_modules
 ```
 
-This creates a temporary Nx workspace and checks target-file loading,
-precedence and secret resolution with dummy values. It does not use the
-source workspace's dotenv files, credentials or remote cache.
+This creates a temporary workspace to check target-file loading, precedence and
+resolution with dummy data. It uses no source-workspace dotenv files,
+credentials or remote cache.
 
-## Changes
+## Dependencies
 
-Keep dotenv file discovery with the caller. Doppler is the only built-in cloud
-provider; its authentication and lookups live under `src/doppler/`.
-Preserve all-or-nothing environment updates, strict failures, explicit command
-opt-in and literal handling of resolved values. Update the public API types and
-documentation together with behavior changes.
+resenv has no runtime npm dependencies. Development tools are excluded from the
+consumer package; exact versions and integrity live in `package.json` and
+`package-lock.json`. The Doppler CLI is installed and managed separately by users.
 
-Keep one public resolver, `resolve()`. It always returns an independent
-resolved copy and replaces input values only with `{ replace: true }`. Preloads
-enable that option; the CLI passes the returned copy to its child process.
+| Packages | Purpose | License |
+| --- | --- | --- |
+| `rollup`, `@rollup/plugin-typescript` | CommonJS, ESM facades and declarations | MIT |
+| `typescript` | Strict implementation and consumer checks | Apache-2.0 |
+| `tslib` | Build-time compiler helpers | 0BSD |
+| `@types/node` | Pinned runtime types | MIT |
+| `eslint`, `typescript-eslint` | Source and tooling lint | MIT |
+| `vitest`, `@vitest/coverage-v8` | Unit tests and coverage | MIT |
+| `semantic-release` | Version, tag and release orchestration | MIT |
+| `@semantic-release/commit-analyzer`, `@semantic-release/release-notes-generator` | Commit classification and release notes | MIT |
+| `@semantic-release/npm`, `@semantic-release/github` | Official npm/GitHub publishing | MIT |
 
-Add regression tests for changed behavior and avoid real provider calls. Use
-Conventional Commit subjects, for example `fix(resolver): preserve empty values`.
-Review dependency changes under the [dependency policy](docs/dependencies.md)
-and put the evidence in the PR. Update the guide when a lasting choice changes.
+Use normal npm lifecycle behavior. Review required hooks and implicit native
+builds when changing dependencies; record setup requirements and review evidence
+in the PR. Rollup uses platform-specific optional binaries, so preserve clean
+Linux/macOS install checks. Do not globally disable scripts, use force or legacy
+peer resolution, patch installed files, or disguise findings with lock metadata.
 
-CODEOWNERS identifies the maintainer. Keep bug reports and pull requests focused
-on observable behavior and include the checks run. Weekly dependency updates are
-grouped, with major version updates reviewed separately; bots cannot merge them.
+Standard semantic-release and its official plugins provide the release flow.
+Use npm's official bundle unchanged and inspect its bundled components when
+upgrading. Verify registry signatures and attestations on changes; provenance
+alone does not establish account ownership or maintainer MFA. Canonical sources:
+[semantic-release](https://github.com/semantic-release/semantic-release),
+[npm plugin](https://github.com/semantic-release/npm),
+[GitHub plugin](https://github.com/semantic-release/github).
 
-Keep the README focused on installation, authentication, application integration,
-API behavior and troubleshooting. Put contributor tooling, test commands and
-local development instructions here; detailed internals belong in `docs/`.
-Keep docs current rather than appending session logs, dated audit reports or
-test transcripts. Record run results in PRs and CI.
+Maintainer `titan-ron` owns dependency updates, advisory review and removal.
+Weekly updates are grouped, with major versions reviewed separately; bots cannot
+merge. Run `npm ci`, `npm run audit`, `npm run audit:tooling`,
+`npm audit signatures` and `npm run verify` when changing dependencies. Review
+runtime and release-tool exposure under [release security](docs/release-security.md).
+Keep dated findings, download counts and other review snapshots in PRs or CI.
 
-Security reports follow [SECURITY.md](SECURITY.md). Publication and repository
-visibility changes require a separate maintainer decision; see the
-[release checklist](docs/releasing.md).
+## Submitting changes
 
-npm releases run only through GitHub Actions with npm trusted publishing (OIDC).
-The maintainer configures the npm side. Local development and release checks
-do not require `npm login`; do not publish from a developer machine or add npm
-publishing tokens. CI must publish the exact candidate archive that its tests
-verified.
+Keep dotenv discovery with the caller, provider inference tied to original
+values, fetched output literal and commands explicitly enabled. Preserve atomic
+environment replacement and one public `resolve()` function that always returns
+an independent copy, replacing input only with `{ replace: true }`.
+
+Update types and docs with behavior changes. Add regression tests using dummy
+data. Use Conventional Commit subjects such as
+`fix(resolver): preserve empty values`. CODEOWNERS identifies the maintainer.
+Keep reports and PRs focused on
+observable behavior and include checks run; use [SECURITY.md](SECURITY.md) for
+private vulnerability reporting.
+
+Keep documentation focused on current contracts, lasting decisions and procedures.
+The README covers consumers; this guide owns contributor workflows. Put detailed
+architecture, provider behavior and release procedures in the linked guides,
+and per-run test results, benchmarks and audit evidence in PRs or CI.
+
+Publication uses GitHub Actions and npm OIDC. CI tests one private archive; the
+release job reuses its compiled output, removes the private marker, updates
+package metadata and repacks for publication without recompiling. The final
+archive differs from the tested candidate. See [releasing](docs/releasing.md)
+for approval and recovery; never publish locally or configure npm tokens.

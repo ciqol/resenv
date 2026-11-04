@@ -1,22 +1,27 @@
 # Releases
 
-**Merge the PR to `main`; CI publishes the release.** There is no separate
-approval button, npm staging queue or Finalize job. Manual workflow dispatch
-runs checks only. The default branch requires a PR, current passing checks,
+**Merge the PR to `main`; CI publishes eligible changes.** Manual workflow
+dispatch runs checks only. The default branch requires a PR, current passing checks,
 resolved review threads and squash merging, with no bypass actors. The sole
 maintainer approves by merging; no second reviewer is required.
 
 ## Normal flow
 
-CI gates runtime dependency advisories, reports toolchain advisories for review,
-checks signatures, lint, types and coverage, builds
-once, and tests the packed build across Linux Node 20/22/24/26 and macOS Node 26.
-After a merge, the protected release job downloads that build, removes its
-private marker and calls `npm run release` (`semantic-release`). The official
-plugins analyze commits, generate notes, version and publish the package to npm
-`latest`, and create the GitHub release. No extra package archive is attached to
-GitHub; npm distributes the package. The source
-is not rebuilt and package-consumer tests stay in CI.
+CI builds once and tests one private candidate archive across the
+[supported platforms](build.md#ci). After a merge, the protected release job
+extracts that archive, removes its private marker and calls `npm run release`
+(`semantic-release`). The official plugins analyze commits, generate change
+notes, update package metadata and repack the directory for publication to npm
+`latest`. They also create the GitHub release.
+
+The compiled output is reused without rebuilding; the final archive differs
+from the tested candidate because its metadata changes. Package-consumer tests
+run in CI before this preparation, with no second pass in the privileged job.
+The npm plugin publishes a distribution with no lifecycle scripts.
+
+The package includes the source revision's README, copied by the build. GitHub
+releases contain change notes rather than a second user guide. npm distributes
+the package; no extra npm archive is attached to new GitHub releases.
 
 Use the official plugin defaults for release notes, success comments, failure
 issues and released labels. The release job grants the documented `contents`,
@@ -30,8 +35,7 @@ otherwise the official plugin behavior is unchanged. Docs and maintenance
 commits alone do not trigger a release. Squash PR titles must follow that
 convention. `0.x.x` denotes initial development, not a SemVer prerelease.
 
-The published `v0.1.0` tag is the real baseline. The one-time bootstrap is
-complete and its code has been removed. Preserve release tags and full checkout
+The published `v0.1.0` tag is the baseline. Preserve release tags and full checkout
 history so semantic-release can determine the next version. Historical beta
 versions remain available; this flow does not update the `beta` channel.
 

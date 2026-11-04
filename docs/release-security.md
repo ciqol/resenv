@@ -64,5 +64,5 @@ scripts. The source is not rebuilt. CI owns package-consumer testing; there is
 no custom release hook or second test pass in the privileged release job.
 
 Standard semantic-release and its official plugins are installed and reported
-normally. None of these tools ships to consumers. See [dependencies](dependencies.md)
+normally. None of these tools ships to consumers. See [dependency policy](../CONTRIBUTING.md#dependencies)
 for tool choices and [releasing](releasing.md) for publication and recovery.

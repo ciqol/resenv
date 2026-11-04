@@ -5,11 +5,8 @@ populates the environment, resenv fetches referenced values through HTTPS and
 replaces them in memory before application startup. It resolves once per startup;
 restart the application to fetch changed secrets. This mode does not execute
 shell commands.
-The canonical `--require @ciqol/resenv/resolve` preload infers Doppler from
-`doppler://` values. The equivalent `--import` and `resenv run -- ...` do the
-same. The library also infers Doppler from values; call `resolve()` without
-a provider option. `resolve-doppler` and
-`run --doppler` remain supported for compatibility.
+The preload, CLI and library infer Doppler from original `doppler://` values.
+See the [README](../README.md) for application and Nx integration examples.
 
 ## Local setup
 
@@ -22,6 +19,7 @@ doppler login
 ```
 
 Doppler owns browser authorization, token persistence, login scopes and logout.
+Authentication and credential storage depend on the platform and CLI version.
 Use `doppler logout` to manage the CLI login. resenv never opens a browser,
 prompts for login, issues or revokes tokens, or reads or writes the OS
 credential store directly. There is no separate resenv login.
@@ -56,7 +54,16 @@ Windows discovery is covered with injected process tests; a native Windows
 end-to-end run is not yet verified. Automated checks never use a developer's
 Doppler login or OS credential store.
 
-### Migration from resenv-managed login
+## Compatibility and migration
+
+`/resolve-doppler` is an alias for the canonical `/resolve` preload;
+`run --doppler` remains accepted. New integrations should use `/resolve` or
+`run` without a provider flag.
+
+Original `encrypted:` values remain unchanged. resenv does not decrypt dotenvx
+ciphertext, and Doppler references need no dotenvx private key.
+
+### Earlier resenv-managed login
 
 `resenv login` and `resenv logout` have been removed. Run `doppler login` to
 establish the CLI identity, then start the application normally. Earlier resenv
@@ -79,16 +86,6 @@ secret name. Project/config slugs must be lowercase letters, digits, `_` or
 `-`. Secret names can use Doppler's permissive punctuation; percent encoding
 is accepted for a secret name, such as `payments%2Fapi.key`. Query strings,
 fragments, credentials, ports and executable expressions are rejected.
-
-For an Nx Node target, put the preload on the application process:
-
-```json
-"runtimeArgs": ["--require", "@ciqol/resenv/resolve"]
-```
-
-For an Nx command target, use `resenv run -- node app.mjs` inside the
-target. Preloading the outer Nx process would run before Nx loads target files.
-resenv does not choose, read or rewrite dotenv files.
 
 ## Runtime credential lookup
 

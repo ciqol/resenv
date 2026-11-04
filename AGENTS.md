@@ -1,7 +1,7 @@
 # resenv
 
 Node.js package: `@ciqol/resenv`, MIT licensed, copyright ciqol contributors.
-Start each session with [the maintainer handoff](docs/maintainer-handoff.md),
+Start each session with [the contributor guide](CONTRIBUTING.md),
 then inspect Git, GitHub and npm for current state; this chat is not required.
 The user approved public source and `main` as the default and sole release
 branch. Merge is the release approval: require a PR, passing checks, resolved

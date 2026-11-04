@@ -1,33 +1,16 @@
 # @ciqol/resenv
 
-**Replace references already in `process.env` with their resolved values at
-application startup.** Your existing loader, such as Nx, chooses the dotenv
-files. resenv resolves the resulting environment before application code runs.
+**Resolve secret references already in `process.env` before application code
+runs.** Your existing loader, such as Nx, chooses and loads dotenv files;
+resenv replaces references in memory. It never rewrites those files.
 
-**Doppler is the only built-in cloud provider.** A value such as
-`doppler://my-project/dev/API_TOKEN` tells resenv which secret to fetch. The
-application then reads the actual value from `process.env.API_TOKEN`.
+Doppler is the only built-in cloud provider. For example,
+`API_TOKEN=doppler://my-project/dev/API_TOKEN` becomes the fetched secret in
+`process.env.API_TOKEN`. Resolution happens once at startup; restart the
+application to fetch updated values.
 
-```text
-Nx or another loader sets process.env
-                  |
-resenv fetches the referenced values and replaces them in memory
-                  |
-Application starts with ordinary environment values
-```
-
-Resolution happens once at startup. It does not watch the provider for changes;
-restart the application to fetch updated values. No filename is passed to
-resenv, and dotenv files are never rewritten.
-
-Requires Node.js 20 or later. The package is experimental and remains in initial
-development; its API may change between 0.x releases.
-
-Each npm package includes this README for the version you installed. The
-[repository README](https://github.com/ciqol/resenv#readme) and linked online
-guides follow current development and may describe newer versions.
-
-Background: [A new Git worktree shouldn't mean another copy of your secrets](https://dev.to/titanron/a-new-git-worktree-shouldnt-mean-another-copy-of-your-secrets-424).
+Requires Node.js 20 or later. The package has no runtime npm dependencies and
+is experimental; its API may change between 0.x releases.
 
 ## Install
 
@@ -37,84 +20,60 @@ Install in your application project:
 npm install --save-exact @ciqol/resenv
 ```
 
-This records the version selected by npm's `latest` tag in your project's
-manifest and lockfile.
-
-The CLI examples below use `npx --no-install` to run the copy installed in your
-project. In an npm script, use `resenv` directly.
+The CLI examples use `npx --no-install` to run that installed copy. In an npm
+script, use `resenv` directly.
 
 ## Use with Doppler
 
-Doppler manages application secrets. If you're new to it, start with
-[Doppler's introduction](https://docs.doppler.com/docs/start).
+### 1. Authenticate
 
-### 1. Authenticate locally
-
-Follow the [official Doppler CLI installation guide](https://docs.doppler.com/docs/cli#installation)
-for your operating system, then log in from your application directory:
+Install the [official Doppler CLI](https://docs.doppler.com/docs/cli#installation),
+then log in from your application directory:
 
 ```sh
 doppler login
 ```
 
-Each developer authenticates with their own Doppler access.
+resenv uses `DOPPLER_TOKEN` when supplied; otherwise it reuses the CLI login
+selected for the application's working directory. Doppler owns login, logout
+and credential storage. Missing credentials or access stop startup without
+prompting for login.
 
-> [!WARNING]
-> Authentication and credential storage depend on the Doppler CLI's implementation
-> and may vary by platform or CLI version. resenv only reuses its existing token;
-> it does not manage login, logout or credential storage, or access the OS
-> credential store directly.
+For CI and other unattended environments, supply a suitably scoped
+`DOPPLER_TOKEN` through your runner's secret facility; no CLI is needed.
+See [authentication and platform details](https://github.com/ciqol/resenv/blob/main/docs/doppler.md)
+for supported CLI locations and lookup rules.
 
-At startup, resenv uses `DOPPLER_TOKEN` when supplied; otherwise it reads the
-existing Doppler CLI token for the application's working directory. It then
-fetches only referenced secrets through the HTTPS API. Missing credentials or
-access stop startup without opening a browser or prompting for login.
+### 2. Declare references
 
-For CI and other unattended environments, supply `DOPPLER_TOKEN` through your
-runner's secret facility; the CLI is not needed in that mode. See
-[Doppler authentication and platform details](https://github.com/ciqol/resenv/blob/main/docs/doppler.md), including
-migration from the earlier resenv-managed login.
-
-Need another secrets provider, operating system or CLI installation method?
-[Request support](https://github.com/ciqol/resenv/issues/new) with your use case
-and platform details.
-
-### 2. Declare references in the environment your app already loads
-
-For example, in an Nx application's `.env.serve`:
+In the environment your application already loads, such as Nx's `.env.serve`:
 
 ```dotenv
 API_TOKEN=doppler://my-project/dev/API_TOKEN
 PORT=3000
 ```
 
-The reference contains the Doppler project, config and secret name. This is
-resenv's reference syntax. Plain values such as `PORT` pass through unchanged.
-The reference itself grants no access: the authenticated identity needs
-permission to read that secret. Doppler references need no dotenvx private key.
+Each reference names a project, config and secret. The authenticated identity
+must have access to that secret. Plain values such as `PORT` pass through.
 
-### 3. Preload resenv on the application process
+### 3. Preload on the application process
 
-Once the environment has been loaded:
+After your loader has populated the environment:
 
 ```sh
 node --require @ciqol/resenv/resolve app.cjs
 node --import @ciqol/resenv/resolve app.mjs
 ```
 
-The preload replaces `process.env.API_TOKEN` before the application and its
-imports execute. It infers Doppler from the value, so no provider flag is needed.
-
+The preload replaces references before the application and its imports execute.
 Alternatively, wrap a command whose environment is already populated:
 
 ```sh
 npx --no-install resenv run -- node app.mjs
 ```
 
-The wrapper supplies resolved values to the child process. It inherits
-stdin/stdout/stderr, preserves exit status and forwards SIGINT, SIGTERM and
-SIGHUP to that child. On POSIX, the child runs in its own session so terminal
-signals reach it only through the wrapper.
+The wrapper passes the resolved environment to its child, inherits terminal I/O,
+preserves exit status and forwards termination signals.
 
 ## Nx integration
 
@@ -137,70 +96,70 @@ Put the preload on the application's target, after Nx loads its dotenv files:
 }
 ```
 
-Run `nx serve app`. Nx selects `.env.serve` and any applicable overrides,
-then starts the application with resenv. Use your application's existing path
-and target options. For an existing `@nx/js:node` target, add:
+Run `nx serve app`, using your application's existing path and target options.
+For an existing `@nx/js:node` target, add:
 
 ```json
 "runtimeArgs": ["--require", "@ciqol/resenv/resolve"]
 ```
 
-Preloading the outer `nx` process runs too early. A shell-wide `NODE_OPTIONS`
-setting also affects unrelated processes. Keep the preload on the application
-target. If a build needs secrets, its process needs its own integration after
-its environment is loaded; values embedded in build output remain in that output.
-
-## Resolution behavior
-
-- Only the enabled reference forms are resolved. Ordinary values pass through.
-- Doppler fetches only the named secrets; repeated references share one request
-  within a resolution pass. Values are not cached on disk.
-- All lookups must succeed before the environment is changed or a child starts.
-  Missing access, malformed references and provider failures stop startup.
-- Fetched values stay literal, even if they contain `$()` or another reference.
-- The canonical preload leaves shell expressions literal. Executing commands
-  requires the separate opt-in described below.
-- Application code can read its resolved environment. Access to the same
-  credentials also permits other code or sessions to retrieve those secrets.
-
-See the current [Doppler limits](https://github.com/ciqol/resenv/blob/main/docs/doppler.md#resolution-and-security-boundaries)
-and [security guidance](https://github.com/ciqol/resenv/blob/main/SECURITY.md).
+Preloading the outer `nx` process runs too early. Keep the preload on each
+application or build process that needs secrets, after its environment is loaded.
+Secrets embedded in build output remain in that output.
 
 ## Library API
 
-Call the library after your loader has populated the environment, before
-importing modules that read configuration:
+Call the synchronous resolver after loading the environment, before importing
+modules that read configuration:
 
 ```js
 import { resolve } from '@ciqol/resenv'
 
 const childEnv = resolve()
-
-// Also replace values in process.env; the returned copy can be ignored.
 resolve(process.env, { replace: true })
 ```
 
-`resolve(env = process.env, options = {})` always returns a new resolved
-environment. `replace` defaults to `false`, leaving the input unchanged. With
-`replace: true`, it also replaces values in the input after every lookup succeeds;
-the return value is still an independent copy.
+`resolve(env = process.env, options = {})` always returns an independent
+resolved copy. CommonJS uses `require('@ciqol/resenv')`.
 
-Providers are inferred from each original value, just as with `/resolve` and
-`run`. Doppler is the only supported cloud provider today. No options are
-required: without references, the result is an unchanged copy and no credentials
-are accessed. An environment can contain several references, including different
-Doppler projects/configs. Each value selects its own source; a command can supply
-a Doppler token. Commands still require
-`commands: true`. Returned secret values are never interpreted again.
+| Option | Default | Behavior |
+| --- | --- | --- |
+| `replace` | `false` | Also replace input values after all lookups succeed. Requires `process.env` or writable data properties. |
+| `commands` | `false` | Execute whole-value `$(command)` expressions through POSIX `/bin/sh`. |
+| `commandTimeoutMs` | `30000` | Per-command timeout in milliseconds; a positive integer up to `2147483647`. |
 
-CommonJS uses the same API through
-`require('@ciqol/resenv')`. Both formats share the `ResenvError` class, whose
-`code` identifies the failure. CLI and preload failures exit with a safe message.
+Doppler is inferred from original values. Without references, the result is an
+unchanged copy and no credentials are accessed. Library failures throw
+`ResenvError`; its `code` identifies the failure. CLI and preload failures exit
+with a safe message.
 
-Using `replace: true` requires `process.env` or writable data properties. A read-only
-property, setter or Proxy target fails before any replacement is committed.
-Keep the default copy mode for inputs that should remain unchanged. The Node
-preloads enable in-place replacement so application imports see resolved values.
+## Resolution and safety
+
+- All lookups must succeed before the input environment changes or a child starts.
+- Only named secrets are fetched; repeated references share a request within a
+  resolution pass. Values are not cached on disk.
+- Fetched values stay literal, even if they contain another reference or `$()`.
+- Shell commands require explicit opt-in and run with your permissions. Failed
+  resolution cannot undo their file or network effects.
+- Use one preload mode per process. Combining modes or a preload with the CLI
+  fails with `CONFLICTING_PRELOADS`. Avoid additional resolvers in `NODE_OPTIONS`.
+- Application code can read its secrets and any credentials supplied to it.
+
+See [Doppler limits and compatibility](https://github.com/ciqol/resenv/blob/main/docs/doppler.md)
+and [security guidance](https://github.com/ciqol/resenv/blob/main/SECURITY.md).
+
+## Optional commands
+
+Enable commands alongside Doppler references through the library:
+
+```js
+const env = resolve({ BUILD_LABEL: '$(printf local)' }, { commands: true })
+```
+
+Or use `resenv run --commands -- ...`, or preload
+`@ciqol/resenv/resolve-commands`. The canonical `/resolve` preload leaves shell
+expressions literal. Only use command mode with trusted configuration; see
+[command limits](https://github.com/ciqol/resenv/blob/main/SECURITY.md#command-execution).
 
 ## Debug startup
 
@@ -208,55 +167,22 @@ preloads enable in-place replacement so application imports see resolved values.
 NODE_DEBUG=ciqol:resenv node --require @ciqol/resenv/resolve app.mjs
 ```
 
-For the Nx target above, use `NODE_DEBUG=ciqol:resenv nx serve app`. Set `NODE_DEBUG`
-when launching Node, before dotenv loading. Diagnostics use `node:util`'s
-`debuglog` and are off by default:
+For Nx, use `NODE_DEBUG=ciqol:resenv nx serve app`. Enable it when launching Node,
+before dotenv loading. Diagnostics omit secrets, tokens, commands and provider
+responses. `NODE_DEBUG=child_process` or `NODE_DEBUG=*` can expose credentials;
+resenv blocks its subprocess operations in that mode. See
+[diagnostic details](https://github.com/ciqol/resenv/blob/main/SECURITY.md#diagnostics).
 
-```text
-CIQOL:RESENV 12345: Replaced secret value for "API_TOKEN".
-CIQOL:RESENV 12345: Done: replaced 1 secret value(s).
-```
+## Further reading
 
-With no matching references, the only message is `Nothing to handle.` Failures
-include a safe error and completion summary. Logs omit values, tokens, command
-text and provider responses; no log files are created.
+Each npm package includes this README for its installed version. The
+[repository README](https://github.com/ciqol/resenv#readme) and linked online
+guides follow current development and may describe newer versions. GitHub
+[releases](https://github.com/ciqol/resenv/releases) contain version change notes.
 
-`NODE_DEBUG=child_process` (including `NODE_DEBUG=*`) makes Node print spawn
-options containing credentials. resenv blocks its subprocess operations with
-`UNSAFE_DEBUG_LOGGING` in that mode. Use `NODE_DEBUG=ciqol:resenv` instead.
-
-## Optional commands
-
-- **Opt-in shell commands:** `/resolve-commands` resolves complete `$(command)`
-  values through `/bin/sh`. The canonical `/resolve` preload leaves these values
-  literal for both `--require` and `--import`, including when `RESENV_COMMANDS`
-  is set in the environment. `resenv run --commands -- ...` enables commands
-  alongside inferred Doppler references, as does the command preload. Use only
-  trusted configuration; commands run with your permissions. A timeout limits
-  execution time, but cannot undo file changes, network requests or other effects.
-  Leave this option disabled when the environment can contain untrusted input.
-  Commands have closed stdin, a 30-second timeout and a 64 KiB combined output
-  limit. Trailing LF characters are removed; fetched output stays literal.
-  Embedded forms such as `prefix$(command)suffix` are unsupported.
-
-Values beginning with `encrypted:` are left unchanged. resenv resolves cloud
-references; dotenvx decryption is outside its scope. The package has no runtime
-npm dependencies.
-
-`/resolve-doppler` is an equivalent name for `/resolve`; `run --doppler` remains
-accepted. New integrations should use the canonical entry points above.
-
-Use one preload mode per process. Combining `/resolve` and `/resolve-commands`
-or combining a preload with `resenv run` fails with `CONFLICTING_PRELOADS` to
-prevent reinterpreting fetched values. Do not configure a second resolver in
-the child process through `NODE_OPTIONS` or other launch hooks.
-For both modes together, use `resenv run --commands -- ...` or one library call
-with `{ commands: true }`.
-
-## Contributing
-
-For checkout setup, building, testing, trying local changes in another project
-and submitting fixes, see [CONTRIBUTING.md](https://github.com/ciqol/resenv/blob/main/CONTRIBUTING.md).
+- [Contributing, development and tests](https://github.com/ciqol/resenv/blob/main/CONTRIBUTING.md)
+- [Request provider or platform support](https://github.com/ciqol/resenv/issues/new)
+- [Background: A new Git worktree shouldn't mean another copy of your secrets](https://dev.to/titanron/a-new-git-worktree-shouldnt-mean-another-copy-of-your-secrets-424)
 
 ## License
 
