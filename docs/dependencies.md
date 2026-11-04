@@ -23,8 +23,8 @@ The user selected standard semantic-release on main instead of maintaining a
 custom staging/finalization lifecycle. The official engine and plugins provide
 the release conventions and integrations that would otherwise need custom code.
 They are pinned to 25.0.9 (engine), 13.2.0 (npm), and 12.0.10 (GitHub), alongside
-the existing analysis/notes plugins. npm is pinned transitively to 11.21.1 so its
-bundled implementation remains reviewable.
+the existing analysis/notes plugins. The lockfile pins npm transitively to
+11.21.1 so its bundled implementation remains reviewable.
 
 Use npm's official bundle unchanged. The lockfile describes the original registry
 artifact, without development aliases or postinstall file replacements. Upgrade
