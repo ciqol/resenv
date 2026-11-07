@@ -1,86 +1,87 @@
 # Releases
 
-**Merge the PR to `main`; CI publishes eligible changes.** Manual workflow
-dispatch runs checks only. The default branch requires a PR, current passing checks,
-resolved review threads and squash merging, with no bypass actors. The sole
-maintainer approves by merging; no second reviewer is required.
+Merge an eligible PR to protected `main` to approve publication. PRs and manual
+workflow dispatches run checks only. The sole maintainer approves by merge; no
+second reviewer is required. Keep the package on npm `latest` as regular `0.x.x`
+versions until a reviewed 1.0 transition.
 
-## Normal flow
+## Versioning and publication
 
-CI builds once and tests one private candidate archive across the
-[supported platforms](build.md#ci). After a merge, the protected release job
-extracts that archive, removes its private marker and calls `npm run release`
-(`semantic-release`). The official plugins analyze commits, generate change
-notes, update package metadata and repack the directory for publication to npm
-`latest`. They also create the GitHub release.
+[semantic-release](https://github.com/semantic-release/semantic-release) uses
+Conventional Commits: fixes and performance changes bump patch, features bump
+minor, and breaking changes bump minor during 0.x development. Docs and
+maintenance commits alone do not release. Use a matching squash PR title.
+Keep `v0.1.0` as the baseline and preserve release tags and full Git history.
+Historical beta versions remain available; this flow does not update `beta`.
 
-The compiled output is reused without rebuilding; the final archive differs
-from the tested candidate because its metadata changes. Package-consumer tests
-run in CI before this preparation, with no second pass in the privileged job.
-The npm plugin publishes a distribution with no lifecycle scripts.
+CI builds one private archive and tests it across the
+[runtime matrix](../CONTRIBUTING.md#build-and-ci). After checks pass, the release
+job extracts that build, removes its private marker and runs `npm run release`.
+The official npm plugin updates metadata and repacks without recompiling; the
+final archive differs from the tested candidate. Consumer tests run before
+release preparation, with no second pass in the privileged job.
 
-The package includes the source revision's README, copied by the build. GitHub
-releases contain change notes rather than a second user guide. npm distributes
-the package; no extra npm archive is attached to new GitHub releases.
+Use the official plugin defaults for release notes, comments, labels and failure
+issues. GitHub releases contain change notes; npm carries the package and its
+source revision's README. Do not attach another npm archive to GitHub releases.
+The development root and ordinary builds stay private.
 
-Use the official plugin defaults for release notes, success comments, failure
-issues and released labels. The release job grants the documented `contents`,
-`issues` and `pull-requests` write permissions, plus OIDC for npm. Write
-permissions remain scoped to that job.
+## Required setup
 
-Conventional Commits determine releases: fixes and performance changes bump
-patch, features bump minor, and breaking changes bump minor while the package
-remains below 1.0. The breaking-change rule is the explicit project policy;
-otherwise the official plugin behavior is unchanged. Docs and maintenance
-commits alone do not trigger a release. Squash PR titles must follow that
-convention. `0.x.x` denotes initial development, not a SemVer prerelease.
-
-The published `v0.1.0` tag is the baseline. Preserve release tags and full checkout
-history so semantic-release can determine the next version. Historical beta
-versions remain available; this flow does not update the `beta` channel.
-
-## Setup
-
-- Default/release branch: `main`, protected by PRs and the actual CI/CodeQL checks.
-- npm trusted publisher: `ciqol/resenv`, `ci.yml`, environment `release`, with
-  **direct publish** permission. Stage-only permission cannot run this flow.
-- GitHub environment `release`: allow only `main`, with no required reviewers.
-- `RELEASE_ENABLED=true` only after protection, the npm publisher and dependency
-  audit are verified. The maintainer manages the npm setting.
-
-On npmjs.com, open **@ciqol/resenv → Settings → Trusted publishing** and
-configure its GitHub Actions publisher with these exact values:
-
-| Field | Value |
+| Setting | Required value |
 | --- | --- |
-| Organization or user | `ciqol` |
-| Repository | `resenv` |
-| Workflow filename | `ci.yml` (filename only) |
-| Environment name | `release` |
-| Allow npm publish | Enabled |
-| Allow npm dist-tag | Not needed for this single-branch release flow |
+| Default and sole release branch | `main` |
+| Branch rules | PR, current CI/CodeQL checks, resolved threads, squash merge, no bypass |
+| GitHub environment | `release`, restricted to `main`, no required reviewers |
+| npm trusted publisher | `ciqol/resenv`, workflow `ci.yml`, environment `release` |
+| npm publisher permission | Direct publish enabled; dist-tag permission is unnecessary |
+| Repository variable | `RELEASE_ENABLED=true` only after protection, npm setup and audit review |
 
-Save the configuration and complete npm's confirmation if prompted. Staging is
-always allowed; enabling direct publishing is the required change. The branch
-restriction lives in GitHub's `release` environment, which already allows only
-`main`. Keep account 2FA and the existing token restrictions; no npm token is
-needed. See [npm's trusted-publishing guide](https://docs.npmjs.com/trusted-publishers/).
+The maintainer configures npm under **@ciqol/resenv → Settings → Trusted
+publishing** and completes its confirmation. Keep account 2FA and token
+restrictions. See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/).
+Never publish locally, configure npm tokens or run local npm login.
+`npm run release:check` verifies locally without publishing or tagging.
 
-Never publish from a developer machine, configure a permanent npm publishing
-token, or request local npm login. Local `npm run release:check` is read-only
-with respect to publication. Only an enabled main push can enter the protected
-release job. A merge does not waive the runtime audit, an unresolved release-risk
-review or the security review expiry.
+Publishing authority is scoped to the main-push release job after CI, smoke and
+coverage pass. Checkout does not persist credentials; the release step receives
+the GitHub token. Job permissions provide contents, issues and pull-requests
+writes for the official plugins, plus OIDC for npm. Merge is the maintainer's
+approval; it does not waive audit or review requirements.
 
-## Failures
+## Security review
 
-Inspect the failed run, npm version and GitHub tag before retrying. The standard
-engine creates its tag before calling publishers; a failed publication may
-therefore leave a tag or partial release. Rerunning is not a general repair for
-that state. Recover the intended version using its original source and archive
-after maintainer review; do not retag different code or silently replace a
-published version.
+- `npm run audit` blocks runtime findings at moderate severity or above.
+  Package checks enforce zero runtime dependencies and exclude development
+  tools, lifecycle scripts and bundled dependencies from the consumer archive.
+- `npm run audit:tooling` reports every severity in CI logs and its summary.
+  Findings do not fail solely on severity; registry or command errors do fail.
+  A successful report is not a clean audit. Registry signatures, lint, types,
+  coverage and package checks remain required.
+- Before merge, review changed findings and Dependabot alerts against actual
+  call paths, input trust, credentials and generated artifacts. Block unresolved
+  credential or artifact-integrity risks; investigate uncertain reachability.
+  Bounded availability risks may be accepted with evidence.
+- Record acceptance in the PR: advisories, affected versions, reachability,
+  residual risk, owner, upstream remediation and re-review triggers. The
+  maintainer approves by merge. Acceptance does not fix a vulnerability.
+- Re-review when dependencies, build scripts, input trust, registry/proxy settings
+  or publishing behavior change. Keep dated findings in PRs or CI.
 
-No workflow automatically deletes tags, releases or npm versions. Existing
-beta versions without matching GitHub releases need separate recovery from
-their original evidence. See [release security](release-security.md).
+Maintainer `titan-ron` owns review and remediation. Use exact versions and the
+lockfile, normal lifecycle behavior and unchanged upstream artifacts. Inspect
+npm's actual bundled components on upgrades; never patch installed dependencies
+or conceal findings. See the
+[dependency policy](../CONTRIBUTING.md#dependencies) for update checks.
+
+## Failure recovery
+
+Inspect the failed run, npm version and GitHub tag before retrying. The engine
+tags before publishing, so failure may leave a tag or partial release; rerunning
+is not a general repair. Recover the intended version from its original source
+and archive after maintainer review. Do not retag different code or replace a
+published version. Historical beta releases without matching GitHub releases
+need their original evidence for recovery.
+
+No workflow deletes tags, releases or npm versions. Removing obsolete npm
+versions requires explicit authorization; never unpublish the entire package.
