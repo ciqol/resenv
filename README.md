@@ -1,5 +1,9 @@
 # @ciqol/resenv
 
+[![🏗️ CI](https://github.com/ciqol/resenv/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ciqol/resenv/actions/workflows/ci.yml)
+[![NPM Version](https://img.shields.io/npm/v/@ciqol/resenv)](https://www.npmjs.com/package/@ciqol/resenv)
+[![NPM Downloads](https://img.shields.io/npm/dm/@ciqol/resenv)](https://www.npmjs.com/package/@ciqol/resenv)
+
 **Resolve secret references already in `process.env` before application code
 runs.** Your existing loader, such as Nx, chooses and loads dotenv files;
 resenv replaces references in memory. It never rewrites those files.
