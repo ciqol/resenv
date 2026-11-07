@@ -37,7 +37,7 @@ reviews that evidence as part of PR approval by merge. Acceptance is not a fix.
 Re-review when dependencies, build scripts, input trust, registry/proxy settings
 or publishing behavior change; do not carry an assessment across changed conditions.
 
-The current [review deadline](security-review.json) remains **November 9, 2026 at
+The current [review deadline](security-review.json) is **November 21, 2026 at
 00:00 UTC**, enforced before publication. Updating it requires a new documented
 review; never extend it merely to make a release pass. Detailed dated findings
 belong in the PR or CI, not an accumulating repository audit log.
