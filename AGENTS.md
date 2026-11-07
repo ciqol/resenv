@@ -92,9 +92,11 @@ Source unit specs run before the CI build; matrix jobs run only higher-level
 tests against that archive and never recompile the source.
 Use `npm run release:check` for non-publishing local verification. CI compiles
 once and matrix jobs test that private archive. The release job consumes this
-build, updates package metadata through the official npm plugin, and repeats
-package consumer checks for the final version without recompiling. No stage,
-finalizer, polling workflow or release queue is used.
+build, removes its private marker, and lets the official npm plugin update
+package metadata and repack for publication without recompiling. The final
+archive differs from the tested candidate; package consumer checks run in CI
+before release preparation, with no second pass in the privileged release job.
+No stage, finalizer, polling workflow or release queue is used.
 
 README documents how application users install and use resenv. Contributor setup,
 tests, local linking and release preparation belong in CONTRIBUTING.md and docs/.
