@@ -19,9 +19,7 @@ sessions. `main` is the default and sole release branch; merge to protected
 | [Contributing](CONTRIBUTING.md) | Setup, tests, local consumers and dependency policy |
 | [Security](SECURITY.md) | Trust boundaries, command limits, diagnostics and private reporting |
 | [Doppler](docs/doppler.md) | Authentication, reference syntax, platforms and migration |
-| [Build](docs/build.md) | Module formats, declarations, packaging and CI contract |
-| [Releasing](docs/releasing.md) | Versioning, publishing setup and recovery |
-| [Release security](docs/release-security.md) | Audit policy and release-tool review requirement |
+| [Releasing](docs/releasing.md) | Versioning, publishing, security review and recovery |
 
 | Path | Responsibility |
 | --- | --- |
@@ -65,8 +63,8 @@ npm run test:integration  # process checks, requires a build
 ```
 
 `npm test` runs unit and process tests. Coverage includes worker and preload
-entry files; the CLI is checked by process and package tests. See the
-[build guide](docs/build.md#ci) for CI platforms and coverage artifacts.
+entry files; the CLI is checked by process and package tests. See
+[build and CI](#build-and-ci) for platforms and coverage artifacts.
 
 ESLint checks TypeScript with type information and the JavaScript build tooling.
 Run `npm run lint:fix` for available fixes and preserve existing formatting.
@@ -97,7 +95,41 @@ in the repository and use absolute links from the README.
 Rebuild after source, declarations, metadata or README changes. The build cleans
 `dist/` and generates its manifest from the root package. `npm run release:check`
 runs verification and previews package contents without publishing or tagging.
-See the [build contract](docs/build.md) for output and archive details.
+See [build and CI](#build-and-ci) for the package architecture.
+
+## Build and CI
+
+Rollup's TypeScript plugin compiles the library/CLI to CommonJS while preserving
+its module graph, then generates ESM facades from exported names. Both formats
+load the same implementation, preserving error identity and shared preload state
+([Node dual-package guidance](https://nodejs.org/api/packages.html#dual-commonjs-es-module-packages)).
+The private `doppler-worker.cjs` supports synchronous HTTPS resolution and is
+located through package self-resolution; it is packed but not publicly exported.
+
+The root exports map defines public entries. Generated `.d.mts` and `.d.cts`
+facades re-export a shared declaration graph in `dist/types/`. The distribution
+has no package-wide `type` field, so the shared `.d.ts` graph describes CommonJS.
+Consumer checks compile both module formats and reject invalid inputs.
+
+The source targets ES2023 with `ES2024.String` declarations for `isWellFormed()`.
+Use the Node version in `.nvmrc` for development; Node types stay on version 24.
+Runtime tests check APIs against the oldest supported Node rather than relying
+on compiler declarations alone. The build resolves `import.meta.url` to the Node
+filename in CommonJS output and leaves Node built-ins external.
+
+The build cleans `dist/`, derives its manifest from the root, rebases entry paths
+and omits development dependencies, scripts, overrides and the `type` field.
+It packages runtime modules, declarations, metadata, LICENSE and this revision's
+README. The executable is `bin/resenv.cjs`; only exports-map entries are public.
+Contributor/security guides and `docs/` stay in the repository. Ordinary builds
+retain `private: true`; publication is covered by [releasing](docs/releasing.md).
+
+CI audits dependencies, verifies registry signatures and checks lint, types and
+source coverage, then builds one private archive. The same bytes pass package
+and process checks on Linux Node 20/22/24 and macOS with the pinned Node version;
+matrix jobs never recompile. Coverage runs once and is uploaded separately for
+same-repository PRs and main. Archives and coverage reports are retained for
+seven days. Keep check names aligned with required CI/CodeQL contexts.
 
 ## Try changes in an application
 
@@ -178,7 +210,7 @@ Maintainer `titan-ron` owns dependency updates, advisory review and removal.
 Weekly updates are grouped, with major versions reviewed separately; bots cannot
 merge. Run `npm ci`, `npm run audit`, `npm run audit:tooling`,
 `npm audit signatures` and `npm run verify` when changing dependencies. Review
-runtime and release-tool exposure under [release security](docs/release-security.md).
+runtime and release-tool exposure under [release security review](docs/releasing.md#security-review).
 Keep dated findings, download counts and other review snapshots in PRs or CI.
 
 ## Submitting changes
@@ -196,12 +228,6 @@ observable behavior and include checks run; use [SECURITY.md](SECURITY.md) for
 private vulnerability reporting.
 
 Keep documentation focused on current contracts, lasting decisions and procedures.
-The README covers consumers; this guide owns contributor workflows. Put detailed
-architecture, provider behavior and release procedures in the linked guides,
-and per-run test results, benchmarks and audit evidence in PRs or CI.
-
-Publication uses GitHub Actions and npm OIDC. CI tests one private archive; the
-release job reuses its compiled output, removes the private marker, updates
-package metadata and repacks for publication without recompiling. The final
-archive differs from the tested candidate. See [releasing](docs/releasing.md)
-for approval and recovery; never publish locally or configure npm tokens.
+The README covers consumers; this guide owns contributor and build workflows.
+Keep provider details and release procedures in the linked guides, and per-run
+test results, benchmarks and audit evidence in PRs or CI.

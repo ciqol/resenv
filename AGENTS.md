@@ -24,9 +24,9 @@ restricted to `main`, without required reviewers. No npm tokens, local publishin
 or local npm login. The user manages npm ownership and authentication. Keep
 `RELEASE_ENABLED` disabled until protection and npm setup are verified.
 
-Read `docs/release-security.md` before changing release tools. Runtime dependency
-audit findings at moderate severity or above block CI. Report the full toolchain
-audit without filtering findings; review development/release-tool exposure before
+Read the security review section in `docs/releasing.md` before changing release
+tools. Runtime dependency audit findings at moderate severity or above block CI.
+Report the full toolchain audit without filtering findings; review development/release-tool exposure before
 merge rather than blocking on severity alone. Preserve the review expiry and
 block publication for risks to credentials or artifact integrity. Do not patch
 installed dependencies or disguise accepted findings as fixed. Release
