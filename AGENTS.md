@@ -26,8 +26,9 @@ or local npm login. The user manages npm ownership and authentication. Keep
 
 Read the security review section in `docs/releasing.md` before changing release
 tools. Runtime dependency audit findings at moderate severity or above block CI.
-Report the full toolchain audit without filtering findings; review development/release-tool exposure before
-merge rather than blocking on severity alone. Preserve the review expiry and
+Report the full toolchain audit without filtering findings; review development
+and release-tool exposure before merge rather than blocking on severity alone.
+Re-review when relevant dependencies, inputs or release behavior change, and
 block publication for risks to credentials or artifact integrity. Do not patch
 installed dependencies or disguise accepted findings as fixed. Release
 tools run with publishing authority only in the trusted release job. Remove obsolete npm versions only

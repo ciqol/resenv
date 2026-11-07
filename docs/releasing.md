@@ -63,17 +63,15 @@ approval; it does not waive audit or review requirements.
   credential or artifact-integrity risks; investigate uncertain reachability.
   Bounded availability risks may be accepted with evidence.
 - Record acceptance in the PR: advisories, affected versions, reachability,
-  residual risk, owner, upstream remediation and a re-review deadline. The
+  residual risk, owner, upstream remediation and re-review triggers. The
   maintainer approves by merge. Acceptance does not fix a vulnerability.
-- [security-review.json](security-review.json) is the authoritative expiry,
-  enforced before publication. Renew it only after a documented review. Re-review
-  sooner when dependencies, build scripts, input trust, registry/proxy settings
+- Re-review when dependencies, build scripts, input trust, registry/proxy settings
   or publishing behavior change. Keep dated findings in PRs or CI.
 
 Maintainer `titan-ron` owns review and remediation. Use exact versions and the
 lockfile, normal lifecycle behavior and unchanged upstream artifacts. Inspect
-npm's actual bundled components on upgrades; never patch installed dependencies,
-conceal findings or extend the expiry just to permit publication. See the
+npm's actual bundled components on upgrades; never patch installed dependencies
+or conceal findings. See the
 [dependency policy](../CONTRIBUTING.md#dependencies) for update checks.
 
 ## Failure recovery
