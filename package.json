@@ -21,7 +21,12 @@
     "environment",
     "dotenv",
     "secrets",
-    "nx"
+    "nx",
+    "doppler",
+    "secret-references",
+    "environment-variables",
+    "nodejs",
+    "git-worktree"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
