@@ -16,6 +16,18 @@ application to fetch updated values.
 Requires Node.js 20 or later. The package has no runtime npm dependencies and
 is experimental; its API may change between 0.x releases.
 
+## When to choose resenv
+
+Choose resenv when your Node.js application already loads its environment through
+Nx, dotenv or another loader, and you want to resolve individual Doppler secret
+references before application code runs. Each reference selects its own project
+and config, so one application can use secrets from multiple Doppler configs.
+
+For Git worktrees, keep reviewed reference configuration and the startup command
+with the project so each checkout receives them without copying plaintext secrets.
+Each worktree still needs the application's usual setup and configured Doppler
+access. Your existing loader remains responsible for selecting and loading files.
+
 ## Install
 
 Install in your application project:
